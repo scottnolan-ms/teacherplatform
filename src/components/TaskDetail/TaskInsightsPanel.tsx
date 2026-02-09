@@ -3,33 +3,33 @@ import Tooltip from '../Tooltip';
 
 // Confidence icons
 const SoaringIcon = () => (
-  <img src="/src/assets/Icons/Confidence-03-Soaring.svg" alt="" width="20" height="20" />
+  <img src="//assets/Icons/Confidence-03-Soaring.svg" alt="" width="20" height="20" />
 );
 const FlyingIcon = () => (
-  <img src="/src/assets/Icons/Confidence-02a-Flying.svg" alt="" width="20" height="20" />
+  <img src="//assets/Icons/Confidence-02a-Flying.svg" alt="" width="20" height="20" />
 );
 const HatchlingIcon = () => (
-  <img src="/src/assets/Icons/Confidence-01-Hatchling.svg" alt="" width="20" height="20" />
+  <img src="//assets/Icons/Confidence-01-Hatchling.svg" alt="" width="20" height="20" />
 );
 
 // Mastery level icons for skill buckets - paired icons showing range
 const MasteryIconNoActivity = () => (
-  <img src="/src/assets/Mastery/Skills/No activity-Fill.svg" alt="No Activity" width="24" height="24" />
+  <img src="//assets/Mastery/Skills/No activity-Fill.svg" alt="No Activity" width="24" height="24" />
 );
 const MasteryIconExploring = () => (
-  <img src="/src/assets/Mastery/Skills/Earned - 01 - Exploring 0-25.svg" alt="Exploring" width="24" height="24" />
+  <img src="//assets/Mastery/Skills/Earned - 01 - Exploring 0-25.svg" alt="Exploring" width="24" height="24" />
 );
 const MasteryIconEmerging = () => (
-  <img src="/src/assets/Mastery/Skills/Earned - 02 - Emerging 25-50.svg" alt="Emerging" width="24" height="24" />
+  <img src="//assets/Mastery/Skills/Earned - 02 - Emerging 25-50.svg" alt="Emerging" width="24" height="24" />
 );
 const MasteryIconFamiliar = () => (
-  <img src="/src/assets/Mastery/Skills/Earned - 03 - Familiar 50-75.svg" alt="Familiar" width="24" height="24" />
+  <img src="//assets/Mastery/Skills/Earned - 03 - Familiar 50-75.svg" alt="Familiar" width="24" height="24" />
 );
 const MasteryIconProficient = () => (
-  <img src="/src/assets/Mastery/Skills/Earned - 04 Proficient 75-99.svg" alt="Proficient" width="24" height="24" />
+  <img src="//assets/Mastery/Skills/Earned - 04 Proficient 75-99.svg" alt="Proficient" width="24" height="24" />
 );
 const MasteryIconMastered = () => (
-  <img src="/src/assets/Mastery/Skills/Earned - 05 Mastered.svg" alt="Mastered" width="24" height="24" />
+  <img src="//assets/Mastery/Skills/Earned - 05 Mastered.svg" alt="Mastered" width="24" height="24" />
 );
 
 interface TaskInsightsPanelProps {
