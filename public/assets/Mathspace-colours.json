@@ -1,0 +1,1172 @@
+{
+  "format": "mathspace-color-tokens-clean",
+  "note": "components/$extensions/override fields removed; alpha variants removed (alpha != 1 or under Alpha/Highlight groups).",
+  "families": [
+    {
+      "family": "Neutral",
+      "colors": [
+        {
+          "name": "Neutral 00 - Black",
+          "hex": "#000000"
+        },
+        {
+          "name": "Neutral 10",
+          "hex": "#19191F"
+        },
+        {
+          "name": "Neutral 20",
+          "hex": "#26262F"
+        },
+        {
+          "name": "Neutral 30",
+          "hex": "#32323C"
+        },
+        {
+          "name": "Neutral 40",
+          "hex": "#3E3E4C"
+        },
+        {
+          "name": "Neutral 50",
+          "hex": "#5A5A68"
+        },
+        {
+          "name": "Neutral 60",
+          "hex": "#767682"
+        },
+        {
+          "name": "Neutral 70",
+          "hex": "#93939C"
+        },
+        {
+          "name": "Neutral 80",
+          "hex": "#B8B8BF"
+        },
+        {
+          "name": "Neutral 90",
+          "hex": "#DFDFE5"
+        },
+        {
+          "name": "Neutral 95",
+          "hex": "#EBECEC"
+        },
+        {
+          "name": "Neutral 96",
+          "hex": "#EFF0F0"
+        },
+        {
+          "name": "Neutral 98",
+          "hex": "#F4F5F5"
+        },
+        {
+          "name": "Neutral 99",
+          "hex": "#F9FAFA"
+        },
+        {
+          "name": "Neutral 100 - White",
+          "hex": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "family": "Purple (Primary)",
+      "colors": [
+        {
+          "name": "Purple 10",
+          "hex": "#200B40"
+        },
+        {
+          "name": "Purple 20",
+          "hex": "#2E1C60"
+        },
+        {
+          "name": "Purple 30",
+          "hex": "#3C2C7F"
+        },
+        {
+          "name": "Purple 40",
+          "hex": "#4D3D9E"
+        },
+        {
+          "name": "Purple 50",
+          "hex": "#5D51AE"
+        },
+        {
+          "name": "Purple 60",
+          "hex": "#7C6ECC"
+        },
+        {
+          "name": "Purple 70",
+          "hex": "#8D82D9"
+        },
+        {
+          "name": "Purple 80",
+          "hex": "#A69BF0"
+        },
+        {
+          "name": "Purple 90",
+          "hex": "#D8D4FF"
+        },
+        {
+          "name": "Purple 95",
+          "hex": "#F1EEFF"
+        },
+        {
+          "name": "Purple 99",
+          "hex": "#F9F7FF"
+        },
+        {
+          "name": "Purple Neon",
+          "hex": "#BE8DFF"
+        },
+        {
+          "name": "Purple Vivid",
+          "hex": "#7F4AFF"
+        }
+      ]
+    },
+    {
+      "family": "Secondary / Blue",
+      "colors": [
+        {
+          "name": "Blue 10",
+          "hex": "#002945"
+        },
+        {
+          "name": "Blue 20",
+          "hex": "#003960"
+        },
+        {
+          "name": "Blue 30",
+          "hex": "#004F85"
+        },
+        {
+          "name": "Blue 40",
+          "hex": "#00609C"
+        },
+        {
+          "name": "Blue 50",
+          "hex": "#0E7AC2"
+        },
+        {
+          "name": "Blue 60",
+          "hex": "#4EB2F2"
+        },
+        {
+          "name": "Blue 70",
+          "hex": "#66C4FF"
+        },
+        {
+          "name": "Blue 80",
+          "hex": "#90D5FF"
+        },
+        {
+          "name": "Blue 90",
+          "hex": "#BDE6FF"
+        },
+        {
+          "name": "Blue 95",
+          "hex": "#E0F2FF"
+        },
+        {
+          "name": "Blue 99",
+          "hex": "#F9FCFE"
+        }
+      ]
+    },
+    {
+      "family": "Secondary / Green",
+      "colors": [
+        {
+          "name": "Green 10",
+          "hex": "#00201B"
+        },
+        {
+          "name": "Green 20",
+          "hex": "#003630"
+        },
+        {
+          "name": "Green 30",
+          "hex": "#005048"
+        },
+        {
+          "name": "Green 40",
+          "hex": "#087568"
+        },
+        {
+          "name": "Green 50",
+          "hex": "#16A188"
+        },
+        {
+          "name": "Green 60",
+          "hex": "#1ABC9C"
+        },
+        {
+          "name": "Green 70",
+          "hex": "#4AD4B6"
+        },
+        {
+          "name": "Green 80",
+          "hex": "#86E8D1"
+        },
+        {
+          "name": "Green 90",
+          "hex": "#C6F7ED"
+        },
+        {
+          "name": "Green 95",
+          "hex": "#E8FBF6"
+        },
+        {
+          "name": "Green 99",
+          "hex": "#F9FEFC"
+        }
+      ]
+    },
+    {
+      "family": "Secondary / Indigo",
+      "colors": [
+        {
+          "name": "Indigo 10",
+          "hex": "#181B4D"
+        },
+        {
+          "name": "Indigo 20",
+          "hex": "#242974"
+        },
+        {
+          "name": "Indigo 30",
+          "hex": "#2F3696"
+        },
+        {
+          "name": "Indigo 40",
+          "hex": "#3C45C2"
+        },
+        {
+          "name": "Indigo 50",
+          "hex": "#505AE5"
+        },
+        {
+          "name": "Indigo 60",
+          "hex": "#636ACE"
+        },
+        {
+          "name": "Indigo 70",
+          "hex": "#8A8FDA"
+        },
+        {
+          "name": "Indigo 80",
+          "hex": "#B1B5E6"
+        },
+        {
+          "name": "Indigo 90",
+          "hex": "#D8DAF2"
+        },
+        {
+          "name": "Indigo 95",
+          "hex": "#EBECF8"
+        },
+        {
+          "name": "Indigo 99",
+          "hex": "#FBFBFD"
+        }
+      ]
+    },
+    {
+      "family": "Secondary / Milo",
+      "colors": [
+        {
+          "name": "Milo 10",
+          "hex": "#3B1C0C"
+        },
+        {
+          "name": "Milo 20",
+          "hex": "#5A2B12"
+        },
+        {
+          "name": "Milo 30",
+          "hex": "#863F1B"
+        },
+        {
+          "name": "Milo 40",
+          "hex": "#BB703A"
+        },
+        {
+          "name": "Milo 50",
+          "hex": "#E48D43"
+        },
+        {
+          "name": "Milo 60",
+          "hex": "#FFAF50"
+        },
+        {
+          "name": "Milo 70",
+          "hex": "#FFC36E"
+        },
+        {
+          "name": "Milo 80",
+          "hex": "#FFD39F"
+        },
+        {
+          "name": "Milo 90",
+          "hex": "#FFEAD0"
+        },
+        {
+          "name": "Milo 95",
+          "hex": "#FFF3E3"
+        },
+        {
+          "name": "Milo 99",
+          "hex": "#FFFBF7"
+        }
+      ]
+    },
+    {
+      "family": "Secondary / Orange",
+      "colors": [
+        {
+          "name": "Orange 10",
+          "hex": "#3E1600"
+        },
+        {
+          "name": "Orange 20",
+          "hex": "#652500"
+        },
+        {
+          "name": "Orange 30",
+          "hex": "#913A00"
+        },
+        {
+          "name": "Orange 40",
+          "hex": "#B7510C"
+        },
+        {
+          "name": "Orange 50",
+          "hex": "#DB6726"
+        },
+        {
+          "name": "Orange 60",
+          "hex": "#F47936"
+        },
+        {
+          "name": "Orange 70",
+          "hex": "#F89A63"
+        },
+        {
+          "name": "Orange 80",
+          "hex": "#FCBE94"
+        },
+        {
+          "name": "Orange 90",
+          "hex": "#FFE0C7"
+        },
+        {
+          "name": "Orange 95",
+          "hex": "#FFF0E4"
+        },
+        {
+          "name": "Orange 99",
+          "hex": "#FFFBF9"
+        }
+      ]
+    },
+    {
+      "family": "Secondary / Red",
+      "colors": [
+        {
+          "name": "Red 10",
+          "hex": "#420008"
+        },
+        {
+          "name": "Red 20",
+          "hex": "#6A0010"
+        },
+        {
+          "name": "Red 30",
+          "hex": "#98001C"
+        },
+        {
+          "name": "Red 40",
+          "hex": "#B92435"
+        },
+        {
+          "name": "Red 50",
+          "hex": "#D5424D"
+        },
+        {
+          "name": "Red 60",
+          "hex": "#E75F6E"
+        },
+        {
+          "name": "Red 70",
+          "hex": "#F57C8A"
+        },
+        {
+          "name": "Red 80",
+          "hex": "#F8A6AF"
+        },
+        {
+          "name": "Red 90",
+          "hex": "#FBCFD3"
+        },
+        {
+          "name": "Red 95",
+          "hex": "#FDEBED"
+        },
+        {
+          "name": "Red 99",
+          "hex": "#FFF3F4"
+        }
+      ]
+    },
+    {
+      "family": "Secondary / Silver",
+      "colors": [
+        {
+          "name": "Silver 10",
+          "hex": "#122431"
+        },
+        {
+          "name": "Silver 20",
+          "hex": "#1E3545"
+        },
+        {
+          "name": "Silver 30",
+          "hex": "#2D4759"
+        },
+        {
+          "name": "Silver 40",
+          "hex": "#3D5B6E"
+        },
+        {
+          "name": "Silver 50",
+          "hex": "#517183"
+        },
+        {
+          "name": "Silver 60",
+          "hex": "#6C8999"
+        },
+        {
+          "name": "Silver 70",
+          "hex": "#8AA5B3"
+        },
+        {
+          "name": "Silver 80",
+          "hex": "#ACC2CF"
+        },
+        {
+          "name": "Silver 90",
+          "hex": "#DCE6EA"
+        },
+        {
+          "name": "Silver 95",
+          "hex": "#EFF4F6"
+        },
+        {
+          "name": "Silver 99",
+          "hex": "#FCFDFD"
+        }
+      ]
+    },
+    {
+      "family": "Secondary / Tan",
+      "colors": [
+        {
+          "name": "Tan 10",
+          "hex": "#2D2920"
+        },
+        {
+          "name": "Tan 20",
+          "hex": "#403C30"
+        },
+        {
+          "name": "Tan 30",
+          "hex": "#595344"
+        },
+        {
+          "name": "Tan 40",
+          "hex": "#736B5B"
+        },
+        {
+          "name": "Tan 50",
+          "hex": "#908670"
+        },
+        {
+          "name": "Tan 60",
+          "hex": "#ABA086"
+        },
+        {
+          "name": "Tan 70",
+          "hex": "#C0B49A"
+        },
+        {
+          "name": "Tan 80",
+          "hex": "#DDD0B1"
+        },
+        {
+          "name": "Tan 90",
+          "hex": "#F0E4C7"
+        },
+        {
+          "name": "Tan 95",
+          "hex": "#F6EFDD"
+        },
+        {
+          "name": "Tan 99",
+          "hex": "#FCF9F2"
+        }
+      ]
+    },
+    {
+      "family": "Secondary / Turquoise",
+      "colors": [
+        {
+          "name": "Turquoise 10",
+          "hex": "#00272A"
+        },
+        {
+          "name": "Turquoise 20",
+          "hex": "#023A40"
+        },
+        {
+          "name": "Turquoise 30",
+          "hex": "#0B5F68"
+        },
+        {
+          "name": "Turquoise 40",
+          "hex": "#127E8C"
+        },
+        {
+          "name": "Turquoise 50",
+          "hex": "#189FAD"
+        },
+        {
+          "name": "Turquoise 60",
+          "hex": "#1CB7C8"
+        },
+        {
+          "name": "Turquoise 70",
+          "hex": "#44C8D7"
+        },
+        {
+          "name": "Turquoise 80",
+          "hex": "#78D9E3"
+        },
+        {
+          "name": "Turquoise 90",
+          "hex": "#A9E8EF"
+        },
+        {
+          "name": "Turquoise 95",
+          "hex": "#D1F3F7"
+        },
+        {
+          "name": "Turquoise 99",
+          "hex": "#F4FEFF"
+        }
+      ]
+    },
+    {
+      "family": "Secondary / Yellow",
+      "colors": [
+        {
+          "name": "Yellow 10",
+          "hex": "#2D1A00"
+        },
+        {
+          "name": "Yellow 20",
+          "hex": "#513100"
+        },
+        {
+          "name": "Yellow 30",
+          "hex": "#754800"
+        },
+        {
+          "name": "Yellow 40",
+          "hex": "#9B6700"
+        },
+        {
+          "name": "Yellow 50",
+          "hex": "#C08300"
+        },
+        {
+          "name": "Yellow 60",
+          "hex": "#E89D00"
+        },
+        {
+          "name": "Yellow 70",
+          "hex": "#F3B831"
+        },
+        {
+          "name": "Yellow 80",
+          "hex": "#F8D580"
+        },
+        {
+          "name": "Yellow 90",
+          "hex": "#FDEBB8"
+        },
+        {
+          "name": "Yellow 95",
+          "hex": "#FFF6DF"
+        },
+        {
+          "name": "Yellow 99",
+          "hex": "#FFFCF7"
+        }
+      ]
+    },
+    {
+      "family": "Tertiary / Aqua",
+      "colors": [
+        {
+          "name": "Aqua 10",
+          "hex": "#003333"
+        },
+        {
+          "name": "Aqua 20",
+          "hex": "#006666"
+        },
+        {
+          "name": "Aqua 30",
+          "hex": "#009999"
+        },
+        {
+          "name": "Aqua 40",
+          "hex": "#00CCCC"
+        },
+        {
+          "name": "Aqua 50",
+          "hex": "#00E6E6"
+        },
+        {
+          "name": "Aqua 60",
+          "hex": "#00FFFF"
+        },
+        {
+          "name": "Aqua 70",
+          "hex": "#66FFFF"
+        },
+        {
+          "name": "Aqua 80",
+          "hex": "#99FFFF"
+        },
+        {
+          "name": "Aqua 90",
+          "hex": "#CCFFFF"
+        },
+        {
+          "name": "Aqua 95",
+          "hex": "#E6FFFF"
+        },
+        {
+          "name": "Aqua 99",
+          "hex": "#F9FFFF"
+        }
+      ]
+    },
+    {
+      "family": "Tertiary / Coral",
+      "colors": [
+        {
+          "name": "Coral 10",
+          "hex": "#5C1D28"
+        },
+        {
+          "name": "Coral 20",
+          "hex": "#812B37"
+        },
+        {
+          "name": "Coral 30",
+          "hex": "#A63A46"
+        },
+        {
+          "name": "Coral 40",
+          "hex": "#CC4D58"
+        },
+        {
+          "name": "Coral 50",
+          "hex": "#E05E6B"
+        },
+        {
+          "name": "Coral 60",
+          "hex": "#EB7581"
+        },
+        {
+          "name": "Coral 70",
+          "hex": "#F2959F"
+        },
+        {
+          "name": "Coral 80",
+          "hex": "#F7BBC0"
+        },
+        {
+          "name": "Coral 90",
+          "hex": "#FBE0E2"
+        },
+        {
+          "name": "Coral 95",
+          "hex": "#FFF4F5"
+        },
+        {
+          "name": "Coral 99",
+          "hex": "#FFF8F9"
+        }
+      ]
+    },
+    {
+      "family": "Tertiary / Crimson",
+      "colors": [
+        {
+          "name": "Crimson 10",
+          "hex": "#4D0000"
+        },
+        {
+          "name": "Crimson 20",
+          "hex": "#800000"
+        },
+        {
+          "name": "Crimson 30",
+          "hex": "#B30000"
+        },
+        {
+          "name": "Crimson 40",
+          "hex": "#E60000"
+        },
+        {
+          "name": "Crimson 50",
+          "hex": "#FF1A1A"
+        },
+        {
+          "name": "Crimson 60",
+          "hex": "#FF4D4D"
+        },
+        {
+          "name": "Crimson 70",
+          "hex": "#FF8080"
+        },
+        {
+          "name": "Crimson 80",
+          "hex": "#FFB3B3"
+        },
+        {
+          "name": "Crimson 90",
+          "hex": "#FFD6D6"
+        },
+        {
+          "name": "Crimson 95",
+          "hex": "#FFEEEE"
+        },
+        {
+          "name": "Crimson 99",
+          "hex": "#FFFAFA"
+        },
+        {
+          "name": "Crimson Neon",
+          "hex": "#FF5577"
+        },
+        {
+          "name": "Crimson Vivid",
+          "hex": "#FF0033"
+        }
+      ]
+    },
+    {
+      "family": "Tertiary / Flame",
+      "colors": [
+        {
+          "name": "Flame 10",
+          "hex": "#451800"
+        },
+        {
+          "name": "Flame 20",
+          "hex": "#682600"
+        },
+        {
+          "name": "Flame 30",
+          "hex": "#913400"
+        },
+        {
+          "name": "Flame 40",
+          "hex": "#B94700"
+        },
+        {
+          "name": "Flame 50",
+          "hex": "#DD5E00"
+        },
+        {
+          "name": "Flame 60",
+          "hex": "#F7751F"
+        },
+        {
+          "name": "Flame 70",
+          "hex": "#FA944D"
+        },
+        {
+          "name": "Flame 80",
+          "hex": "#FCB481"
+        },
+        {
+          "name": "Flame 90",
+          "hex": "#FDDAC1"
+        },
+        {
+          "name": "Flame 95",
+          "hex": "#FEF0E3"
+        },
+        {
+          "name": "Flame 99",
+          "hex": "#FFFAF6"
+        },
+        {
+          "name": "Flame Neon",
+          "hex": "#FF5500"
+        },
+        {
+          "name": "Flame Vivid",
+          "hex": "#FF6B00"
+        }
+      ]
+    },
+    {
+      "family": "Tertiary / Lavender",
+      "colors": [
+        {
+          "name": "Lavender 10",
+          "hex": "#2E003E"
+        },
+        {
+          "name": "Lavender 20",
+          "hex": "#4B0073"
+        },
+        {
+          "name": "Lavender 30",
+          "hex": "#6B00A3"
+        },
+        {
+          "name": "Lavender 40",
+          "hex": "#8E00D9"
+        },
+        {
+          "name": "Lavender 50",
+          "hex": "#A833FF"
+        },
+        {
+          "name": "Lavender 60",
+          "hex": "#C266FF"
+        },
+        {
+          "name": "Lavender 70",
+          "hex": "#D999FF"
+        },
+        {
+          "name": "Lavender 80",
+          "hex": "#EDCCFF"
+        },
+        {
+          "name": "Lavender 90",
+          "hex": "#F6E6FF"
+        },
+        {
+          "name": "Lavender 95",
+          "hex": "#FCF5FF"
+        },
+        {
+          "name": "Lavender 99",
+          "hex": "#FEFAFF"
+        },
+        {
+          "name": "Lavender Neon",
+          "hex": "#F1AAFF"
+        },
+        {
+          "name": "Lavender Vivid",
+          "hex": "#D066FF"
+        }
+      ]
+    },
+    {
+      "family": "Tertiary / Lime",
+      "colors": [
+        {
+          "name": "Lime 10",
+          "hex": "#1A3300"
+        },
+        {
+          "name": "Lime 20",
+          "hex": "#336600"
+        },
+        {
+          "name": "Lime 30",
+          "hex": "#4D9900"
+        },
+        {
+          "name": "Lime 40",
+          "hex": "#66CC00"
+        },
+        {
+          "name": "Lime 50",
+          "hex": "#7FF00E"
+        },
+        {
+          "name": "Lime 60",
+          "hex": "#99FF33"
+        },
+        {
+          "name": "Lime 70",
+          "hex": "#B3FF66"
+        },
+        {
+          "name": "Lime 80",
+          "hex": "#CCFF99"
+        },
+        {
+          "name": "Lime 90",
+          "hex": "#E6FFCC"
+        },
+        {
+          "name": "Lime 95",
+          "hex": "#F5FFF0"
+        },
+        {
+          "name": "Lime 99",
+          "hex": "#FCFFF8"
+        },
+        {
+          "name": "Lime Neon",
+          "hex": "#CCFF33"
+        },
+        {
+          "name": "Lime Vivid",
+          "hex": "#80FF00"
+        }
+      ]
+    },
+    {
+      "family": "Tertiary / Marine",
+      "colors": [
+        {
+          "name": "Marine 10",
+          "hex": "#001A4D"
+        },
+        {
+          "name": "Marine 20",
+          "hex": "#003080"
+        },
+        {
+          "name": "Marine 30",
+          "hex": "#0047B3"
+        },
+        {
+          "name": "Marine 40",
+          "hex": "#005CE6"
+        },
+        {
+          "name": "Marine 50",
+          "hex": "#1A75FF"
+        },
+        {
+          "name": "Marine 60",
+          "hex": "#4D94FF"
+        },
+        {
+          "name": "Marine 70",
+          "hex": "#80B3FF"
+        },
+        {
+          "name": "Marine 80",
+          "hex": "#B3D1FF"
+        },
+        {
+          "name": "Marine 90",
+          "hex": "#CCE0FF"
+        },
+        {
+          "name": "Marine 95",
+          "hex": "#E6F0FF"
+        },
+        {
+          "name": "Marine 99",
+          "hex": "#F8FBFF"
+        },
+        {
+          "name": "Marine Neon",
+          "hex": "#00BFFF"
+        },
+        {
+          "name": "Marine Vivid",
+          "hex": "#007AFF"
+        }
+      ]
+    },
+    {
+      "family": "Tertiary / Mint",
+      "colors": [
+        {
+          "name": "Mint 10",
+          "hex": "#003D1F"
+        },
+        {
+          "name": "Mint 20",
+          "hex": "#005A2B"
+        },
+        {
+          "name": "Mint 30",
+          "hex": "#007838"
+        },
+        {
+          "name": "Mint 40",
+          "hex": "#009F4F"
+        },
+        {
+          "name": "Mint 50",
+          "hex": "#00C367"
+        },
+        {
+          "name": "Mint 60",
+          "hex": "#00DA7E"
+        },
+        {
+          "name": "Mint 70",
+          "hex": "#2DE59A"
+        },
+        {
+          "name": "Mint 80",
+          "hex": "#72EFB5"
+        },
+        {
+          "name": "Mint 90",
+          "hex": "#B0F6D6"
+        },
+        {
+          "name": "Mint 95",
+          "hex": "#D7FBEC"
+        },
+        {
+          "name": "Mint 99",
+          "hex": "#F4FEF9"
+        },
+        {
+          "name": "Mint Neon",
+          "hex": "#00FF99"
+        },
+        {
+          "name": "Mint Vivid",
+          "hex": "#00D97C"
+        }
+      ]
+    },
+    {
+      "family": "Tertiary / Pink",
+      "colors": [
+        {
+          "name": "Pink 10",
+          "hex": "#4D0026"
+        },
+        {
+          "name": "Pink 20",
+          "hex": "#800040"
+        },
+        {
+          "name": "Pink 30",
+          "hex": "#B3005C"
+        },
+        {
+          "name": "Pink 40",
+          "hex": "#E60073"
+        },
+        {
+          "name": "Pink 50",
+          "hex": "#FF3399"
+        },
+        {
+          "name": "Pink 60",
+          "hex": "#FF66B3"
+        },
+        {
+          "name": "Pink 70",
+          "hex": "#FF99CC"
+        },
+        {
+          "name": "Pink 80",
+          "hex": "#FFCCE0"
+        },
+        {
+          "name": "Pink 90",
+          "hex": "#FFE6F0"
+        },
+        {
+          "name": "Pink 95",
+          "hex": "#FFF5FA"
+        },
+        {
+          "name": "Pink 99",
+          "hex": "#FFFAFD"
+        },
+        {
+          "name": "Pink Neon",
+          "hex": "#FF69B4"
+        },
+        {
+          "name": "Pink Vivid",
+          "hex": "#FF1493"
+        }
+      ]
+    },
+    {
+      "family": "Tertiary / Sunshine",
+      "colors": [
+        {
+          "name": "Sunshine 10",
+          "hex": "#4D3D00"
+        },
+        {
+          "name": "Sunshine 20",
+          "hex": "#806600"
+        },
+        {
+          "name": "Sunshine 30",
+          "hex": "#B38F00"
+        },
+        {
+          "name": "Sunshine 40",
+          "hex": "#E6B800"
+        },
+        {
+          "name": "Sunshine 50",
+          "hex": "#FFCC00"
+        },
+        {
+          "name": "Sunshine 60",
+          "hex": "#FFD633"
+        },
+        {
+          "name": "Sunshine 70",
+          "hex": "#FFE066"
+        },
+        {
+          "name": "Sunshine 80",
+          "hex": "#FFEB99"
+        },
+        {
+          "name": "Sunshine 90",
+          "hex": "#FFF2CC"
+        },
+        {
+          "name": "Sunshine 95",
+          "hex": "#FFF9E6"
+        },
+        {
+          "name": "Sunshine 99",
+          "hex": "#FFFEF8"
+        },
+        {
+          "name": "Sunshine Neon",
+          "hex": "#FFF200"
+        },
+        {
+          "name": "Sunshine Vivid",
+          "hex": "#FFCC00"
+        }
+      ]
+    }
+  ]
+}
