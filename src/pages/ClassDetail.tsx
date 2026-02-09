@@ -203,7 +203,7 @@ export default function ClassDetail() {
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <div className="date-filter">
                 <button className="date-filter-btn">
-                  <img src="//assets/Icons/Calendar.svg" alt="" width="16" height="16" />
+                  <img src=/assets/Icons/Calendar.svg" alt="" width="16" height="16" />
                   {dateFilter === 'this-week' ? 'This week' : 'Last 30 days'}
                   <span className="dropdown-arrow">▼</span>
                 </button>
@@ -279,7 +279,7 @@ export default function ClassDetail() {
               </div>
             </div>
             <button className="btn btn-primary assign-task-btn">
-              <img src="//assets/Icons/Add.svg" alt="" width="16" height="16" />
+              <img src=/assets/Icons/Add.svg" alt="" width="16" height="16" />
               Assign task
             </button>
           </div>
@@ -331,31 +331,31 @@ export default function ClassDetail() {
                   <th>Summary</th>
                   <th className="icon-header">
                     <Tooltip content="Skills">
-                      <img src="//assets/Icons/Outcome-Skill-Star-Fill.svg" alt="Skills" width="16" height="16" className="header-icon skills-icon" />
+                      <img src=/assets/Icons/Outcome-Skill-Star-Fill.svg" alt="Skills" width="16" height="16" className="header-icon skills-icon" />
                     </Tooltip>
                     <span className="header-label">Skills</span>
                   </th>
                   <th className="icon-header">
                     <Tooltip content="Questions">
-                      <img src="//assets/Icons/Question-Multiple-Angle.svg" alt="Questions" width="16" height="16" className="header-icon questions-icon" />
+                      <img src=/assets/Icons/Question-Multiple-Angle.svg" alt="Questions" width="16" height="16" className="header-icon questions-icon" />
                     </Tooltip>
                     <span className="header-label">Questions</span>
                   </th>
                   <th className="icon-header">
                     <Tooltip content="Accuracy">
-                      <img src="//assets/Icons/Target-hit.svg" alt="Accuracy" width="16" height="16" className="header-icon accuracy-icon" />
+                      <img src=/assets/Icons/Target-hit.svg" alt="Accuracy" width="16" height="16" className="header-icon accuracy-icon" />
                     </Tooltip>
                     <span className="header-label">Accuracy</span>
                   </th>
                   <th className="icon-header">
                     <Tooltip content="Points">
-                      <img src="//assets/Icons/Points.svg" alt="Points" width="16" height="16" className="header-icon points-icon" />
+                      <img src=/assets/Icons/Points.svg" alt="Points" width="16" height="16" className="header-icon points-icon" />
                     </Tooltip>
                     <span className="header-label">Points</span>
                   </th>
                   <th className="icon-header">
                     <Tooltip content="Time spent">
-                      <img src="//assets/Icons/Time-Taken-acute.svg" alt="Time spent" width="16" height="16" className="header-icon time-icon" />
+                      <img src=/assets/Icons/Time-Taken-acute.svg" alt="Time spent" width="16" height="16" className="header-icon time-icon" />
                     </Tooltip>
                     <span className="header-label">Time</span>
                   </th>
@@ -428,26 +428,26 @@ export default function ClassDetail() {
                               <div className="summary-tooltip">
                                 <div className="tooltip-heading">Student led tasks</div>
                                 <div className="tooltip-item">
-                                  <img src="//assets/Icons/Task-Checkin.svg" width="16" height="16" alt="" />
+                                  <img src=/assets/Icons/Task-Checkin.svg" width="16" height="16" alt="" />
                                   {activity.studentLedTasks.discoveryCheckins}
                                 </div>
                                 <div className="tooltip-item">
-                                  <img src="//assets/Icons/Task-Topic-Readiness-Checkin.svg" width="16" height="16" alt="" />
+                                  <img src=/assets/Icons/Task-Topic-Readiness-Checkin.svg" width="16" height="16" alt="" />
                                   {activity.studentLedTasks.topicReadinessCheckins}
                                 </div>
                                 <div className="tooltip-item">
-                                  <img src="//assets/Icons/Task-Adaptive.svg" width="16" height="16" alt="" />
+                                  <img src=/assets/Icons/Task-Adaptive.svg" width="16" height="16" alt="" />
                                   {activity.studentLedTasks.adaptiveTasks}
                                 </div>
                                 <div className="tooltip-item">
-                                  <img src="//assets/Icons/Revision.svg" width="16" height="16" alt="" />
+                                  <img src=/assets/Icons/Revision.svg" width="16" height="16" alt="" />
                                   {activity.studentLedTasks.revisions}
                                 </div>
                               </div>
                             }
                           >
                             <div className="summary-pill student-led">
-                              <img src="//assets/Icons/Self-directed.svg" width="16" height="16" alt="" />
+                              <img src=/assets/Icons/Self-directed.svg" width="16" height="16" alt="" />
                               {studentLedCount}
                             </div>
                           </Tooltip>
@@ -456,30 +456,30 @@ export default function ClassDetail() {
                               <div className="summary-tooltip">
                                 <div className="tooltip-heading">Teacher assigned tasks</div>
                                 <div className="tooltip-item">
-                                  <img src="//assets/Icons/Task-Topic-Readiness-Checkin.svg" width="16" height="16" alt="" />
+                                  <img src=/assets/Icons/Task-Topic-Readiness-Checkin.svg" width="16" height="16" alt="" />
                                   {activity.teacherAssignedTasks.topicReadinessCheckins}
                                 </div>
                                 <div className="tooltip-item">
-                                  <img src="//assets/Icons/Task-Adaptive.svg" width="16" height="16" alt="" />
+                                  <img src=/assets/Icons/Task-Adaptive.svg" width="16" height="16" alt="" />
                                   {activity.teacherAssignedTasks.adaptiveTasks}
                                 </div>
                                 <div className="tooltip-item">
-                                  <img src="//assets/Icons/Task-Custom.svg" width="16" height="16" alt="" />
+                                  <img src=/assets/Icons/Task-Custom.svg" width="16" height="16" alt="" />
                                   {activity.teacherAssignedTasks.customTasks}
                                 </div>
                                 <div className="tooltip-item">
-                                  <img src="//assets/Icons/Revision.svg" width="16" height="16" alt="" />
+                                  <img src=/assets/Icons/Revision.svg" width="16" height="16" alt="" />
                                   {activity.teacherAssignedTasks.revisions}
                                 </div>
                                 <div className="tooltip-item">
-                                  <img src="//assets/Icons/Test-mode.svg" width="16" height="16" alt="" />
+                                  <img src=/assets/Icons/Test-mode.svg" width="16" height="16" alt="" />
                                   {activity.teacherAssignedTasks.tests}
                                 </div>
                               </div>
                             }
                           >
                             <div className="summary-pill teacher-assigned">
-                              <img src="//assets/Icons/Teacher.svg" width="16" height="16" alt="" />
+                              <img src=/assets/Icons/Teacher.svg" width="16" height="16" alt="" />
                               {teacherAssignedCount}
                             </div>
                           </Tooltip>
@@ -511,19 +511,19 @@ export default function ClassDetail() {
                           content={
                             <div className="accuracy-tooltip">
                               <div className="tooltip-item">
-                                <img src="//assets/Icons/Check_circle-Correct-Fill.svg" width="16" height="16" alt="" />
+                                <img src=/assets/Icons/Check_circle-Correct-Fill.svg" width="16" height="16" alt="" />
                                 {activity.accuracy.correct}
                               </div>
                               <div className="tooltip-item">
-                                <img src="//assets/Icons/Check-partial.svg" width="16" height="16" alt="" />
+                                <img src=/assets/Icons/Check-partial.svg" width="16" height="16" alt="" />
                                 {activity.accuracy.partial}
                               </div>
                               <div className="tooltip-item">
-                                <img src="//assets/Icons/Cancel-incorrect.svg" width="16" height="16" alt="" />
+                                <img src=/assets/Icons/Cancel-incorrect.svg" width="16" height="16" alt="" />
                                 {activity.accuracy.incorrect}
                               </div>
                               <div className="tooltip-item">
-                                <img src="//assets/Icons/Skip.svg" width="16" height="16" alt="" />
+                                <img src=/assets/Icons/Skip.svg" width="16" height="16" alt="" />
                                 {activity.accuracy.skipped}
                               </div>
                             </div>
@@ -538,11 +538,11 @@ export default function ClassDetail() {
                       <td className="sticky-actions">
                         <div className="sticker-button">
                           <div className="sticker-count">
-                            <img src="//assets/Icons/Cards_star.svg" width="16" height="16" alt="" />
+                            <img src=/assets/Icons/Cards_star.svg" width="16" height="16" alt="" />
                             {activity.stickersReceived}
                           </div>
                           <div className="sticker-give">
-                            <img src="//assets/Pictogram/Stickers.svg" width="24" height="24" alt="" />
+                            <img src=/assets/Pictogram/Stickers.svg" width="24" height="24" alt="" />
                           </div>
                         </div>
                       </td>
