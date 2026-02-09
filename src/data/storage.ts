@@ -8,9 +8,10 @@ export function loadData(): AppData {
   if (stored) {
     const parsed = JSON.parse(stored);
 
-    // Check if data is valid (students have required fields)
+    // Check if data is valid (students have required fields and correct asset paths)
     const hasValidStudents = parsed.students?.length > 0 &&
-      parsed.students[0]?.lastName !== undefined;
+      parsed.students[0]?.lastName !== undefined &&
+      parsed.students[0]?.avatarUrl?.startsWith('/assets/');
 
     // If data is corrupted or missing key fields, reset to initial data
     if (!hasValidStudents) {
