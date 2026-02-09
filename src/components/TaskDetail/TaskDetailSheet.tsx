@@ -325,7 +325,7 @@ export default function TaskDetailSheet({ taskId, onClose }: TaskDetailSheetProp
               </button>
             </div>
             <button className="btn btn-primary assign-btn">
-              <img src=/assets/Icons/Add.svg" alt="" width="16" height="16" />
+              <img src="/assets/Icons/Add.svg" alt="" width="16" height="16" />
               Assign
               {totalSelectedOrFiltered > 0 && totalSelectedOrFiltered !== taskDetail.students.length && (
                 <span className="assign-count">({totalSelectedOrFiltered})</span>

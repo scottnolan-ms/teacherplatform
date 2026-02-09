@@ -4,13 +4,13 @@ import Tooltip from '../Tooltip';
 
 // Confidence icons
 const SoaringIcon = () => (
-  <img src=/assets/Icons/Confidence-03-Soaring.svg" alt="" width="16" height="16" />
+  <img src="/assets/Icons/Confidence-03-Soaring.svg" alt="" width="16" height="16" />
 );
 const FlyingIcon = () => (
-  <img src=/assets/Icons/Confidence-02a-Flying.svg" alt="" width="16" height="16" />
+  <img src="/assets/Icons/Confidence-02a-Flying.svg" alt="" width="16" height="16" />
 );
 const HatchlingIcon = () => (
-  <img src=/assets/Icons/Confidence-01-Hatchling.svg" alt="" width="16" height="16" />
+  <img src="/assets/Icons/Confidence-01-Hatchling.svg" alt="" width="16" height="16" />
 );
 
 interface StudentsTabProps {
@@ -204,11 +204,11 @@ export default function StudentsTab({ students, selectedStudentIds, onSelectionC
                   </button>
                   <div className="sticker-button">
                     <div className="sticker-count">
-                      <img src=/assets/Icons/Cards_star.svg" width="16" height="16" alt="" />
+                      <img src="/assets/Icons/Cards_star.svg" width="16" height="16" alt="" />
                       {student.stickersReceived}
                     </div>
                     <div className="sticker-give">
-                      <img src=/assets/Pictogram/Stickers.svg" width="24" height="24" alt="" />
+                      <img src="/assets/Pictogram/Stickers.svg" width="24" height="24" alt="" />
                     </div>
                   </div>
                   <div className="more-menu-container">
