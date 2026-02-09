@@ -4,12 +4,12 @@ import type { SkillsTabData, MasteryLevel } from '../../types';
 // Mastery level icons
 const MasteryIcon = ({ level }: { level: number }) => {
   const icons: Record<number, string> = {
-    0: '//assets/Mastery/Skills/No activity-Fill.svg',
-    1: '//assets/Mastery/Skills/Earned - 01 - Exploring 0-25.svg',
-    2: '//assets/Mastery/Skills/Earned - 02 - Emerging 25-50.svg',
-    3: '//assets/Mastery/Skills/Earned - 03 - Familiar 50-75.svg',
-    4: '//assets/Mastery/Skills/Earned - 04 Proficient 75-99.svg',
-    5: '//assets/Mastery/Skills/Earned - 05 Mastered.svg'
+    0: '/assets/Mastery/Skills/No activity-Fill.svg',
+    1: '/assets/Mastery/Skills/Earned - 01 - Exploring 0-25.svg',
+    2: '/assets/Mastery/Skills/Earned - 02 - Emerging 25-50.svg',
+    3: '/assets/Mastery/Skills/Earned - 03 - Familiar 50-75.svg',
+    4: '/assets/Mastery/Skills/Earned - 04 Proficient 75-99.svg',
+    5: '/assets/Mastery/Skills/Earned - 05 Mastered.svg'
   };
   const roundedLevel = Math.min(5, Math.max(0, Math.round(level)));
   return <img src={icons[roundedLevel]} alt={`Mastery ${roundedLevel}`} width="20" height="20" />;

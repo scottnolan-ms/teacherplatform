@@ -51,7 +51,7 @@ function generateStudents(classId: string, startIndex: number): Student[] {
       lastName,
       classId,
       mathspaceGroup: mathspaceGroups[Math.floor(Math.random() * 3)],
-      avatarUrl: `//assets/Avatars/${avatars[studentIndex % avatars.length]}`
+      avatarUrl: `/assets/Avatars/${avatars[studentIndex % avatars.length]}`
     };
   });
 }

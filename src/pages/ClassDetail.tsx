@@ -388,7 +388,7 @@ export default function ClassDetail() {
                         <div className="student-avatar-wrapper">
                           <img src={student.avatarUrl} alt={student.name} className="student-avatar" />
                           <img
-                            src={`//assets/Mathspace-Groups/${msGroup}.svg`}
+                            src={`/assets/Mathspace-Groups/${msGroup}.svg`}
                             alt={msGroup}
                             className="mathspace-badge"
                           />
