@@ -126,6 +126,21 @@ function generateTasks(classId: string): Task[] {
   const jan28th = new Date('2025-01-28T00:00:00');
   const feb10th = new Date('2025-02-10T23:59:59');
 
+  // Test task dates — today is Apr 30, 2026
+  const testStart      = new Date('2026-04-16T09:00:00');
+  const group1Due      = new Date('2026-04-23T10:00:00'); // last week — fully done, results released
+  const group1Expiry   = new Date('2026-04-27T23:59:59'); // expired 3 days ago
+  const group2Due      = new Date('2026-04-25T10:00:00'); // 5 days ago — done, expiry tomorrow
+  const group2Expiry   = new Date('2026-05-01T23:59:59'); // tomorrow — auto-release on expiry
+  const group3Due      = new Date('2026-04-23T11:00:00'); // same as group1 + 1hr extension
+  const group3Expiry   = new Date('2026-05-03T23:59:59'); // 3 days from now — release 1 day after
+
+  // Student ID ranges per class
+  const studentStart = classId === 'class-a' ? 1 : 31;
+  const group1Ids = Array.from({ length: 15 }, (_, i) => `student-${studentStart + i}`);
+  const group2Ids = Array.from({ length: 12 }, (_, i) => `student-${studentStart + 15 + i}`);
+  const group3Ids = Array.from({ length: 3 },  (_, i) => `student-${studentStart + 27 + i}`);
+
   return [
     {
       id: `task-${classId}-1`,
@@ -172,12 +187,52 @@ function generateTasks(classId: string): Task[] {
       title: 'Geometry Foundations Test',
       classId,
       taskType: 'test',
+      testStatus: 'completed',
       areaOfStudy: 'Geometry',
-      startDate: oneWeekAgo.toISOString(),
-      dueDate: oneWeekAgo.toISOString(),
+      startDate: testStart.toISOString(),
+      dueDate: group1Due.toISOString(),
+      expiryDate: group3Expiry.toISOString(),
       questionsCount: 20,
       skillsCount: 12,
       status: 'expired',
+      taskGroups: [
+        {
+          id: `tg-${classId}-1`,
+          name: 'Period 1 & 2',
+          description: 'Mon/Wed morning session',
+          studentIds: group1Ids,
+          startDate: testStart.toISOString(),
+          dueDate: group1Due.toISOString(),
+          expiryDate: group1Expiry.toISOString(),
+          resultsLocked: false,
+          resultsReleaseRule: 'manual',
+        },
+        {
+          id: `tg-${classId}-2`,
+          name: 'Period 3 & 4',
+          description: 'Tue/Thu afternoon session',
+          studentIds: group2Ids,
+          startDate: testStart.toISOString(),
+          dueDate: group2Due.toISOString(),
+          expiryDate: group2Expiry.toISOString(),
+          resultsLocked: true,
+          resultsReleaseRule: 'on-expiry',
+        },
+        {
+          id: `tg-${classId}-3`,
+          name: 'Extended Time',
+          description: 'Additional time accommodation',
+          studentIds: group3Ids,
+          startDate: testStart.toISOString(),
+          dueDate: group3Due.toISOString(),
+          expiryDate: group3Expiry.toISOString(),
+          timeExtensionMinutes: 60,
+          calculatorAllowed: true,
+          resultsLocked: true,
+          resultsReleaseRule: 'days-after-expiry',
+          releaseAfterDays: 1,
+        },
+      ],
       assignments: [
         { groupId: 'mathspace-Explorer', groupType: 'mathspace', groupName: 'Explorer', questionSetId: 'qs-a' },
         { groupId: 'mathspace-Adventurer', groupType: 'mathspace', groupName: 'Adventurer', questionSetId: 'qs-a' },

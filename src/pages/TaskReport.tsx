@@ -1,294 +1,382 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { loadData } from '../data/storage';
-import type { Task, Class, TaskResult, Student, PersistentGroup, MathspaceGroup } from '../types';
+import type { Student, TaskGroup, TestStatus, ResultsReleaseRule } from '../types';
+import './TaskReport.css';
 
-type FilterType = 'all' | 'mathspace' | 'persistent' | 'temporary';
+export type Scenario = 'before' | 'during' | 'after';
 
-export default function TaskReport() {
-  const { taskId } = useParams<{ taskId: string }>();
-  const [task, setTask] = useState<Task | null>(null);
-  const [classData, setClassData] = useState<Class | null>(null);
-  const [taskResult, setTaskResult] = useState<TaskResult | null>(null);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [persistentGroups, setPersistentGroups] = useState<PersistentGroup[]>([]);
+export interface LocalGroup extends TaskGroup {
+  resultsLocked: boolean;
+  resultsReleaseRule: ResultsReleaseRule;
+  releaseAfterDays?: number;
+}
 
-  const [filterType, setFilterType] = useState<FilterType>('all');
-  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    const data = loadData();
-    const t = data.tasks.find(task => task.id === taskId);
-    setTask(t || null);
+export function fmt(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('en-AU', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
-    if (t) {
-      const cls = data.classes.find(c => c.id === t.classId);
-      setClassData(cls || null);
+export function fmtShort(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('en-AU', { month: 'short', day: 'numeric' });
+}
 
-      const result = data.taskResults.find(r => r.taskId === taskId);
-      setTaskResult(result || null);
+export function initials(name: string): string {
+  return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+}
 
-      setStudents(data.students.filter(s => s.classId === t.classId));
-      setPersistentGroups(data.persistentGroups);
-    }
-  }, [taskId]);
+export function testStatusFromScenario(scenario: Scenario, paused: boolean): TestStatus {
+  if (scenario === 'before') return 'scheduled';
+  if (scenario === 'during') return paused ? 'paused' : 'live';
+  return 'completed';
+}
 
-  const getMathspaceGroupColor = (group: MathspaceGroup) => {
-    switch (group) {
-      case 'Explorer': return '#10b981';
-      case 'Adventurer': return '#f59e0b';
-      case 'Trailblazer': return '#8b5cf6';
-    }
+export const GROUP_PALETTE = [
+  { bg: '#F1EEFF', color: '#3C2C7F' },
+  { bg: '#BDE6FF', color: '#004F85' },
+  { bg: '#C6F7ED', color: '#005048' },
+  { bg: '#FDEBB8', color: '#754800' },
+];
+
+// ─── Status Badge ─────────────────────────────────────────────────────────────
+
+export function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    Completed: 'completed',
+    'In Progress': 'in-progress',
+    'Not Started': 'not-started',
+    Reassigned: 'reassigned',
+    Missed: 'missed',
+    Scheduled: 'scheduled',
+    Live: 'live',
+    Paused: 'paused',
   };
+  return <span className={`status-badge status-badge--${map[status] ?? 'not-started'}`}>{status}</span>;
+}
 
-  const getFilteredStudents = () => {
-    if (filterType === 'all' || !selectedGroupId) {
-      return students;
-    }
+// ─── Result Lock Control ──────────────────────────────────────────────────────
 
-    if (filterType === 'mathspace') {
-      return students.filter(s =>
-        (s.mathspaceGroupOverride || s.mathspaceGroup) === selectedGroupId
-      );
-    } else if (filterType === 'persistent') {
-      const group = persistentGroups.find(g => g.id === selectedGroupId);
-      return students.filter(s => group?.studentIds.includes(s.id));
-    } else if (filterType === 'temporary') {
-      const tempGroup = task?.temporaryGroups?.find(g => g.id === selectedGroupId);
-      return students.filter(s => tempGroup?.studentIds.includes(s.id));
-    }
+export function ResultLockControl({
+  group,
+  groupStatus,
+  onToggleLock,
+  onChangeRule,
+  onChangeDays,
+}: {
+  group: LocalGroup;
+  groupStatus: TestStatus;
+  onToggleLock: () => void;
+  onChangeRule: (r: ResultsReleaseRule) => void;
+  onChangeDays: (d: number) => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
 
-    return students;
-  };
-
-  const filteredStudents = getFilteredStudents();
-  const filteredResults = taskResult?.perStudent.filter(r =>
-    filteredStudents.find(s => s.id === r.studentId)
-  ) || [];
-
-  const completedCount = filteredResults.filter(s => s.status === 'Completed').length;
-  const averageScore = filteredResults.length > 0
-    ? Math.round(filteredResults.reduce((sum, s) => sum + s.score, 0) / filteredResults.length)
-    : 0;
-
-  // Group comparison data
-  const mathspaceGroups: MathspaceGroup[] = ['Explorer', 'Adventurer', 'Trailblazer'];
-  const mathspaceComparison = mathspaceGroups.map(groupName => {
-    const groupStudents = students.filter(s =>
-      (s.mathspaceGroupOverride || s.mathspaceGroup) === groupName
-    );
-    const groupResults = taskResult?.perStudent.filter(r =>
-      groupStudents.find(s => s.id === r.studentId)
-    ) || [];
-    const completed = groupResults.filter(r => r.status === 'Completed').length;
-    const avgScore = groupResults.length > 0
-      ? Math.round(groupResults.reduce((sum, r) => sum + r.score, 0) / groupResults.length)
-      : 0;
-
-    return {
-      name: groupName,
-      count: groupStudents.length,
-      completed,
-      averageScore: avgScore
-    };
-  });
-
-  if (!task || !taskResult) {
+  if (groupStatus !== 'completed') {
     return (
-      <div className="page">
-        <div className="page-header">
-          <h1>Task Not Found</h1>
+      <div className="result-control">
+        <div className="result-release-row">
+          <label>Release results:</label>
+          <select value={group.resultsReleaseRule} onChange={e => onChangeRule(e.target.value as ResultsReleaseRule)}>
+            <option value="manual">Manual only</option>
+            <option value="on-expiry">On expiry {group.expiryDate ? `(${fmtShort(group.expiryDate)})` : ''}</option>
+            <option value="days-after-expiry">After expiry</option>
+          </select>
+          {group.resultsReleaseRule === 'days-after-expiry' && (
+            <>
+              <input
+                type="number" min={1} max={30}
+                value={group.releaseAfterDays ?? 1}
+                onChange={e => onChangeDays(parseInt(e.target.value))}
+              />
+              <span>day(s)</span>
+            </>
+          )}
         </div>
       </div>
     );
   }
 
+  if (confirming) {
+    return (
+      <div className="result-control">
+        <div className="confirm-unlock-banner">
+          <span className="confirm-unlock-banner__icon">⚠️</span>
+          <span>
+            <strong>{group.studentIds.length} students</strong> will immediately see their results.
+          </span>
+        </div>
+        <div className="confirm-unlock-actions">
+          <button className="btn-report btn-report--danger btn-report--sm" onClick={() => { onToggleLock(); setConfirming(false); }}>
+            Release results
+          </button>
+          <button className="btn-report btn-report--secondary btn-report--sm" onClick={() => setConfirming(false)}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const releaseNote = () => {
+    if (!group.resultsLocked) return null;
+    if (group.resultsReleaseRule === 'on-expiry' && group.expiryDate) {
+      return `Auto-releases ${fmtShort(group.expiryDate)}`;
+    }
+    if (group.resultsReleaseRule === 'days-after-expiry' && group.expiryDate) {
+      const d = new Date(group.expiryDate);
+      d.setDate(d.getDate() + (group.releaseAfterDays ?? 1));
+      return `Auto-releases ${fmtShort(d.toISOString())}`;
+    }
+    return 'Manual release only';
+  };
+
   return (
-    <div className="page">
-      <div className="page-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-          <div>
-            <h1>{task.title} - Report</h1>
-            <p>
-              <Link to={`/classes/${classData?.id}`} style={{ color: '#3b82f6' }}>
-                {classData?.name}
-              </Link>
-              {' • '}
-              <Link to={`/tasks/${task.id}`} style={{ color: '#3b82f6' }}>
-                Back to Task
-              </Link>
-            </p>
+    <div className="result-control">
+      <button
+        className={`result-lock-btn ${group.resultsLocked ? 'result-lock-btn--locked' : 'result-lock-btn--unlocked'}`}
+        onClick={() => group.resultsLocked ? setConfirming(true) : onToggleLock()}
+      >
+        <span className="result-lock-btn__icon">{group.resultsLocked ? '🔒' : '🔓'}</span>
+        <span className="result-lock-btn__text">
+          <span>{group.resultsLocked ? 'Results locked' : 'Results visible to students'}</span>
+          {releaseNote() && <span className="result-lock-btn__sub">{releaseNote()}</span>}
+        </span>
+      </button>
+      {group.resultsLocked && (
+        <div className="result-release-row">
+          <label>Auto-release:</label>
+          <select value={group.resultsReleaseRule} onChange={e => onChangeRule(e.target.value as ResultsReleaseRule)}>
+            <option value="manual">Never (manual only)</option>
+            <option value="on-expiry">On expiry {group.expiryDate ? `(${fmtShort(group.expiryDate)})` : ''}</option>
+            <option value="days-after-expiry">After expiry</option>
+          </select>
+          {group.resultsReleaseRule === 'days-after-expiry' && (
+            <>
+              <input
+                type="number" min={1} max={30}
+                value={group.releaseAfterDays ?? 1}
+                onChange={e => onChangeDays(parseInt(e.target.value))}
+              />
+              <span>day(s)</span>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Group Card ───────────────────────────────────────────────────────────────
+
+export function GroupCard({
+  group,
+  groupStatus,
+  students,
+  results,
+  onToggleLock,
+  onChangeRule,
+  onChangeDays,
+}: {
+  group: LocalGroup;
+  groupStatus: TestStatus;
+  students: Student[];
+  results: { studentId: string; status: string; score: number }[];
+  onToggleLock: () => void;
+  onChangeRule: (r: ResultsReleaseRule) => void;
+  onChangeDays: (d: number) => void;
+}) {
+  const groupStudents = students.filter(s => group.studentIds.includes(s.id));
+  const groupResults = results.filter(r => group.studentIds.includes(r.studentId));
+  const completedCount = groupResults.filter(r => r.status === 'Completed').length;
+  const total = groupStudents.length;
+  const pct = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+  const completedResults = groupResults.filter(r => r.status === 'Completed');
+  const avgScore = completedResults.length > 0
+    ? Math.round(completedResults.reduce((s, r) => s + r.score, 0) / completedResults.length)
+    : 0;
+
+  const statusLabel: Record<TestStatus, string> = {
+    scheduled: 'Scheduled',
+    live: 'Live',
+    paused: 'Paused',
+    completed: 'Done',
+  };
+
+  const statusBadgeClass: Record<TestStatus, string> = {
+    scheduled: 'not-started',
+    live: 'in-progress',
+    paused: 'in-progress',
+    completed: 'completed',
+  };
+
+  return (
+    <div className={`group-card group-card--${groupStatus}`}>
+      <div className="group-card__header">
+        <div className="group-card__name">{group.name}</div>
+        <span className={`status-badge status-badge--${statusBadgeClass[groupStatus]}`}>
+          {statusLabel[groupStatus]}
+        </span>
+      </div>
+
+      <div className="group-card__meta">
+        <div className="group-card__meta-row">
+          <span>👥</span>
+          <span>{total} students</span>
+        </div>
+        <div className="group-card__meta-row">
+          <span>📅</span>
+          <span>Due {fmt(group.dueDate)}</span>
+        </div>
+        {group.expiryDate && (
+          <div className="group-card__meta-row">
+            <span>⏰</span>
+            <span>Expires {fmt(group.expiryDate)}</span>
+          </div>
+        )}
+      </div>
+
+      {(group.timeExtensionMinutes || group.calculatorAllowed) && (
+        <div className="group-card__tags">
+          {group.timeExtensionMinutes && (
+            <span className="group-tag group-tag--extension">⏱ +{group.timeExtensionMinutes} min</span>
+          )}
+          {group.calculatorAllowed && (
+            <span className="group-tag group-tag--calculator">🧮 Calculator</span>
+          )}
+        </div>
+      )}
+
+      <div className="progress-section">
+        <div className="progress-header">
+          <span className="progress-label">Completion</span>
+          <span className="progress-value">{completedCount}/{total}</span>
+        </div>
+        <div className="progress-bar">
+          <div className="progress-bar__fill" style={{ width: `${pct}%` }} />
+        </div>
+        {groupStatus === 'completed' && avgScore > 0 && (
+          <div className="avg-score">Class avg: <strong>{avgScore}%</strong></div>
+        )}
+      </div>
+
+      <ResultLockControl
+        group={group}
+        groupStatus={groupStatus}
+        onToggleLock={onToggleLock}
+        onChangeRule={onChangeRule}
+        onChangeDays={onChangeDays}
+      />
+    </div>
+  );
+}
+
+// ─── Reassign Modal ───────────────────────────────────────────────────────────
+
+export function ReassignModal({
+  students,
+  groups,
+  onConfirm,
+  onClose,
+}: {
+  students: Student[];
+  groups: LocalGroup[];
+  onConfirm: (newDueDate: string, groupId: string, includeInReport: boolean) => void;
+  onClose: () => void;
+}) {
+  const nextWeek = new Date();
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  const [dueDate, setDueDate] = useState(nextWeek.toISOString().split('T')[0]);
+  const [groupId, setGroupId] = useState(groups[0]?.id ?? '');
+  const [includeInReport, setIncludeInReport] = useState(true);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal reassign-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Reassign Test</h2>
+        </div>
+        <div className="modal-body">
+          <p style={{ marginTop: 0, fontSize: '0.875rem', color: '#5A5A68' }}>
+            Reassigning for <strong>{students.length}</strong> student{students.length !== 1 ? 's' : ''}:
+          </p>
+
+          <div className="reassign-student-chips">
+            {students.map(s => (
+              <span key={s.id} className="reassign-student-chip">
+                <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#A69BF0', color: '#3C2C7F', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.625rem', fontWeight: 700, flexShrink: 0 }}>
+                  {initials(s.name)}
+                </span>
+                {s.name}
+              </span>
+            ))}
+          </div>
+
+          <div className="reassign-options">
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label>New due date</label>
+              <input
+                type="date"
+                value={dueDate}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={e => setDueDate(e.target.value)}
+              />
+            </div>
+
+            {groups.length > 1 && (
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>Assign to group</label>
+                <select value={groupId} onChange={e => setGroupId(e.target.value)}>
+                  {groups.map(g => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                  <option value="__new__">Create a new group for reassigned students</option>
+                </select>
+              </div>
+            )}
+
+            <div className="include-in-report-box">
+              <input
+                type="checkbox"
+                id="include-in-report"
+                checked={includeInReport}
+                onChange={e => setIncludeInReport(e.target.checked)}
+              />
+              <div className="include-in-report-box__body">
+                <label className="include-in-report-box__label" htmlFor="include-in-report">
+                  Include results in this report
+                </label>
+                <span className="include-in-report-box__desc">
+                  The reassigned attempt will appear in this report alongside other students, keeping results in one place.
+                </span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="card">
-        <h3>Summary {filterType !== 'all' && '(Filtered)'}</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '1rem' }}>
-          <div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3b82f6' }}>
-              {completedCount}/{filteredResults.length}
-            </div>
-            <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Completed</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
-              {averageScore}%
-            </div>
-            <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Average Score</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#8b5cf6' }}>
-              {filteredStudents.length}
-            </div>
-            <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Students</div>
-          </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={() => onConfirm(dueDate, groupId, includeInReport)}>
+            Reassign {students.length} student{students.length !== 1 ? 's' : ''}
+          </button>
         </div>
-      </div>
-
-      <div className="card">
-        <h3>Filters</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '1rem', marginTop: '1rem' }}>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label>Group Type</label>
-            <select
-              value={filterType}
-              onChange={e => {
-                setFilterType(e.target.value as FilterType);
-                setSelectedGroupId('');
-              }}
-            >
-              <option value="all">All Students</option>
-              <option value="mathspace">Mathspace Groups</option>
-              <option value="persistent">Persistent Custom Groups</option>
-              <option value="temporary">Temporary Groups</option>
-            </select>
-          </div>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label>Specific Group</label>
-            <select
-              value={selectedGroupId}
-              onChange={e => setSelectedGroupId(e.target.value)}
-              disabled={filterType === 'all'}
-            >
-              <option value="">Select a group...</option>
-              {filterType === 'mathspace' && mathspaceGroups.map(name => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-              {filterType === 'persistent' && persistentGroups
-                .filter(g => !g.classId || g.classId === task.classId)
-                .map(g => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
-                ))}
-              {filterType === 'temporary' && task.temporaryGroups?.map(g => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div className="card">
-        <h3>Mathspace Group Comparison</h3>
-        <table className="table" style={{ marginTop: '1rem' }}>
-          <thead>
-            <tr>
-              <th>Group</th>
-              <th>Students</th>
-              <th>Completed</th>
-              <th>Avg Score</th>
-              <th>Assignment</th>
-            </tr>
-          </thead>
-          <tbody>
-            {mathspaceComparison.map(group => {
-              const assignment = task.assignments.find(
-                a => a.groupType === 'mathspace' && a.groupId === group.name
-              );
-              const questionSet = assignment
-                ? loadData().questionSets.find(qs => qs.id === assignment.questionSetId)
-                : null;
-
-              return (
-                <tr key={group.name}>
-                  <td>
-                    <span
-                      className="group-pill"
-                      style={{
-                        backgroundColor: `${getMathspaceGroupColor(group.name as MathspaceGroup)}20`,
-                        color: getMathspaceGroupColor(group.name as MathspaceGroup)
-                      }}
-                    >
-                      {group.name}
-                    </span>
-                  </td>
-                  <td>{group.count}</td>
-                  <td>{group.completed}/{group.count}</td>
-                  <td>{group.averageScore}%</td>
-                  <td style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                    {questionSet?.name || 'None'}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="card">
-        <h3>Student Results {filterType !== 'all' && '(Filtered)'}</h3>
-        <table className="table" style={{ marginTop: '1rem' }}>
-          <thead>
-            <tr>
-              <th>Student</th>
-              <th>Mathspace Group</th>
-              <th>Status</th>
-              <th>Score</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredStudents.map(student => {
-              const result = taskResult.perStudent.find(r => r.studentId === student.id);
-              if (!result) return null;
-
-              return (
-                <tr key={student.id}>
-                  <td>
-                    <Link to={`/students/${student.id}`} style={{ fontWeight: 500, color: '#3b82f6' }}>
-                      {student.name}
-                    </Link>
-                  </td>
-                  <td>
-                    <span
-                      className="group-pill"
-                      style={{
-                        backgroundColor: `${getMathspaceGroupColor(student.mathspaceGroupOverride || student.mathspaceGroup)}20`,
-                        color: getMathspaceGroupColor(student.mathspaceGroupOverride || student.mathspaceGroup)
-                      }}
-                    >
-                      {student.mathspaceGroupOverride || student.mathspaceGroup}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        result.status === 'Completed'
-                          ? 'badge-green'
-                          : result.status === 'In Progress'
-                          ? 'badge-yellow'
-                          : 'badge-red'
-                      }`}
-                    >
-                      {result.status}
-                    </span>
-                  </td>
-                  <td style={{ fontWeight: 500 }}>{result.score}%</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
       </div>
     </div>
   );
 }
+
+// ─── Main Component (redirects to class-scoped URL) ──────────────────────────
+
+export default function TaskReport() {
+  const { taskId } = useParams<{ taskId: string }>();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const data = loadData();
+    const t = data.tasks.find(t => t.id === taskId);
+    if (t) navigate(`/classes/${t.classId}/tasks/${t.id}`, { replace: true });
+  }, [taskId, navigate]);
+
+  return null;
+}
+

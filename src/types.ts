@@ -5,6 +5,23 @@ export type MasteryLevel = 0 | 1 | 2 | 3 | 4 | 5;
 export type ReadinessLevel = 'ready' | 'partially-ready' | 'not-ready';
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
 export type TaskStatus = 'active' | 'expired';
+export type TestStatus = 'scheduled' | 'live' | 'paused' | 'completed';
+export type ResultsReleaseRule = 'manual' | 'on-expiry' | 'days-after-expiry';
+
+export interface TaskGroup {
+  id: string;
+  name: string;
+  description?: string;
+  studentIds: string[];
+  startDate: string;
+  dueDate: string;
+  expiryDate?: string;
+  timeExtensionMinutes?: number;
+  calculatorAllowed?: boolean;
+  resultsLocked: boolean;
+  resultsReleaseRule: ResultsReleaseRule;
+  releaseAfterDays?: number;
+}
 export type TaskType = 'topic-readiness-checkin' | 'adaptive' | 'custom' | 'test' | 'revision';
 
 export interface School {
@@ -133,6 +150,8 @@ export interface Task {
   expiryDate?: string;
   assignments: TaskAssignment[];
   temporaryGroups?: TemporaryGroup[];
+  taskGroups?: TaskGroup[];
+  testStatus?: TestStatus;
   createdAt: string;
   questionsCount?: number;
   skillsCount?: number;
@@ -330,6 +349,16 @@ export interface CurriculumSkill {
   proficientStudentCount: number;
   totalStudents: number;
   isPrerequisite: boolean;
+  tested: boolean;                    // whether this skill was measured in a readiness check-in
+  growthFromTest?: number;            // mastery change since test (current - atTest)
+  classAverageMasteryAtTest?: number; // mastery snapshot at time of test
+}
+
+export interface TextbookSkillsSummary {
+  criticalGap: CurriculumSkill[];     // avg mastery <= 1.5
+  needsMorePractice: CurriculumSkill[]; // 1.5 < avg < 3.5
+  proficient: CurriculumSkill[];      // avg >= 3.5
+  untested: CurriculumSkill[];        // not yet measured in any test
 }
 
 export interface CurriculumSubtopic {
@@ -369,9 +398,26 @@ export interface StudentTopicMastery {
   skillMasteries: Record<string, number>;      // skillId → mastery level
 }
 
+export interface TextbookInsights {
+  readinessBreakdown: {
+    strong: number;
+    developing: number;
+    needsSupport: number;
+    total: number;
+  };
+  skillsSummary: TextbookSkillsSummary;
+  atRiskStudents: { studentId: string; name: string; avatarUrl: string; avgMastery: number }[];
+  quickWinSkills: CurriculumSkill[];   // skills close to proficient (2.8-3.5)
+  topicsCoveredByTests: number;
+  totalTopics: number;
+  testedSkillsCount: number;
+  totalSkillsCount: number;
+}
+
 export interface CurriculumData {
   topics: CurriculumTopic[];
   students: StudentTopicMastery[];
   overallClassMastery: number;
   overallProficiency: ProficiencyLevel;
+  insights: TextbookInsights;
 }

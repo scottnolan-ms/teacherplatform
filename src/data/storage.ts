@@ -1,7 +1,7 @@
 import type { AppData, PersistentGroup, Task, TaskResult, Student } from '../types';
 import { initialData } from './seedData';
 
-const STORAGE_KEY = 'teacher-groups-app-data';
+const STORAGE_KEY = 'teacher-groups-app-data-v2';
 
 export function loadData(): AppData {
   const stored = localStorage.getItem(STORAGE_KEY);

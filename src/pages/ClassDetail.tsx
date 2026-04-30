@@ -6,7 +6,7 @@ import CreateGroupModal from '../components/CreateGroupModal';
 import Tooltip from '../components/Tooltip';
 import StudentDetailModal from '../components/StudentDetailModal';
 import { TaskDetailSheet } from '../components/TaskDetail';
-import CurriculumTab from '../components/CurriculumTab';
+import TextbookProgressTab from '../components/TextbookProgressTab';
 import { generateCurriculumData } from '../data/curriculumData';
 
 type SortField = 'lastName' | 'firstName' | 'mathspaceGroup' | 'groups';
@@ -14,9 +14,9 @@ type SortDirection = 'asc' | 'desc';
 type DateFilter = 'this-week' | 'last-30-days';
 
 export default function ClassDetail() {
-  const { classId } = useParams<{ classId: string }>();
+  const { classId, taskId } = useParams<{ classId: string; taskId: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'students' | 'groups' | 'tasks' | 'curriculum'>('students');
+  const [activeTab, setActiveTab] = useState<'students' | 'groups' | 'tasks' | 'textbook-progress'>(taskId ? 'tasks' : 'students');
   const [classData, setClassData] = useState<Class | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [studentActivities, setStudentActivities] = useState<StudentActivity[]>([]);
@@ -190,10 +190,10 @@ export default function ClassDetail() {
           Tasks
         </button>
         <button
-          className={`tab ${activeTab === 'curriculum' ? 'active' : ''}`}
-          onClick={() => setActiveTab('curriculum')}
+          className={`tab ${activeTab === 'textbook-progress' ? 'active' : ''}`}
+          onClick={() => setActiveTab('textbook-progress')}
         >
-          Curriculum
+          Textbook Progress
         </button>
       </div>
 
@@ -623,11 +623,12 @@ export default function ClassDetail() {
           tasks={tasks}
           taskResults={taskResults}
           classId={classId || ''}
+          initialTaskId={taskId}
         />
       )}
 
-      {activeTab === 'curriculum' && curriculumData && (
-        <CurriculumTab curriculumData={curriculumData} />
+      {activeTab === 'textbook-progress' && curriculumData && (
+        <TextbookProgressTab curriculumData={curriculumData} />
       )}
 
       {showCreateGroup && (
@@ -655,10 +656,22 @@ interface TasksTabContentProps {
   tasks: Task[];
   taskResults: TaskResult[];
   classId: string;
+  initialTaskId?: string;
 }
 
-function TasksTabContent({ tasks, taskResults }: TasksTabContentProps) {
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+function TasksTabContent({ tasks, taskResults, classId, initialTaskId }: TasksTabContentProps) {
+  const navigate = useNavigate();
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(initialTaskId ?? null);
+
+  const openTask = (taskId: string) => {
+    navigate(`/classes/${classId}/tasks/${taskId}`);
+    setSelectedTaskId(taskId);
+  };
+
+  const closeTask = () => {
+    navigate(`/classes/${classId}`);
+    setSelectedTaskId(null);
+  };
 
   const now = new Date();
   const currentTasks = tasks.filter(t => new Date(t.dueDate) >= now);
@@ -748,7 +761,7 @@ function TasksTabContent({ tasks, taskResults }: TasksTabContentProps) {
                       <td>
                         <button
                           className="task-name-link"
-                          onClick={() => setSelectedTaskId(task.id)}
+                          onClick={() => openTask(task.id)}
                         >
                           {task.title}
                         </button>
@@ -774,7 +787,7 @@ function TasksTabContent({ tasks, taskResults }: TasksTabContentProps) {
                         <button
                           className="btn btn-secondary"
                           style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
-                          onClick={() => setSelectedTaskId(task.id)}
+                          onClick={() => openTask(task.id)}
                         >
                           View Report
                         </button>
@@ -816,7 +829,7 @@ function TasksTabContent({ tasks, taskResults }: TasksTabContentProps) {
                       <td>
                         <button
                           className="task-name-link"
-                          onClick={() => setSelectedTaskId(task.id)}
+                          onClick={() => openTask(task.id)}
                         >
                           {task.title}
                         </button>
@@ -842,7 +855,7 @@ function TasksTabContent({ tasks, taskResults }: TasksTabContentProps) {
                         <button
                           className="btn btn-secondary"
                           style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
-                          onClick={() => setSelectedTaskId(task.id)}
+                          onClick={() => openTask(task.id)}
                         >
                           View Report
                         </button>
@@ -859,7 +872,7 @@ function TasksTabContent({ tasks, taskResults }: TasksTabContentProps) {
       {selectedTaskId && (
         <TaskDetailSheet
           taskId={selectedTaskId}
-          onClose={() => setSelectedTaskId(null)}
+          onClose={closeTask}
         />
       )}
     </>

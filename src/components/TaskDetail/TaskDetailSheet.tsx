@@ -1,11 +1,21 @@
 import { useState, useEffect } from 'react';
 import { loadData } from '../../data/storage';
-import type { Task, Student, TaskResult, TaskDetailData, StudentTaskDetail, QuestionDetail, SkillsTabData, TaskInsights, ReadinessLevel, MasteryLevel, SkillReference, SkillFilterBucket } from '../../types';
+import type { Task, Student, TaskResult, TaskDetailData, StudentTaskDetail, QuestionDetail, SkillsTabData, TaskInsights, ReadinessLevel, MasteryLevel, SkillReference, SkillFilterBucket, TaskGroup, TestStatus } from '../../types';
 import TaskInsightsPanel from './TaskInsightsPanel';
 import StudentsTab from './StudentsTab';
 import QuestionsTab from './QuestionsTab';
 import SkillsTab from './SkillsTab';
 import ActionFlowModal from './ActionFlowModal';
+import '../../pages/TaskReport.css';
+import {
+  type Scenario,
+  type LocalGroup,
+  fmt,
+  fmtShort as _fmtShort,
+  testStatusFromScenario,
+  GroupCard,
+  ReassignModal,
+} from '../../pages/TaskReport';
 
 interface TaskDetailSheetProps {
   taskId: string;
@@ -23,6 +33,18 @@ export default function TaskDetailSheet({ taskId, onClose }: TaskDetailSheetProp
   const [showQuickWinsModal, setShowQuickWinsModal] = useState(false);
   const [highlightAtRisk, setHighlightAtRisk] = useState(false);
 
+  // Test report state
+  const [rawTask, setRawTask] = useState<Task | null>(null);
+  const [rawStudents, setRawStudents] = useState<Student[]>([]);
+  const [rawResults, setRawResults] = useState<{ studentId: string; status: string; score: number }[]>([]);
+  const [localGroups, setLocalGroups] = useState<LocalGroup[]>([]);
+  const [scenario, setScenario] = useState<Scenario>('after');
+  const [isPaused, setIsPaused] = useState(false);
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [reassignStudentIds, setReassignStudentIds] = useState<string[]>([]);
+  const [layout, setLayout] = useState<'classic' | 'compact'>('classic');
+  const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
+
   useEffect(() => {
     const data = loadData();
     const task = data.tasks.find(t => t.id === taskId);
@@ -36,7 +58,50 @@ export default function TaskDetailSheet({ taskId, onClose }: TaskDetailSheetProp
     // Generate mock detailed data
     const detailData = generateTaskDetailData(task, classStudents, taskResult, teacher.name, classData?.name || '');
     setTaskDetail(detailData);
+
+    // Save raw data for test controls
+    setRawTask(task);
+    setRawStudents(classStudents);
+    setRawResults(taskResult?.perStudent ?? []);
+    if (task.taskGroups && task.taskGroups.length > 0) {
+      setLocalGroups(task.taskGroups as LocalGroup[]);
+    } else {
+      setLocalGroups([{
+        id: 'synthetic-all',
+        name: 'All Students',
+        studentIds: classStudents.map(s => s.id),
+        startDate: task.startDate ?? task.createdAt,
+        dueDate: task.dueDate,
+        expiryDate: task.expiryDate,
+        resultsLocked: false,
+        resultsReleaseRule: 'manual',
+      }]);
+    }
   }, [taskId]);
+
+  // Test controls computed
+  const isTest = rawTask?.taskType === 'test';
+  const testStatus: TestStatus = testStatusFromScenario(scenario, isPaused);
+
+  const getGroupStatus = (idx: number): TestStatus => {
+    if (scenario === 'before') return 'scheduled';
+    if (scenario === 'during') return idx === 0 ? (isPaused ? 'paused' : 'live') : 'scheduled';
+    return 'completed';
+  };
+
+  const toggleGroupLock = (id: string) =>
+    setLocalGroups(prev => prev.map(g => g.id === id ? { ...g, resultsLocked: !g.resultsLocked } : g));
+
+  const changeGroupRule = (id: string, rule: LocalGroup['resultsReleaseRule']) =>
+    setLocalGroups(prev => prev.map(g => g.id === id ? { ...g, resultsReleaseRule: rule } : g));
+
+  const changeGroupDays = (id: string, days: number) =>
+    setLocalGroups(prev => prev.map(g => g.id === id ? { ...g, releaseAfterDays: days } : g));
+
+  const handleReassign = () => {
+    setReassignStudentIds([]);
+    setShowReassignModal(false);
+  };
 
   if (!taskDetail) {
     return null;
@@ -290,6 +355,167 @@ export default function TaskDetailSheet({ taskId, onClose }: TaskDetailSheetProp
         </div>
 
         <div className="sheet-body">
+          {isTest && (
+            <>
+              {/* Scenario switcher — prototype demo only */}
+              <div className="scenario-bar">
+                <span className="scenario-bar__label">Prototype:</span>
+                {(['before', 'during', 'after'] as Scenario[]).map(s => (
+                  <button
+                    key={s}
+                    className={`scenario-btn ${scenario === s ? 'active' : ''}`}
+                    onClick={() => { setScenario(s); setIsPaused(false); }}
+                  >
+                    {s === 'before' ? 'Before test' : s === 'during' ? 'During test' : 'After test'}
+                  </button>
+                ))}
+                {scenario === 'during' && (
+                  <>
+                    <span style={{ color: '#B8B8BF' }}>|</span>
+                    <button className={`scenario-btn ${isPaused ? 'active' : ''}`} onClick={() => setIsPaused(p => !p)}>
+                      {isPaused ? '⏸ Paused' : '▶ Playing'}
+                    </button>
+                  </>
+                )}
+                <div className="layout-toggle">
+                  <button className={`layout-toggle-btn ${layout === 'classic' ? 'active' : ''}`} onClick={() => setLayout('classic')}>V1</button>
+                  <button className={`layout-toggle-btn ${layout === 'compact' ? 'active' : ''}`} onClick={() => setLayout('compact')}>V2</button>
+                </div>
+              </div>
+
+              {/* Test controls bar */}
+              <div className="test-controls-bar">
+                <div className="test-controls-left">
+                  <div className={`test-status-pill test-status-pill--${testStatus}`}>
+                    <span className="test-status-dot" />
+                    {testStatus === 'scheduled' && 'Scheduled'}
+                    {testStatus === 'live' && 'Live'}
+                    {testStatus === 'paused' && 'Paused'}
+                    {testStatus === 'completed' && 'Completed'}
+                  </div>
+                  <div className="test-controls-meta">
+                    {testStatus === 'scheduled' && rawTask?.startDate && `Starts ${fmt(rawTask.startDate)}`}
+                    {testStatus === 'live' && rawTask && `Ends ${fmt(rawTask.dueDate)}`}
+                    {testStatus === 'paused' && 'Test paused — students cannot submit'}
+                    {testStatus === 'completed' && rawTask && `Ended ${fmt(rawTask.dueDate)}`}
+                  </div>
+                </div>
+                <div className="test-actions">
+                  {testStatus === 'scheduled' && (<>
+                    <button className="btn-report btn-report--primary">Start early</button>
+                    <button className="btn-report btn-report--secondary">Reschedule</button>
+                    <button className="btn-report btn-report--secondary">Edit test</button>
+                  </>)}
+                  {testStatus === 'live' && (<>
+                    <button className="btn-report btn-report--warning" onClick={() => setIsPaused(true)}>⏸ Pause test</button>
+                    <button className="btn-report btn-report--secondary">Restart</button>
+                    <button className="btn-report btn-report--secondary">Reschedule</button>
+                  </>)}
+                  {testStatus === 'paused' && (<>
+                    <button className="btn-report btn-report--primary" onClick={() => setIsPaused(false)}>▶ Resume test</button>
+                    <button className="btn-report btn-report--secondary">Restart</button>
+                    <button className="btn-report btn-report--secondary">Reschedule</button>
+                  </>)}
+                  {testStatus === 'completed' && (<>
+                    <button className="btn-report btn-report--secondary" onClick={() => {
+                      const missedIds = rawStudents.filter(s => {
+                        const r = rawResults.find(r => r.studentId === s.id);
+                        return !r || r.status === 'Not Started';
+                      }).map(s => s.id);
+                      setReassignStudentIds(missedIds);
+                      setShowReassignModal(true);
+                    }}>Reassign missed</button>
+                    <button className="btn-report btn-report--secondary" onClick={() => {
+                      setReassignStudentIds(rawStudents.map(s => s.id));
+                      setShowReassignModal(true);
+                    }}>Reassign test</button>
+                    <button className="btn-report btn-report--secondary">Export results</button>
+                  </>)}
+                </div>
+              </div>
+
+              {/* Test groups — V1: full cards, V2: compact chips */}
+              {localGroups.length > 0 && layout === 'classic' && (
+                <div className="groups-section">
+                  <div className="groups-section__header">
+                    <h3 className="groups-section__title">
+                      Test Groups
+                      <span style={{ marginLeft: '0.5rem', fontSize: '0.8125rem', fontWeight: 400, color: '#767682' }}>
+                        {localGroups.length} group{localGroups.length !== 1 ? 's' : ''}
+                      </span>
+                    </h3>
+                    <button className="btn-report btn-report--secondary btn-report--sm">+ Add group</button>
+                  </div>
+                  <div className="groups-grid" style={{ gridTemplateColumns: `repeat(${Math.min(localGroups.length, 3)}, 1fr)` }}>
+                    {localGroups.map((g, idx) => (
+                      <GroupCard
+                        key={g.id}
+                        group={g}
+                        groupStatus={getGroupStatus(idx)}
+                        students={rawStudents}
+                        results={rawResults}
+                        onToggleLock={() => toggleGroupLock(g.id)}
+                        onChangeRule={rule => changeGroupRule(g.id, rule)}
+                        onChangeDays={days => changeGroupDays(g.id, days)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {localGroups.length > 0 && layout === 'compact' && (
+                <>
+                  <div className="groups-chips-bar">
+                    {localGroups.map((g, idx) => {
+                      const gs = rawStudents.filter(s => g.studentIds.includes(s.id));
+                      const gr = rawResults.filter(r => g.studentIds.includes(r.studentId));
+                      const done = gr.filter(r => r.status === 'Completed').length;
+                      const total = gs.length;
+                      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+                      const isExpanded = expandedGroupId === g.id;
+                      const gStatus = getGroupStatus(idx);
+                      const statusDot: Record<string, string> = { scheduled: '#B8B8BF', live: '#22C55E', paused: '#F59E0B', completed: '#22C55E' };
+                      return (
+                        <button
+                          key={g.id}
+                          className={`group-chip-btn ${isExpanded ? 'chip-active' : ''}`}
+                          onClick={() => setExpandedGroupId(isExpanded ? null : g.id)}
+                        >
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: statusDot[gStatus], flexShrink: 0 }} />
+                          <span className="group-chip__name">{g.name}</span>
+                          <div className="group-chip__mini-bar">
+                            <div className="group-chip__mini-bar-fill" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="group-chip__count">{done}/{total}</span>
+                          <span className="group-chip__lock">{g.resultsLocked ? '🔒' : '🔓'}</span>
+                        </button>
+                      );
+                    })}
+                    <button className="btn-report btn-report--secondary btn-report--sm" style={{ marginLeft: 'auto' }}>+ Add group</button>
+                  </div>
+                  {expandedGroupId && (() => {
+                    const g = localGroups.find(g => g.id === expandedGroupId);
+                    const idx = localGroups.findIndex(g => g.id === expandedGroupId);
+                    if (!g) return null;
+                    return (
+                      <div className="group-chip-expanded">
+                        <GroupCard
+                          group={g}
+                          groupStatus={getGroupStatus(idx)}
+                          students={rawStudents}
+                          results={rawResults}
+                          onToggleLock={() => toggleGroupLock(g.id)}
+                          onChangeRule={rule => changeGroupRule(g.id, rule)}
+                          onChangeDays={days => changeGroupDays(g.id, days)}
+                        />
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+            </>
+          )}
+
           <TaskInsightsPanel
             insights={taskDetail.insights}
             taskType={taskDetail.header.taskType}
@@ -337,11 +563,13 @@ export default function TaskDetailSheet({ taskId, onClose }: TaskDetailSheetProp
             {activeTab === 'students' && (
               <StudentsTab
                 students={filteredStudents}
+                taskGroups={localGroups.length > 1 ? (localGroups as unknown as TaskGroup[]) : undefined}
                 selectedStudentIds={selectedStudentIds}
                 onSelectionChange={setSelectedStudentIds}
                 atRiskStudentIds={taskDetail.insights.atRiskStudents}
                 highlightAtRisk={highlightAtRisk}
                 taskType={taskDetail.header.taskType}
+                onReassignStudent={(sid) => { setReassignStudentIds([sid]); setShowReassignModal(true); }}
               />
             )}
             {activeTab === 'questions' && (
@@ -370,6 +598,15 @@ export default function TaskDetailSheet({ taskId, onClose }: TaskDetailSheetProp
           skills={getQuickWinsWithStudents()}
           onClose={() => setShowQuickWinsModal(false)}
           onAction={handleQuickWinsAction}
+        />
+      )}
+
+      {showReassignModal && (
+        <ReassignModal
+          students={rawStudents.filter(s => reassignStudentIds.includes(s.id))}
+          groups={localGroups}
+          onConfirm={handleReassign}
+          onClose={() => setShowReassignModal(false)}
         />
       )}
     </div>

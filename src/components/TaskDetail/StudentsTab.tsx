@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
-import type { StudentTaskDetail, TaskType } from '../../types';
+import type { StudentTaskDetail, TaskType, TaskGroup } from '../../types';
 import Tooltip from '../Tooltip';
+
+const GROUP_PALETTE = [
+  { bg: '#F1EEFF', color: '#3C2C7F' },
+  { bg: '#BDE6FF', color: '#004F85' },
+  { bg: '#C6F7ED', color: '#005048' },
+  { bg: '#FDEBB8', color: '#754800' },
+];
 
 // Confidence icons
 const SoaringIcon = () => (
@@ -15,15 +22,19 @@ const HatchlingIcon = () => (
 
 interface StudentsTabProps {
   students: StudentTaskDetail[];
+  taskGroups?: TaskGroup[];
   selectedStudentIds?: string[];
   onSelectionChange?: (studentIds: string[]) => void;
   atRiskStudentIds?: string[];
   highlightAtRisk?: boolean;
   taskType?: TaskType;
+  onReassignStudent?: (studentId: string) => void;
 }
 
-export default function StudentsTab({ students, selectedStudentIds, onSelectionChange, atRiskStudentIds = [], highlightAtRisk = false, taskType = 'custom' }: StudentsTabProps) {
+export default function StudentsTab({ students, taskGroups, selectedStudentIds, onSelectionChange, atRiskStudentIds = [], highlightAtRisk = false, taskType = 'custom', onReassignStudent }: StudentsTabProps) {
   const showConfidenceColumn = taskType === 'topic-readiness-checkin';
+  const showGroupColumn = (taskGroups?.length ?? 0) > 1;
+  const getStudentGroup = (id: string) => taskGroups?.find(g => g.studentIds.includes(id));
   const [localSelectedStudents, setLocalSelectedStudents] = useState<string[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
@@ -85,6 +96,7 @@ export default function StudentsTab({ students, selectedStudentIds, onSelectionC
               />
             </th>
             <th>Student</th>
+            {showGroupColumn && <th>Group</th>}
             <th>Progress</th>
             {showConfidenceColumn && <th>Confidence</th>}
             <th>Result</th>
@@ -118,6 +130,20 @@ export default function StudentsTab({ students, selectedStudentIds, onSelectionC
                   </span>
                 </div>
               </td>
+              {showGroupColumn && (() => {
+                const grp = getStudentGroup(student.studentId);
+                const idx = taskGroups!.findIndex(g => g.id === grp?.id);
+                const palette = GROUP_PALETTE[Math.max(0, idx) % GROUP_PALETTE.length];
+                return (
+                  <td>
+                    {grp && (
+                      <span style={{ background: palette.bg, color: palette.color, borderRadius: 4, padding: '2px 8px', fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        {grp.name}
+                      </span>
+                    )}
+                  </td>
+                );
+              })()}
               <td>
                 <div className="progress-cell">
                   <div className="progress-bar-container">
@@ -198,34 +224,59 @@ export default function StudentsTab({ students, selectedStudentIds, onSelectionC
                 {student.timeSpentMinutes > 0 ? formatTime(student.timeSpentMinutes) : '-'}
               </td>
               <td className="actions-cell">
-                <div className="action-buttons">
-                  <button className="btn btn-secondary btn-sm">
-                    Scorecard
-                  </button>
-                  <div className="sticker-button">
-                    <div className="sticker-count">
-                      <img src="/assets/Icons/Cards_star.svg" width="16" height="16" alt="" />
-                      {student.stickersReceived}
-                    </div>
-                    <div className="sticker-give">
-                      <img src="/assets/Pictogram/Stickers.svg" width="24" height="24" alt="" />
-                    </div>
-                  </div>
-                  <div className="more-menu-container">
+                {student.status === 'not-started' ? (
+                  <div className="action-buttons">
                     <button
-                      className="more-btn"
-                      onClick={() => setOpenMenuId(openMenuId === student.studentId ? null : student.studentId)}
+                      className="btn btn-primary btn-sm"
+                      onClick={() => onReassignStudent?.(student.studentId)}
                     >
-                      ⋮
+                      Reassign
                     </button>
-                    {openMenuId === student.studentId && (
-                      <StudentActionMenu
-                        studentName={`${student.firstName} ${student.lastName}`}
-                        onClose={() => setOpenMenuId(null)}
-                      />
-                    )}
+                    <div className="more-menu-container">
+                      <button
+                        className="more-btn"
+                        onClick={() => setOpenMenuId(openMenuId === student.studentId ? null : student.studentId)}
+                      >
+                        ⋮
+                      </button>
+                      {openMenuId === student.studentId && (
+                        <StudentActionMenu
+                          studentName={`${student.firstName} ${student.lastName}`}
+                          onClose={() => setOpenMenuId(null)}
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="action-buttons">
+                    <button className="btn btn-secondary btn-sm">
+                      Scorecard
+                    </button>
+                    <div className="sticker-button">
+                      <div className="sticker-count">
+                        <img src="/assets/Icons/Cards_star.svg" width="16" height="16" alt="" />
+                        {student.stickersReceived}
+                      </div>
+                      <div className="sticker-give">
+                        <img src="/assets/Pictogram/Stickers.svg" width="24" height="24" alt="" />
+                      </div>
+                    </div>
+                    <div className="more-menu-container">
+                      <button
+                        className="more-btn"
+                        onClick={() => setOpenMenuId(openMenuId === student.studentId ? null : student.studentId)}
+                      >
+                        ⋮
+                      </button>
+                      {openMenuId === student.studentId && (
+                        <StudentActionMenu
+                          studentName={`${student.firstName} ${student.lastName}`}
+                          onClose={() => setOpenMenuId(null)}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
               </td>
             </tr>
           ))}

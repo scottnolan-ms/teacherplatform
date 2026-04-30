@@ -55,6 +55,7 @@ function AppContent() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/classes" element={<ClassesList />} />
           <Route path="/classes/:classId" element={<ClassDetail />} />
+          <Route path="/classes/:classId/tasks/:taskId" element={<ClassDetail />} />
           <Route path="/students" element={<StudentsList />} />
           <Route path="/students/:studentId" element={<StudentDetail />} />
           <Route path="/tasks/create" element={<CreateTask />} />

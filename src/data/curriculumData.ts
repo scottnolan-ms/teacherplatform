@@ -5,7 +5,9 @@ import type {
   CurriculumSkill,
   StudentTopicMastery,
   ProficiencyLevel,
-  Student
+  Student,
+  TextbookInsights,
+  TextbookSkillsSummary
 } from '../types';
 
 // Curriculum structure for Year 9 Mathematics (NSW syllabus-aligned)
@@ -123,6 +125,14 @@ const CURRICULUM_STRUCTURE = {
   ]
 };
 
+// Skills that were measured in the readiness check-in test
+// (Linear Equations Readiness Check-in covers linear relationships + some prerequisite skills)
+const TESTED_SKILL_IDS = new Set([
+  'skill-2', 'skill-alg-simplify', 'skill-3', 'skill-4',  // Linear Relationships (partial)
+  'skill-1', 'skill-ind-negative',                         // Indices (partial - prerequisite overlap)
+  'skill-9', 'skill-mr-rates', 'skill-10', 'skill-mr-division', // Measurement & Ratio (prerequisite)
+]);
+
 function getProficiency(mastery: number): ProficiencyLevel {
   if (mastery >= 3.5) return 'strong';
   if (mastery >= 2.0) return 'developing';
@@ -151,7 +161,6 @@ export function generateCurriculumData(
   const rand = seededRandom(classId + '-curriculum');
 
   // Class A: lower overall mastery (struggling), Class B: higher overall mastery (partially ready)
-  // Per-topic mastery targets differ between classes
   const topicTargets: Record<string, { classA: number; classB: number }> = {
     'topic-linear-relationships': { classA: 1.6, classB: 3.4 },
     'topic-indices': { classA: 1.2, classB: 3.0 },
@@ -167,7 +176,6 @@ export function generateCurriculumData(
 
     for (const topic of CURRICULUM_STRUCTURE.topics) {
       const targetAvg = isClassB ? topicTargets[topic.id].classB : topicTargets[topic.id].classA;
-      // Add student variation around target
       const studentVariation = (rand() - 0.5) * 2.0;
       const studentTopicBase = Math.max(0, Math.min(5, targetAvg + studentVariation));
 
@@ -207,6 +215,9 @@ export function generateCurriculumData(
     };
   });
 
+  // Collect all skills flat for insights computation
+  const allSkills: CurriculumSkill[] = [];
+
   // Build class-level aggregates
   const topics: CurriculumTopic[] = CURRICULUM_STRUCTURE.topics.map(topic => {
     const subtopics: CurriculumSubtopic[] = topic.subtopics.map(subtopic => {
@@ -214,8 +225,19 @@ export function generateCurriculumData(
         const masteryValues = studentMasteries.map(s => s.skillMasteries[skill.id] ?? 0);
         const avg = masteryValues.reduce((a, b) => a + b, 0) / masteryValues.length;
         const proficientCount = masteryValues.filter(m => m >= 4).length;
+        const isTested = TESTED_SKILL_IDS.has(skill.id);
 
-        return {
+        // For tested skills, generate an "at test" snapshot (slightly lower than current)
+        let classAverageMasteryAtTest: number | undefined;
+        let growthFromTest: number | undefined;
+        if (isTested) {
+          // Growth: tested skills show some improvement since the test
+          const growthAmount = isClassB ? (rand() * 0.4 + 0.1) : (rand() * 0.6 + 0.2);
+          classAverageMasteryAtTest = Math.max(0, avg - growthAmount);
+          growthFromTest = avg - classAverageMasteryAtTest;
+        }
+
+        const currSkill: CurriculumSkill = {
           id: skill.id,
           code: skill.code,
           name: skill.name,
@@ -223,7 +245,13 @@ export function generateCurriculumData(
           proficientStudentCount: proficientCount,
           totalStudents: students.length,
           isPrerequisite: topic.isPrerequisite,
+          tested: isTested,
+          growthFromTest,
+          classAverageMasteryAtTest,
         };
+
+        allSkills.push(currSkill);
+        return currSkill;
       });
 
       const subtopicAvg = skills.reduce((a, s) => a + s.classAverageMastery, 0) / skills.length;
@@ -239,7 +267,6 @@ export function generateCurriculumData(
 
     const topicAvg = subtopics.reduce((a, s) => a + s.classAverageMastery, 0) / subtopics.length;
 
-    // Student breakdown for topic
     const topicMasteryValues = studentMasteries.map(s => s.topicMasteries[topic.id] ?? 0);
     const strong = topicMasteryValues.filter(m => m >= 3.5).length;
     const developing = topicMasteryValues.filter(m => m >= 2.0 && m < 3.5).length;
@@ -261,6 +288,59 @@ export function generateCurriculumData(
     };
   });
 
+  // --- Compute TextbookInsights ---
+  const skillsSummary: TextbookSkillsSummary = {
+    criticalGap: allSkills.filter(s => s.classAverageMastery <= 1.5),
+    needsMorePractice: allSkills.filter(s => s.classAverageMastery > 1.5 && s.classAverageMastery < 3.5),
+    proficient: allSkills.filter(s => s.classAverageMastery >= 3.5),
+    untested: allSkills.filter(s => !s.tested),
+  };
+
+  // At-risk students: overall mastery < 2.0
+  const atRiskStudents = studentMasteries
+    .map(s => {
+      const vals = Object.values(s.topicMasteries);
+      const avgMastery = vals.reduce((a, b) => a + b, 0) / vals.length;
+      return { studentId: s.studentId, name: s.studentName, avatarUrl: s.avatarUrl, avgMastery };
+    })
+    .filter(s => s.avgMastery < 2.0)
+    .sort((a, b) => a.avgMastery - b.avgMastery);
+
+  // Quick win skills: close to proficient (2.8 - 3.5)
+  const quickWinSkills = allSkills.filter(s => s.classAverageMastery >= 2.8 && s.classAverageMastery < 3.5);
+
+  // Readiness breakdown across all students (overall)
+  const allStudentAvgs = studentMasteries.map(s => {
+    const vals = Object.values(s.topicMasteries);
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  });
+  const overallStrong = allStudentAvgs.filter(m => m >= 3.5).length;
+  const overallDeveloping = allStudentAvgs.filter(m => m >= 2.0 && m < 3.5).length;
+  const overallNeedsSupport = allStudentAvgs.filter(m => m < 2.0).length;
+
+  // Count topics that have at least one tested skill
+  const topicsCoveredByTests = topics.filter(t =>
+    t.subtopics.some(st => st.skills.some(sk => sk.tested))
+  ).length;
+
+  const testedSkillsCount = allSkills.filter(s => s.tested).length;
+
+  const insights: TextbookInsights = {
+    readinessBreakdown: {
+      strong: overallStrong,
+      developing: overallDeveloping,
+      needsSupport: overallNeedsSupport,
+      total: students.length,
+    },
+    skillsSummary,
+    atRiskStudents,
+    quickWinSkills,
+    topicsCoveredByTests,
+    totalTopics: topics.length,
+    testedSkillsCount,
+    totalSkillsCount: allSkills.length,
+  };
+
   const overallAvg = topics.reduce((a, t) => a + t.classAverageMastery, 0) / topics.length;
 
   return {
@@ -268,5 +348,6 @@ export function generateCurriculumData(
     students: studentMasteries,
     overallClassMastery: overallAvg,
     overallProficiency: getProficiency(overallAvg),
+    insights,
   };
 }
