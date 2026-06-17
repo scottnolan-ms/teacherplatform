@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { loadData } from '../data/storage';
-import type { Class, Student, PersistentGroup, StudentActivity, Task, TaskResult, CurriculumData } from '../types';
+import type { Class, Student, PersistentGroup, StudentActivity, Task, TaskGroup, TaskResult, CurriculumData } from '../types';
 import CreateGroupModal from '../components/CreateGroupModal';
 import Tooltip from '../components/Tooltip';
 import StudentDetailModal from '../components/StudentDetailModal';
@@ -659,9 +659,313 @@ interface TasksTabContentProps {
   initialTaskId?: string;
 }
 
+const TASK_TYPE_CONFIG: Record<string, { label: string; color: string; iconSrc: string; iconBg: string }> = {
+  'topic-readiness-checkin': {
+    label: 'Readiness check',
+    color: '#7C6ECC',
+    iconSrc: '/assets/Icons/Task-Topic-Readiness-Checkin.svg',
+    iconBg: '#F1EEFF',
+  },
+  'adaptive': {
+    label: 'Adaptive',
+    color: '#1CB7C8',
+    iconSrc: '/assets/Icons/Task-Adaptive.svg',
+    iconBg: '#E0F9F7',
+  },
+  'custom': {
+    label: 'Custom',
+    color: '#0E7AC2',
+    iconSrc: '/assets/Icons/Task-Custom.svg',
+    iconBg: '#E0F2FF',
+  },
+  'test': {
+    label: 'Test',
+    color: '#D5424D',
+    iconSrc: '/assets/Icons/Task-Topic-Test.svg',
+    iconBg: '#FDEBED',
+  },
+  'revision': {
+    label: 'Revision',
+    color: '#16A188',
+    iconSrc: '/assets/Icons/Revision.svg',
+    iconBg: '#E8FBF6',
+  },
+};
+
+const GROUP_PALETTE = [
+  { bg: '#F1EEFF', color: '#3C2C7F' },
+  { bg: '#FDEBB8', color: '#754800' },
+  { bg: '#C6F7ED', color: '#005048' },
+  { bg: '#BDE6FF', color: '#004F85' },
+];
+
+function getTaskStats(taskId: string, taskResults: TaskResult[]) {
+  const result = taskResults.find(r => r.taskId === taskId);
+  if (!result) return { completed: 0, total: 0, avgScore: 0 };
+  const completed = result.perStudent.filter(s => s.status === 'Completed').length;
+  const total = result.perStudent.length;
+  const completedResults = result.perStudent.filter(s => s.status === 'Completed');
+  const avgScore = completedResults.length > 0
+    ? Math.round(completedResults.reduce((sum, s) => sum + s.score, 0) / completedResults.length)
+    : 0;
+  return { completed, total, avgScore };
+}
+
+function getGroupStats(taskId: string, groupStudentIds: string[], taskResults: TaskResult[]) {
+  const result = taskResults.find(r => r.taskId === taskId);
+  if (!result) return { completed: 0, total: groupStudentIds.length, avgScore: 0 };
+  const groupResults = result.perStudent.filter(s => groupStudentIds.includes(s.studentId));
+  const completed = groupResults.filter(s => s.status === 'Completed').length;
+  const total = groupStudentIds.length;
+  const completedResults = groupResults.filter(s => s.status === 'Completed');
+  const avgScore = completedResults.length > 0
+    ? Math.round(completedResults.reduce((sum, s) => sum + s.score, 0) / completedResults.length)
+    : 0;
+  return { completed, total, avgScore };
+}
+
+function getTaskRowStatus(task: Task): { label: string; variant: string } {
+  const now = new Date();
+  const dueDate = new Date(task.dueDate);
+  const expiryDate = task.expiryDate ? new Date(task.expiryDate) : null;
+
+  if (task.taskGroups && task.taskGroups.length > 0) {
+    const activeCount = task.taskGroups.filter(g => {
+      const gExpiry = g.expiryDate ? new Date(g.expiryDate) : null;
+      return !gExpiry || now <= gExpiry;
+    }).length;
+    const total = task.taskGroups.length;
+    if (activeCount === 0) return { label: 'Complete', variant: 'complete' };
+    if (activeCount === total) return { label: `${activeCount}/${total} Active`, variant: 'active' };
+    return { label: `${activeCount}/${total} Active`, variant: 'mixed' };
+  }
+
+  if (expiryDate && now > expiryDate) return { label: 'Complete', variant: 'complete' };
+  if (task.status === 'expired') return { label: 'Complete', variant: 'complete' };
+  if (now > dueDate && expiryDate && now <= expiryDate) return { label: 'Extension', variant: 'extension' };
+  return { label: 'Active', variant: 'active' };
+}
+
+function getGroupRowStatus(group: TaskGroup): { label: string; variant: string } {
+  const now = new Date();
+  const dueDate = new Date(group.dueDate);
+  const expiryDate = group.expiryDate ? new Date(group.expiryDate) : null;
+
+  if (expiryDate && now > expiryDate) {
+    if (group.resultsLocked) return { label: 'Results locked', variant: 'locked' };
+    return { label: 'Complete', variant: 'complete' };
+  }
+  if (now > dueDate && expiryDate && now <= expiryDate) return { label: 'Extension', variant: 'extension' };
+  return { label: 'Active', variant: 'active' };
+}
+
+function formatTaskDate(dateStr?: string): string {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function StatusBadge({ label, variant }: { label: string; variant: string }) {
+  return (
+    <span className={`tl-status tl-status--${variant}`}>
+      {variant === 'active' || variant === 'mixed' ? (
+        <span className="tl-status-dot" />
+      ) : variant === 'complete' ? (
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+          <path d="M1.5 5.5L4.5 8.5L9.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : variant === 'extension' ? (
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+          <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.2" />
+          <path d="M5.5 3V5.5L7 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+        </svg>
+      ) : variant === 'locked' ? (
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+          <rect x="2" y="5" width="7" height="4.5" rx="1" stroke="currentColor" strokeWidth="1.2" />
+          <path d="M3.5 5V3.5a2 2 0 014 0V5" stroke="currentColor" strokeWidth="1.2" />
+        </svg>
+      ) : null}
+      {label}
+    </span>
+  );
+}
+
+function ResultBadge({ score }: { score: number }) {
+  if (score <= 0) return <span className="tl-dash">—</span>;
+  const variant = score >= 70 ? 'good' : score >= 40 ? 'mid' : 'low';
+  return <span className={`tl-result tl-result--${variant}`}>{score}%</span>;
+}
+
+function ProgressBar({ pct }: { pct: number }) {
+  return (
+    <div className="tl-progress">
+      <div className="tl-progress-track">
+        <div className="tl-progress-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="tl-progress-pct">{pct}%</span>
+    </div>
+  );
+}
+
+function TasksTable({
+  taskList,
+  title,
+  taskResults,
+  expandedTaskIds,
+  onToggleExpand,
+  onOpenTask,
+}: {
+  taskList: Task[];
+  title: string;
+  taskResults: TaskResult[];
+  expandedTaskIds: Set<string>;
+  onToggleExpand: (taskId: string, e: React.MouseEvent) => void;
+  onOpenTask: (taskId: string) => void;
+}) {
+  if (taskList.length === 0) return null;
+
+  return (
+    <div className="tasks-section">
+      <h3 className="tasks-section-heading">{title} ({taskList.length})</h3>
+      <div className="tl-card">
+        <div className="tl-scroll">
+          <table className="tl-table">
+            <thead>
+              <tr>
+                <th className="tl-th tl-th--name">Tasks ({taskList.length})</th>
+                <th className="tl-th">Task type</th>
+                <th className="tl-th">Progress</th>
+                <th className="tl-th tl-th--center">Participation</th>
+                <th className="tl-th tl-th--center">Results</th>
+                <th className="tl-th tl-th--center">Revision</th>
+                <th className="tl-th tl-th--center">
+                  <img src="/assets/Icons/Time-Taken-acute.svg" width="15" height="15" alt="Time" style={{ verticalAlign: 'middle', opacity: 0.55 }} />
+                </th>
+                <th className="tl-th">Status</th>
+                <th className="tl-th tl-th--date">Task start</th>
+                <th className="tl-th tl-th--date">Task due</th>
+                <th className="tl-th tl-th--date">Task expire</th>
+              </tr>
+            </thead>
+            <tbody>
+              {taskList.map(task => {
+                const type = TASK_TYPE_CONFIG[task.taskType || 'custom'] || TASK_TYPE_CONFIG['custom'];
+                const stats = getTaskStats(task.id, taskResults);
+                const status = getTaskRowStatus(task);
+                const hasGroups = !!(task.taskGroups && task.taskGroups.length > 0);
+                const isExpanded = expandedTaskIds.has(task.id);
+                const progressPct = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+                const estTime = Math.round((task.questionsCount || 10) * 1.5);
+
+                return (
+                  <Fragment key={task.id}>
+                    {/* ── Parent row ── */}
+                    <tr className={`tl-row ${hasGroups ? 'tl-row--expandable' : ''} ${isExpanded ? 'tl-row--expanded' : ''}`}>
+                      <td className="tl-td tl-td--name">
+                        <div className="tl-name-cell">
+                          {hasGroups ? (
+                            <button
+                              className={`tl-chevron ${isExpanded ? 'tl-chevron--open' : ''}`}
+                              onClick={e => onToggleExpand(task.id, e)}
+                              aria-expanded={isExpanded}
+                              aria-label={isExpanded ? 'Collapse groups' : 'Expand groups'}
+                            >
+                              <svg width="9" height="9" viewBox="0 0 9 9" fill="none" aria-hidden="true">
+                                <path d="M2.5 1.5L6.5 4.5L2.5 7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </button>
+                          ) : (
+                            <span className="tl-chevron-spacer" aria-hidden="true" />
+                          )}
+                          <span className="tl-task-icon" style={{ background: type.iconBg }}>
+                            <img src={type.iconSrc} width="14" height="14" alt="" />
+                          </span>
+                          <button className="task-name-link" onClick={() => onOpenTask(task.id)}>
+                            {task.title}
+                          </button>
+                        </div>
+                      </td>
+                      <td className="tl-td">
+                        <span className="tl-type-chip" style={{ background: `${type.color}18`, color: type.color }}>
+                          {type.label}
+                        </span>
+                      </td>
+                      <td className="tl-td tl-td--progress">
+                        {hasGroups
+                          ? <span className="tl-avg-label">AVG {progressPct}%</span>
+                          : <ProgressBar pct={progressPct} />}
+                      </td>
+                      <td className="tl-td tl-td--center">
+                        <span className="tl-participation">{stats.completed}/{stats.total}</span>
+                      </td>
+                      <td className="tl-td tl-td--center">
+                        {hasGroups && stats.avgScore > 0
+                          ? <span className="tl-avg-label">Avg {stats.avgScore}%</span>
+                          : <ResultBadge score={stats.avgScore} />}
+                      </td>
+                      <td className="tl-td tl-td--center"><span className="tl-dash">—</span></td>
+                      <td className="tl-td tl-td--center"><span className="tl-time">{estTime}m</span></td>
+                      <td className="tl-td"><StatusBadge label={status.label} variant={status.variant} /></td>
+                      <td className="tl-td tl-td--date">{formatTaskDate(task.startDate)}</td>
+                      <td className="tl-td tl-td--date">{formatTaskDate(task.dueDate)}</td>
+                      <td className="tl-td tl-td--date">{formatTaskDate(task.expiryDate)}</td>
+                    </tr>
+
+                    {/* ── Group sub-rows (expanded) ── */}
+                    {hasGroups && isExpanded && task.taskGroups!.map((group, idx) => {
+                      const gStats = getGroupStats(task.id, group.studentIds, taskResults);
+                      const gStatus = getGroupRowStatus(group);
+                      const gPct = gStats.total > 0 ? Math.round((gStats.completed / gStats.total) * 100) : 0;
+                      const palette = GROUP_PALETTE[idx % GROUP_PALETTE.length];
+
+                      return (
+                        <tr key={group.id} className="tl-group-row">
+                          <td className="tl-td tl-td--name">
+                            <div className="tl-name-cell tl-name-cell--group">
+                              <span className="tl-chevron-spacer" aria-hidden="true" />
+                              <span className="tl-task-icon-spacer" aria-hidden="true" />
+                              <span
+                                className="tl-group-chip"
+                                style={{ background: palette.bg, color: palette.color }}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                  <circle cx="5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+                                  <circle cx="11" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+                                  <circle cx="8" cy="11" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+                                </svg>
+                                {group.name}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="tl-td" />
+                          <td className="tl-td tl-td--progress"><ProgressBar pct={gPct} /></td>
+                          <td className="tl-td tl-td--center">
+                            <span className="tl-participation">{gStats.completed}/{gStats.total}</span>
+                          </td>
+                          <td className="tl-td tl-td--center"><ResultBadge score={gStats.avgScore} /></td>
+                          <td className="tl-td tl-td--center"><span className="tl-dash">—</span></td>
+                          <td className="tl-td tl-td--center"><span className="tl-time">{estTime}m</span></td>
+                          <td className="tl-td"><StatusBadge label={gStatus.label} variant={gStatus.variant} /></td>
+                          <td className="tl-td tl-td--date">{formatTaskDate(group.startDate)}</td>
+                          <td className="tl-td tl-td--date">{formatTaskDate(group.dueDate)}</td>
+                          <td className="tl-td tl-td--date">{formatTaskDate(group.expiryDate)}</td>
+                        </tr>
+                      );
+                    })}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TasksTabContent({ tasks, taskResults, classId, initialTaskId }: TasksTabContentProps) {
   const navigate = useNavigate();
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(initialTaskId ?? null);
+  const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(new Set());
 
   const openTask = (taskId: string) => {
     navigate(`/classes/${classId}/tasks/${taskId}`);
@@ -673,201 +977,43 @@ function TasksTabContent({ tasks, taskResults, classId, initialTaskId }: TasksTa
     setSelectedTaskId(null);
   };
 
+  const toggleExpand = (taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedTaskIds(prev => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  };
+
   const now = new Date();
   const currentTasks = tasks.filter(t => new Date(t.dueDate) >= now);
   const historicTasks = tasks.filter(t => new Date(t.dueDate) < now);
 
-  const getTaskStats = (taskId: string) => {
-    const result = taskResults.find(r => r.taskId === taskId);
-    if (!result) return { completed: 0, total: 0, avgScore: 0 };
-
-    const completed = result.perStudent.filter(s => s.status === 'Completed').length;
-    const total = result.perStudent.length;
-    const avgScore = total > 0 ? Math.round(
-      result.perStudent.reduce((sum, s) => sum + s.score, 0) / total
-    ) : 0;
-
-    return { completed, total, avgScore };
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
-
-  const getTaskTypeChip = (task: Task) => {
-    const type = task.taskType || 'custom';
-    const labels: Record<string, string> = {
-      'topic-readiness-checkin': 'Readiness Check-in',
-      'adaptive': 'Adaptive',
-      'custom': 'Custom',
-      'test': 'Test',
-      'revision': 'Revision'
-    };
-    const colors: Record<string, string> = {
-      'topic-readiness-checkin': '#7C6ECC',
-      'adaptive': '#1CB7C8',
-      'custom': '#0E7AC2',
-      'test': '#D5424D',
-      'revision': '#16A188'
-    };
-    return (
-      <span
-        className="task-type-chip"
-        style={{
-          backgroundColor: `${colors[type]}15`,
-          color: colors[type],
-          padding: '0.25rem 0.5rem',
-          borderRadius: '0.25rem',
-          fontSize: '0.75rem',
-          fontWeight: 500
-        }}
-      >
-        {labels[type]}
-      </span>
-    );
-  };
-
   return (
     <>
-      <div className="tasks-section">
-        <h3 style={{ marginBottom: '1rem' }}>Current Tasks ({currentTasks.length})</h3>
-        <div className="card">
-          {currentTasks.length === 0 ? (
-            <p style={{ color: '#64748b', textAlign: 'center', padding: '2rem' }}>
-              No current tasks assigned to this class.
-            </p>
-          ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Task Name</th>
-                  <th>Type</th>
-                  <th>Due Date</th>
-                  <th>Groups</th>
-                  <th>Completion</th>
-                  <th>Avg Score</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentTasks.map(task => {
-                  const stats = getTaskStats(task.id);
-                  return (
-                    <tr key={task.id}>
-                      <td>
-                        <button
-                          className="task-name-link"
-                          onClick={() => openTask(task.id)}
-                        >
-                          {task.title}
-                        </button>
-                      </td>
-                      <td>{getTaskTypeChip(task)}</td>
-                      <td>{formatDate(task.dueDate)}</td>
-                      <td>
-                        <div className="group-chips">
-                          {task.assignments.map((a, i) => (
-                            <span key={i} className="badge badge-blue" style={{ marginRight: '0.25rem' }}>
-                              {a.groupName}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td>
-                        <span className="completion-badge">
-                          {stats.completed}/{stats.total}
-                        </span>
-                      </td>
-                      <td>{stats.avgScore}%</td>
-                      <td>
-                        <button
-                          className="btn btn-secondary"
-                          style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
-                          onClick={() => openTask(task.id)}
-                        >
-                          View Report
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
+      <TasksTable
+        taskList={currentTasks}
+        title="Current Tasks"
+        taskResults={taskResults}
+        expandedTaskIds={expandedTaskIds}
+        onToggleExpand={toggleExpand}
+        onOpenTask={openTask}
+      />
 
-      <div className="tasks-section" style={{ marginTop: '2rem' }}>
-        <h3 style={{ marginBottom: '1rem' }}>Past Tasks ({historicTasks.length})</h3>
-        <div className="card">
-          {historicTasks.length === 0 ? (
-            <p style={{ color: '#64748b', textAlign: 'center', padding: '2rem' }}>
-              No past tasks for this class.
-            </p>
-          ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Task Name</th>
-                  <th>Type</th>
-                  <th>Due Date</th>
-                  <th>Groups</th>
-                  <th>Completion</th>
-                  <th>Avg Score</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {historicTasks.map(task => {
-                  const stats = getTaskStats(task.id);
-                  return (
-                    <tr key={task.id}>
-                      <td>
-                        <button
-                          className="task-name-link"
-                          onClick={() => openTask(task.id)}
-                        >
-                          {task.title}
-                        </button>
-                      </td>
-                      <td>{getTaskTypeChip(task)}</td>
-                      <td>{formatDate(task.dueDate)}</td>
-                      <td>
-                        <div className="group-chips">
-                          {task.assignments.map((a, i) => (
-                            <span key={i} className="badge badge-blue" style={{ marginRight: '0.25rem' }}>
-                              {a.groupName}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td>
-                        <span className="completion-badge">
-                          {stats.completed}/{stats.total}
-                        </span>
-                      </td>
-                      <td>{stats.avgScore}%</td>
-                      <td>
-                        <button
-                          className="btn btn-secondary"
-                          style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
-                          onClick={() => openTask(task.id)}
-                        >
-                          View Report
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+      {historicTasks.length > 0 && (
+        <div style={{ marginTop: '2rem' }}>
+          <TasksTable
+            taskList={historicTasks}
+            title="Past Tasks"
+            taskResults={taskResults}
+            expandedTaskIds={expandedTaskIds}
+            onToggleExpand={toggleExpand}
+            onOpenTask={openTask}
+          />
         </div>
-      </div>
+      )}
 
       {selectedTaskId && (
         <TaskDetailSheet
