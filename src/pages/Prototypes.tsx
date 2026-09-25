@@ -1,0 +1,4 @@
+import { Link } from 'react-router-dom';
+// Add new explorations here, in the order they should appear in the hub.
+const prototypes=[{title:'Test controls',path:'/classes/class-test-controls/tasks/linear-equations-test',description:'Explore four task-report layouts, including start, pause, resume, restart and reassignment for groups and individual students.'}];
+export default function Prototypes(){return <div className="prototype-page"><h1>Prototypes</h1><p>A place to explore and share ideas for the teacher experience.</p><div className="prototype-list">{prototypes.map(p=><Link className="prototype-card" to={p.path} key={p.path}><div><h2>{p.title}</h2><p>{p.description}</p></div><span>Open prototype →</span></Link>)}</div><footer>More prototypes will be added here as we explore.</footer></div>}

@@ -16,7 +16,7 @@ type DateFilter = 'this-week' | 'last-30-days';
 export default function ClassDetail() {
   const { classId, taskId } = useParams<{ classId: string; taskId: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'students' | 'groups' | 'tasks' | 'textbook-progress'>(taskId ? 'tasks' : 'students');
+  const [activeTab, setActiveTab] = useState<'students' | 'groups' | 'tasks' | 'textbook-progress'>(taskId || new URLSearchParams(window.location.search).get('tab')==='tasks' ? 'tasks' : 'students');
   const [classData, setClassData] = useState<Class | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [studentActivities, setStudentActivities] = useState<StudentActivity[]>([]);

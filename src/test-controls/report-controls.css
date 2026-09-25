@@ -1,0 +1,78 @@
+/* Report control tokens adapted from design-system-26; current Figma DS2 colours.
+   Buttons use the small size; accordions use small, low-emphasis neutral icon controls. */
+.tc-app {
+  --report-primary: #6e3ddd;
+  --report-primary-container: #ddcfff;
+  --report-primary-on-container: #42168a;
+  --report-control-height: 32px;
+  --report-label-size: 12px;
+  --report-chip-radius: 4px;
+}
+.tc-app :is(.tc-actions button,.tc-row-action,.tc-primary,.tc-modal-footer button,.tc-demo button,.tc-dashboard-restore button,.tc-card-bottom button:not(.tc-text)) {
+  min-height: var(--report-control-height);
+  border: 2px solid var(--report-primary);
+  border-radius: 1000px;
+  padding: 4px 12px;
+  font: 500 var(--report-label-size)/20px 'Proxima Nova',Arial,sans-serif;
+  color: var(--report-primary);
+  background: transparent;
+  display: inline-flex; align-items:center; justify-content:center; gap:6px;
+}
+.tc-app.tc-app button.tc-primary {background:var(--report-primary);color:white;border-color:var(--report-primary)}
+.tc-app.tc-app button.tc-row-action {background:var(--report-primary-container);color:var(--report-primary-on-container);border-color:transparent}
+.tc-app :is(.tc-actions button,.tc-row-action,.tc-modal-footer button,.tc-demo button):hover:not(:disabled) {background:var(--report-primary-container);color:var(--report-primary-on-container);border-color:var(--report-primary)}
+.tc-app.tc-app button.tc-primary:hover:not(:disabled) {background:#8051e1;color:white}
+.tc-app button:disabled {opacity:.38}
+.tc-app :is(button,input,select):focus-visible {outline:3px solid var(--report-primary-on-container);outline-offset:2px}
+.tc-app .tc-actions small {margin:0;font:inherit;color:inherit}
+.tc-app .tc-icon-button {width:32px;height:32px;min-width:32px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:18px}
+.tc-app .tc-modal-heading .tc-icon-button {background:var(--report-primary-container);border:0;color:var(--report-primary-on-container)}
+.tc-app .tc-accordion-toggle {display:inline-flex;align-items:center;gap:8px;min-height:32px;padding:0;font-size:13px;font-weight:600;color:#32323c!important;border-radius:1000px}
+.tc-app .tc-accordion-icon {width:32px;height:32px;flex:0 0 32px;display:grid;place-items:center;border-radius:50%;background:transparent;color:#32323c}
+.tc-accordion-icon i {display:block;width:20px;height:20px;background:currentColor;mask:url('/assets/report-controls/arrow-down.svg') center/contain no-repeat;transform:rotate(-90deg);transition:transform 140ms ease}
+.tc-accordion-toggle[aria-expanded=true] .tc-accordion-icon i {transform:rotate(0deg)}
+.tc-app button.tc-accordion-toggle:hover:not(:disabled) {background:transparent;border-color:transparent}
+.tc-app .tc-accordion-toggle:hover .tc-accordion-icon {background:#dfdfe5}
+.tc-app .tc-accordion-toggle:active .tc-accordion-icon {background:#c7c7d1}
+.tc-app :is(.tc-status,.tc-mode,.tc-group-name,.tc-live-counts button,.tc-strip-status button) {border-radius:var(--report-chip-radius);font:600 12px/18px 'Proxima Nova',Arial,sans-serif;padding:3px 8px;min-height:24px;display:inline-flex;align-items:center;gap:4px}
+.tc-app :is(.tc-mode,.tc-status.scheduled,.tc-group-name,.tc-strip-status button) {background:var(--report-primary-container);color:var(--report-primary-on-container)}
+.tc-app .tc-status.in-progress {background:#bdf3eb;color:#006b60}
+.tc-app .tc-status.paused {background:#fff2cc;color:#765500}
+.tc-app .tc-status.completed {background:#dfdfe5;color:#454551}
+.tc-app .tc-live-counts button {background:#ebe7f2;color:#42168a;border:1px solid transparent}
+.tc-app .tc-live-counts button.active {background:#42168a;color:white}
+.tc-app .tc-live-counts button strong {color:inherit;font-size:13px;margin:0}
+.tc-app .tc-live-counts button:hover:not(:disabled),.tc-app .tc-strip-status button:hover:not(:disabled) {background:#ddcfff;color:#42168a}
+.tc-app .tc-filterbar :is(select,.tc-select-all,.tc-search) {height:32px;border:1px solid #92929f;border-radius:1000px;color:#32323c;font:500 12px/18px 'Proxima Nova',Arial,sans-serif!important;padding:5px 12px}
+.tc-app.tc-layout-04 .tc-filterbar select,.tc-app .tc-filterbar select {appearance:none;padding-right:32px;background:white url('/assets/report-controls/arrow-down.svg') right 8px center/20px no-repeat}
+.tc-app .tc-select-all.selected {background:#ddcfff;border-color:#6e3ddd;color:#42168a}
+.tc-app .tc-layout-switch {border-radius:1000px;background:#f4f5f5;border:1px solid #dfdfe5;gap:4px;padding:3px 8px}
+.tc-app .tc-layout-switch button {min-height:28px;border:0;border-radius:1000px;padding:4px 10px;font-size:11px;font-weight:500;color:#42168a;background:transparent;box-shadow:none}
+.tc-app .tc-layout-switch button.active {background:#230b48;color:white}
+.tc-app .tc-layout-switch button:hover:not(.active) {background:#ddcfff}
+.tc-app .tc-layout-switch>span,.tc-app .tc-layout-switch small {color:#676775}
+.tc-app .tc-group-strip {gap:10px}
+.tc-app .tc-group-strip>div:first-child {min-width:190px;flex-wrap:wrap;gap:3px 8px}
+.tc-app .tc-strip-status {flex-wrap:wrap}
+.tc-app .tc-live-heading {flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce) {.tc-accordion-icon i {transition:none}}
+
+/* Quick single-status view and the table's more flexible status filter share state. */
+.tc-app .tc-live-counts {flex-wrap:wrap;gap:8px}
+.tc-app .tc-live-counts .tc-filter-caption {margin:0;color:#454551;font-size:11px}
+.tc-status-toggle {display:inline-flex;align-items:center;gap:2px;padding:3px;border:1px solid #dfdfe5;background:#f4f5f5;border-radius:1000px;flex-wrap:wrap}
+.tc-app .tc-status-toggle button {border:0;border-radius:1000px;background:transparent;color:#42168a;font-size:11px;font-weight:500;min-height:26px;padding:3px 9px;gap:6px}
+.tc-app .tc-status-toggle button strong {font-size:11px}
+.tc-app .tc-status-toggle button.active,.tc-app .tc-status-toggle button.active:hover {background:#230b48;color:white}
+.tc-status-filter {position:relative;font-size:12px;color:#32323c}
+.tc-status-filter summary {cursor:pointer;list-style:none;border:1px solid #92929f;border-radius:1000px;padding:6px 32px 6px 12px;height:32px;background:white url('/assets/report-controls/arrow-down.svg') right 8px center/20px no-repeat;white-space:nowrap}
+.tc-status-filter summary::-webkit-details-marker {display:none}
+.tc-status-filter summary:focus-visible {outline:3px solid #42168a;outline-offset:2px}
+.tc-status-menu {position:absolute;top:38px;left:0;width:265px;z-index:40;background:white;border:1px solid #dfdfe5;border-radius:8px;box-shadow:0 4px 16px #32323c26;padding:14px;display:flex;flex-direction:column;gap:8px}
+.tc-status-menu>strong {color:#42168a}
+.tc-status-menu>span {font-size:11px;color:#676775}
+.tc-status-menu label {display:flex;align-items:center;gap:8px;padding:6px;border-radius:4px;cursor:pointer}
+.tc-status-menu label:hover {background:#f3edff}
+.tc-status-menu label span {margin-left:auto}
+.tc-status-menu footer {display:flex;justify-content:space-between;border-top:1px solid #dfdfe5;padding-top:6px}
+.tc-app .tc-report {overflow:visible}

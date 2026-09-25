@@ -1,3 +1,4 @@
+import { seed as testStudents } from '../test-controls/model';
 import type { AppData, PersistentGroup, Task, TaskResult, Student } from '../types';
 import { initialData } from './seedData';
 
@@ -17,7 +18,7 @@ export function loadData(): AppData {
     if (!hasValidStudents) {
       console.log('Resetting localStorage due to schema change');
       saveData(initialData);
-      return initialData;
+      return ensureTestClass(initialData);
     }
 
     // Merge with initial data to ensure all fields exist (handles schema migrations)
@@ -33,11 +34,11 @@ export function loadData(): AppData {
       questionSets: parsed.questionSets || initialData.questionSets,
       studentActivities: parsed.studentActivities || initialData.studentActivities,
     };
-    return merged;
+    return ensureTestClass(merged);
   }
   // Initialize with seed data
   saveData(initialData);
-  return initialData;
+  return ensureTestClass(initialData);
 }
 
 export function saveData(data: AppData): void {
@@ -123,4 +124,18 @@ export function removeStudentFromGroup(studentId: string, groupId: string): void
     group.updatedAt = new Date().toISOString();
     saveData(data);
   }
+}
+
+// Add the report demo without replacing existing classes or stored edits.
+function ensureTestClass(data: AppData): AppData {
+ const classId='class-test-controls'; const taskId='linear-equations-test';
+ if(!data.classes.some(c=>c.id===classId)) data.classes.push({id:classId,name:'Year 8 — Test controls',schoolId:data.school.id,teacherId:data.teacher.id});
+ for(const attempt of testStudents){
+  const id=`test-student-${attempt.id}`;
+  if(!data.students.some(s=>s.id===id))data.students.push({id,name:attempt.name,firstName:attempt.name.split(' ')[0],lastName:attempt.name.split(' ').slice(1).join(' '),classId,mathspaceGroup:'Adventurer',avatarUrl:data.students[(attempt.id-1)%data.students.length].avatarUrl});
+  if(!data.studentActivities.some(a=>a.studentId===id)&&data.studentActivities[0])data.studentActivities.push({...data.studentActivities[0],studentId:id});
+ }
+ if(!data.tasks.some(t=>t.id===taskId))data.tasks.push({id:taskId,title:'Linear equations test',classId,taskType:'test',areaOfStudy:'Algebra',startDate:'2026-09-25T10:00',dueDate:'2026-09-28T15:00',expiryDate:'2026-09-28T15:00',createdAt:'2026-09-25T09:00',questionsCount:15,skillsCount:6,status:'active',testStatus:'live',assignments:[],taskGroups:['Group 1','Group 2'].map((name,i)=>({id:`test-group-${i+1}`,name,studentIds:testStudents.filter(s=>s.group===name).map(s=>`test-student-${s.id}`),startDate:i?'2026-09-28T09:00':'2026-09-25T10:00',dueDate:i?'2026-09-28T15:00':'2026-09-25T11:00',resultsLocked:true,resultsReleaseRule:'on-expiry'}))});
+ if(!data.taskResults.some(r=>r.taskId===taskId))data.taskResults.push({taskId,perStudent:testStudents.map(s=>({studentId:`test-student-${s.id}`,status:s.status==='Completed'?'Completed':s.progress?'In Progress':'Not Started',score:s.status==='Completed'?83:0}))});
+ saveData(data); return data;
 }
