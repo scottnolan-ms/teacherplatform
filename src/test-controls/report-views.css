@@ -58,3 +58,15 @@
 .tc-demo{flex-wrap:wrap;gap:8px}.tc-demo select{border:1px solid #93939c;border-radius:16px;padding:3px 8px;color:#42168a;background:white;font-size:11px}.tc-demo label{display:flex;align-items:center;gap:4px;font-size:11px;white-space:nowrap}
 
 .tr-result{gap:3px}.tr-result-chip-icon{display:inline-block;flex:0 0 16px;width:16px;height:16px;background:currentColor;mask:url('/assets/report-details/882b8.svg') center/contain no-repeat}
+
+/* A quick, eased sheet entrance; retain the portal during the exit. */
+.tr-detail-portal{overflow:hidden}
+.tr-detail-portal .tr-sheet-backdrop{animation:tr-backdrop-enter 260ms ease-in reverse both;overflow:clip}
+.tr-detail-portal .tr-sheet{animation:tr-sheet-enter 260ms cubic-bezier(.4,0,.7,.2) reverse both}
+.tr-detail-portal.tr-sheet-closing .tr-sheet-backdrop{animation:tr-backdrop-exit 260ms ease-in both}
+.tr-detail-portal.tr-sheet-closing .tr-sheet{animation:tr-sheet-exit 260ms cubic-bezier(.4,0,.7,.2) both;pointer-events:none}
+@keyframes tr-sheet-enter{from{transform:translateY(0)}to{transform:translateY(calc(100% + 24px))}}
+@keyframes tr-sheet-exit{from{transform:translateY(0)}to{transform:translateY(calc(100% + 24px))}}
+@keyframes tr-backdrop-enter{from{background-color:rgba(0,0,0,.4)}to{background-color:transparent}}
+@keyframes tr-backdrop-exit{from{background-color:rgba(0,0,0,.4)}to{background-color:transparent}}
+@media(prefers-reduced-motion:reduce){.tr-detail-portal .tr-sheet,.tr-detail-portal .tr-sheet-backdrop{animation-duration:1ms!important}.tr-detail-portal .tr-sheet{transform:none!important}}
