@@ -22,8 +22,8 @@ export const questions = equations.map(([equation,answer,solution,difficulty],i)
 export type Question = typeof questions[number];
 // Deterministic demo responses are derived from existing attempt progress, never stored over it.
 export function response(student:Attempt,q:Question) {
- const answered=Math.floor(student.progress/100*questions.length);
- const inProgress=q.id===answered+1 && student.progress>0 && student.status!=='Completed';
+ const answered=Math.floor((student.markingProgress??student.progress)/100*questions.length);
+ const inProgress=q.id===answered+1 && student.progress>0 && student.status!=='Completed'&&student.reportMode!=='test';
  const n=(student.id*3+q.id*7+student.version)%10;
  const accuracy=student.accuracy??[10,8,6,4,2,0][(student.id-1)%6];
  const outcome:Outcome=q.id>answered?(inProgress?'In progress':'Not started'):n<accuracy?'Correct':n<accuracy+2&&q.marks>1?'Partial':'Incorrect';
@@ -34,7 +34,7 @@ export function studentResult(s:Attempt) {
  const attempted=questions.filter(q=>['Correct','Partial','Incorrect'].includes(response(s,q).outcome));
  const earned=attempted.reduce((n,q)=>n+response(s,q).earned,0);
  const available=attempted.reduce((n,q)=>n+q.marks,0);
- return {earned,available,answered:attempted.length,percent:available?Math.round(100*earned/available):null};
+ return {earned,available,answered:attempted.length,percent:s.markingPending?null:available?Math.round(100*earned/available):null};
 }
 export function questionResult(rows:Attempt[],q:Question) {
  const responses=rows.map(s=>response(s,q));
@@ -44,7 +44,7 @@ export function questionResult(rows:Attempt[],q:Question) {
 export const resultTiers=['100%','80–99%','50–79%','25–49%','0–24%','Not started'];
 export const questionTiers=['80–100%','50–79%','25–49%','0–24%','Not started'];
 export function tierMatches(percent:number|null,tier:string) {
- if(percent===null)return tier==='Not started';
+ if(percent===null)return tier==='Not started'||tier==='Awaiting marking';
  if(tier==='100%')return percent===100;
  const bounds=tier.match(/(\d+)–(\d+)/);return !!bounds&&percent>=Number(bounds[1])&&percent<=Number(bounds[2]);
 }
@@ -59,8 +59,17 @@ export type ScorePreview = 'Current attempt' | ScoreStage;
 export function scorecardResult(s:Attempt, now:number, preview:ScorePreview='Current attempt') {
  const result=studentResult(s);
  const stage:ScoreStage=preview!=='Current attempt'?preview:(s.status==='Completed'||!!s.closedAt||!!s.expires&&now>=new Date(s.expires).getTime())?'Closed':now>=new Date(s.due).getTime()?'After due date':'Before due date';
- const available=stage==='Before due date'?result.available:questions.reduce((n,q)=>n+q.marks,0);
- const percent=available?Math.round(100*result.earned/available):null;
+ const available=stage==='Before due date'&&s.reportMode!=='test'?result.available:questions.reduce((n,q)=>n+q.marks,0);
+ const percent=s.markingPending?null:available?Math.round(100*result.earned/available):null;
  return {...result, available, percent, stage, unattempted:questions.length-result.answered,
   tier:percent===null?'none':percent===100?'perfect':percent>=80?'good':percent>=50?'mid':percent>=25?'low':'poor'};
 }
+
+// Tests expose a marking snapshot, never the live accuracy of unfinished work.
+export function reportAttempt(s:Attempt,now:number,progressive:boolean):Attempt {
+ if(progressive)return {...s,reportMode:'custom',markingPending:false,markingProgress:undefined};
+ const finished=s.status==='Completed'||!!s.closedAt||!!s.expires&&now>=new Date(s.expires).getTime();
+ const due=now>=new Date(s.due).getTime();
+ return {...s,reportMode:'test',markingPending:!finished&&!due,markingProgress:finished?s.progress:due?(s.dueProgress??Math.max(0,s.progress-20)):0};
+}
+export function customDemoRows(rows:Attempt[]):Attempt[]{return rows.map(s=>({...s,mode:'Untimed',status:s.status==='Paused'?'In progress':s.status,pausedAt:undefined}))}

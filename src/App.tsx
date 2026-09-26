@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import PortalNavigation from './components/PortalNavigation';
-import Prototypes from './pages/Prototypes';
+import Prototypes, { ProgressiveResults } from './pages/Prototypes';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 import Dashboard from './pages/Dashboard';
@@ -19,11 +19,13 @@ function AppContent() {
   const [collapsed,setCollapsed]=useState(()=>localStorage.getItem('portal-nav-collapsed')==='true');
   const toggleNav=()=>setCollapsed(value=>{localStorage.setItem('portal-nav-collapsed',String(!value));return !value});
   const isTest = ['/test-controls','/classes/class-test-controls/tasks/linear-equations-test','/tasks/linear-equations-test/report','/tasks/linear-equations-test'].includes(location.pathname);
+  const isCustom=['/classes/class-progressive-results/tasks/linear-equations-custom','/tasks/linear-equations-custom/report','/tasks/linear-equations-custom'].includes(location.pathname);
   return (
     <div className={`portal-shell ${collapsed?'nav-collapsed':''}`}>
       <PortalNavigation collapsed={collapsed} onToggle={toggleNav}/>
-      {isTest?<TestControls />:<main className="main-content">
+      {isTest||isCustom?<TestControls key={isCustom?'custom':'test'} progressive={isCustom}/>:<main className="main-content">
         <Routes>
+          <Route path="/prototypes/progressive-results" element={<ProgressiveResults/>}/>
           <Route path="/prototypes" element={<Prototypes />} />
           <Route path="/skills" element={<Stub page="Skills" />} />
           <Route path="/support" element={<Stub page="Live support" />} />

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import ts from 'typescript';
 async function load(file){const source=ts.transpileModule(fs.readFileSync(new URL(file,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;return import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)}
 const {seed,demoRows,NOW}=await load('./model.ts');
-const {questions,response,studentResult,questionResult,tierMatches,matchesProgress,resultTiers,scorecardResult}=await load('./report-data.ts');
+const {questions,response,studentResult,questionResult,tierMatches,matchesProgress,resultTiers,scorecardResult,reportAttempt,customDemoRows}=await load('./report-data.ts');
 assert.equal(questions.length,15);
 for(const s of seed){const r=studentResult(s);assert.ok(r.earned<=r.available);assert.equal(r.answered,Math.floor(s.progress/100*15));assert.equal(resultTiers.filter(t=>tierMatches(r.percent,t)).length,1);if(!s.progress){assert.equal(r.percent,null);assert.ok(questions.every(q=>response(s,q).outcome==='Not started'))}}
 for(const q of questions){const r=questionResult(seed,q);assert.equal(Object.values(r.counts).reduce((a,b)=>a+b,0),seed.length);assert.equal(r.participation,seed.length-r.counts['Not started']);assert.equal(questionResult([],q).percent,null)}
@@ -43,3 +43,23 @@ assert.ok(expiredResults.every(r=>r.stage==='Closed'&&r.available===24));
 const pausedExpired={...demoRows()[2],expires:new Date(NOW-1).toISOString()};
 assert.equal(scorecardResult(pausedExpired,NOW).stage,'Closed');
 console.log('Expired demo has a spread of result tiers and uses final denominators.');
+
+const live=demoRows()[2];
+const beforeTest=reportAttempt(live,NOW,false);
+assert.equal(beforeTest.markingPending,true);
+assert.equal(scorecardResult(beforeTest,NOW).percent,null);
+const custom=reportAttempt(live,NOW,true);
+assert.ok(scorecardResult(custom,NOW).percent>0);
+const atDue=new Date(live.due).getTime();
+const dueTest=reportAttempt(live,atDue,false);
+assert.equal(dueTest.markingPending,false);
+assert.equal(dueTest.markingProgress,live.dueProgress);
+const extraWork=reportAttempt({...live,progress:100},atDue+1000,false);
+assert.deepEqual(studentResult(extraWork),studentResult(dueTest));
+const finalTest=reportAttempt({...live,progress:100},new Date(live.expires).getTime(),false);
+assert.equal(finalTest.markingProgress,100);
+assert.equal(scorecardResult(finalTest,atDue).available,24);
+assert.equal(reportAttempt({...live,status:'Completed'},NOW,false).markingPending,false);
+assert.ok(questions.every(q=>response(dueTest,q).outcome!=='In progress'));
+assert.ok(customDemoRows(demoRows()).every(s=>s.status!=='Paused'&&s.mode==='Untimed'));
+console.log('Separate test milestones, fixed due snapshot, final marking and custom live results passed.');

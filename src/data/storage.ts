@@ -1,4 +1,5 @@
-import { seed as testStudents } from '../test-controls/model';
+import { scorecardResult } from '../test-controls/report-data';
+import { seed as testStudents, demoRows, NOW } from '../test-controls/model';
 import type { AppData, PersistentGroup, Task, TaskResult, Student } from '../types';
 import { initialData } from './seedData';
 
@@ -137,5 +138,10 @@ function ensureTestClass(data: AppData): AppData {
  }
  if(!data.tasks.some(t=>t.id===taskId))data.tasks.push({id:taskId,title:'Linear equations test',classId,taskType:'test',areaOfStudy:'Algebra',startDate:'2026-09-25T10:00',dueDate:'2026-09-28T15:00',expiryDate:'2026-09-28T15:00',createdAt:'2026-09-25T09:00',questionsCount:15,skillsCount:6,status:'active',testStatus:'live',assignments:[],taskGroups:['Group 1','Group 2'].map((name,i)=>({id:`test-group-${i+1}`,name,studentIds:testStudents.filter(s=>s.group===name).map(s=>`test-student-${s.id}`),startDate:i?'2026-09-28T09:00':'2026-09-25T10:00',dueDate:i?'2026-09-28T15:00':'2026-09-25T11:00',resultsLocked:true,resultsReleaseRule:'on-expiry'}))});
  if(!data.taskResults.some(r=>r.taskId===taskId))data.taskResults.push({taskId,perStudent:testStudents.map(s=>({studentId:`test-student-${s.id}`,status:s.status==='Completed'?'Completed':s.progress?'In Progress':'Not Started',score:s.status==='Completed'?83:0}))});
+ const progressiveId='class-progressive-results';
+ if(!data.classes.some(c=>c.id===progressiveId))data.classes.push({id:progressiveId,name:'Year 8 — Progressive results',schoolId:data.school.id,teacherId:data.teacher.id});
+ for(const attempt of testStudents){const source=data.students.find(s=>s.id===`test-student-${attempt.id}`)!;const id=`progressive-student-${attempt.id}`;if(!data.students.some(s=>s.id===id))data.students.push({...source,id,classId:progressiveId});}
+ if(!data.tasks.some(t=>t.id==='linear-equations-custom')){const source=data.tasks.find(t=>t.id===taskId)!;data.tasks.push({...source,id:'linear-equations-custom',title:'Linear equations custom task',classId:progressiveId,taskType:'custom',testStatus:undefined,taskGroups:source.taskGroups?.map(g=>({...g,id:`progressive-${g.id}`,studentIds:g.studentIds.map(id=>id.replace('test-student','progressive-student')),resultsLocked:false}))});}
+ if(!data.taskResults.some(t=>t.taskId==='linear-equations-custom'))data.taskResults.push({taskId:'linear-equations-custom',perStudent:demoRows().map(s=>({studentId:`progressive-student-${s.id}`,status:s.status==='Completed'?'Completed':s.progress?'In Progress':'Not Started',score:scorecardResult(s,NOW).percent??0}))});
  saveData(data); return data;
 }

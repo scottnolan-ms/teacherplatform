@@ -70,3 +70,7 @@
 @keyframes tr-backdrop-enter{from{background-color:rgba(0,0,0,.4)}to{background-color:transparent}}
 @keyframes tr-backdrop-exit{from{background-color:rgba(0,0,0,.4)}to{background-color:transparent}}
 @media(prefers-reduced-motion:reduce){.tr-detail-portal .tr-sheet,.tr-detail-portal .tr-sheet-backdrop{animation-duration:1ms!important}.tr-detail-portal .tr-sheet{transform:none!important}}
+
+.tc-custom-live{padding:10px 14px}.tc-custom-live h3{margin:0;font-size:13px}.tc-custom-live p{font-size:11px;color:#62616e;margin:5px 0 8px}.tc-custom-live button{margin-right:8px;font-size:11px}
+.tc-app.tr-menu-portal{position:static;background:transparent}.tr-menu-dismiss{position:fixed;inset:0;z-index:220}.tr-row-menu{position:fixed;z-index:221;width:248px;max-height:calc(100vh - 16px);overflow:auto;background:white;border:1px solid #dfdfe5;border-radius:8px;box-shadow:0 8px 20px #32323c40;padding:12px}
+.tr-row-menu header{display:flex;gap:8px;align-items:center;font-size:12px}.tr-row-menu h4{font-size:10px;text-transform:uppercase;color:#5a5a68;font-weight:500;margin:14px 4px 4px}.tc-app .tr-row-menu button,.tc-app .tr-row-menu a{display:flex;align-items:center;gap:8px;width:100%;border:0;border-radius:4px;background:white;color:#6e3ddd;font-size:13px;text-align:left;padding:8px;font-weight:500}.tc-app .tr-row-menu a:hover{background:#eee5ff}.tr-row-menu i{width:24px;height:24px;flex:0 0 24px;background:currentColor;mask-size:contain;mask-repeat:no-repeat;mask-position:center}
