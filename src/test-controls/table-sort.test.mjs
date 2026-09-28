@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import ts from 'typescript';
+const compile=f=>ts.transpileModule(fs.readFileSync(new URL(f,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const url=s=>`data:text/javascript;base64,${Buffer.from(s).toString('base64')}`;
+const {sortAttempts}=await import(url(compile('./table-sort.ts').replace("'./report-data'",JSON.stringify(url(compile('./report-data.ts'))))));
+const {demoRows,NOW}=await import(url(compile('./model.ts')));
+const rows=demoRows();
+assert.equal(sortAttempts(rows,'last','asc',NOW)[0].name,'Amelia Chen');
+assert.equal(sortAttempts(rows,'last','desc',NOW)[0].name,'Lucas Wilson');
+assert.equal(sortAttempts(rows,'first','asc',NOW)[0].name,'Amelia Chen');
+assert.equal(sortAttempts(rows,'first','desc',NOW)[0].name,'Sophia Okonkwo');
+assert.equal(sortAttempts(rows,'progress','asc',NOW)[0].progress,0);
+assert.equal(sortAttempts(rows,'progress','desc',NOW)[0].progress,100);
+const pending={...rows[0],id:99,markingPending:true};
+for(const direction of ['asc','desc'])assert.equal(sortAttempts([...rows,pending],'results',direction,NOW).at(-1).id,99);
+assert.equal(rows[0].name,'Emma Johnson');
+console.log('Name, numeric, missing-results sorting and source order checks passed.');

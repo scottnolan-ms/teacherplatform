@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import ts from 'typescript';
 const source=ts.transpileModule(fs.readFileSync(new URL('./model.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
-const {seed,NOW,applyAction,eligible,demoRows,tickAttempts,attemptPhase}=await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+const {seed,NOW,applyAction,eligible,demoRows,tickAttempts,attemptPhase,effectiveStatus}=await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
 const opts={policy:'automatic',due:'2026-09-29T15:00',start:'2026-09-29T09:00',fresh:false,minutes:60,group:'New sitting'};
 const ids=seed.map(s=>s.id);
 const paused=applyAction(seed,ids,'Pause',opts,NOW);
@@ -14,20 +14,24 @@ assert.equal(reassigned.length,14);assert.deepEqual(reassigned.slice(0,12),seed)
 const restart=applyAction(seed,[1],'Restart',opts,NOW);assert.equal(restart[0].progress,seed[0].progress);assert.equal(restart[0].remaining,3600);
 const fresh=applyAction(seed,[1],'Restart',{...opts,fresh:true},NOW);assert.equal(fresh[0].progress,0);assert.equal(fresh[0].version,2);
 const reschedule=applyAction(seed,[1],'Reschedule',opts,NOW);assert.equal(reschedule[0].status,'Scheduled');assert.equal(reschedule[0].remaining,seed[0].remaining);
-assert.equal(applyAction(seed,[7],'Start now',opts,NOW)[6].status,'In progress');assert.equal(applyAction(seed,[10],'Resume',{...opts,policy:'close'},NOW)[9].status,'Completed');
+assert.equal(applyAction(seed,[7],'Start now',opts,NOW)[6].status,'In progress');assert.equal(applyAction(seed,[10],'Resume',{...opts,policy:'close'},NOW)[9].status,'Closed');
 console.log('Passed all control-state checks.');
 
 const mixed=demoRows();
 assert.deepEqual([...new Set(mixed.map(s=>s.group))],['Group 1','Group 2']);
-assert.ok(mixed.some(s=>attemptPhase(s,NOW)==='Expired'));
+assert.equal(effectiveStatus({...mixed[2],status:'Paused',expires:new Date(NOW-1).toISOString()},NOW),'Closed');
 assert.ok(mixed.some(s=>attemptPhase(s,NOW)==='Closed'));
 assert.ok(mixed.some(s=>attemptPhase(s,NOW)==='Before due date'));
 assert.ok(mixed.some(s=>attemptPhase(s,NOW)==='After due date'));
-for(const scenario of ['After expiry','Closed'])assert.ok(demoRows(scenario).every(s=>s.status==='Completed'));
+for(const scenario of ['After expiry','Closed'])assert.ok(demoRows(scenario).every(s=>s.status==='Closed'));
 const active={...mixed[3],status:'In progress',mode:'Scheduled',remaining:1};
-assert.equal(tickAttempts([active],NOW)[0].status,'Completed');
+assert.equal(tickAttempts([active],NOW)[0].status,'Closed');
 assert.equal(tickAttempts([{...active,status:'Paused'}],NOW)[0].remaining,1);
 const newAttempt=applyAction(mixed,[1],'Reassign',{...opts,fresh:true},NOW).at(-1);
 assert.equal(newAttempt.closedAt,undefined);
 assert.ok(new Date(newAttempt.expires)>new Date(newAttempt.due));
 console.log('Lifecycle fixtures, expiry, clock and reassignment checks passed.');
+
+assert.equal(effectiveStatus({...seed[4],expires:new Date(NOW+1000).toISOString()},NOW),'Completed');
+assert.equal(tickAttempts([{...active,status:'Paused',expires:new Date(NOW-1).toISOString()}],NOW)[0].status,'Closed');
+assert.equal(eligible({...seed[0],status:'Closed'},'Pause'),false);

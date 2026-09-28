@@ -23,7 +23,7 @@ export type Question = typeof questions[number];
 // Deterministic demo responses are derived from existing attempt progress, never stored over it.
 export function response(student:Attempt,q:Question) {
  const answered=Math.floor((student.markingProgress??student.progress)/100*questions.length);
- const inProgress=q.id===answered+1 && student.progress>0 && student.status!=='Completed'&&student.reportMode!=='test';
+ const inProgress=q.id===answered+1 && student.progress>0 && student.status!=='Completed'&&student.status!=='Closed'&&student.reportMode!=='test';
  const n=(student.id*3+q.id*7+student.version)%10;
  const accuracy=student.accuracy??[10,8,6,4,2,0][(student.id-1)%6];
  const outcome:Outcome=q.id>answered?(inProgress?'In progress':'Not started'):n<accuracy?'Correct':n<accuracy+2&&q.marks>1?'Partial':'Incorrect';
@@ -58,7 +58,7 @@ export type ScoreStage = 'Before due date' | 'After due date' | 'Closed';
 export type ScorePreview = 'Current attempt' | ScoreStage;
 export function scorecardResult(s:Attempt, now:number, preview:ScorePreview='Current attempt') {
  const result=studentResult(s);
- const stage:ScoreStage=preview!=='Current attempt'?preview:(s.status==='Completed'||!!s.closedAt||!!s.expires&&now>=new Date(s.expires).getTime())?'Closed':now>=new Date(s.due).getTime()?'After due date':'Before due date';
+ const stage:ScoreStage=preview!=='Current attempt'?preview:(s.status==='Completed'||s.status==='Closed'||!!s.closedAt||!!s.expires&&now>=new Date(s.expires).getTime())?'Closed':now>=new Date(s.due).getTime()?'After due date':'Before due date';
  const available=stage==='Before due date'&&s.reportMode!=='test'?result.available:questions.reduce((n,q)=>n+q.marks,0);
  const percent=s.markingPending?null:available?Math.round(100*result.earned/available):null;
  return {...result, available, percent, stage, unattempted:questions.length-result.answered,
@@ -68,7 +68,7 @@ export function scorecardResult(s:Attempt, now:number, preview:ScorePreview='Cur
 // Tests expose a marking snapshot, never the live accuracy of unfinished work.
 export function reportAttempt(s:Attempt,now:number,progressive:boolean):Attempt {
  if(progressive)return {...s,reportMode:'custom',markingPending:false,markingProgress:undefined};
- const finished=s.status==='Completed'||!!s.closedAt||!!s.expires&&now>=new Date(s.expires).getTime();
+ const finished=s.status==='Completed'||s.status==='Closed'||!!s.closedAt||!!s.expires&&now>=new Date(s.expires).getTime();
  const due=now>=new Date(s.due).getTime();
  return {...s,reportMode:'test',markingPending:!finished&&!due,markingProgress:finished?s.progress:due?(s.dueProgress??Math.max(0,s.progress-20)):0};
 }

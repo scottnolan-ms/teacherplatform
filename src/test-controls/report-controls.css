@@ -76,3 +76,101 @@
 .tc-status-menu label span {margin-left:auto}
 .tc-status-menu footer {display:flex;justify-content:space-between;border-top:1px solid #dfdfe5;padding-top:6px}
 .tc-app .tc-report {overflow:visible}
+
+/* DS2 comfortable radio selection and neutral, low-emphasis close control. */
+.tc-app .tc-impact {background:transparent;border:0;border-radius:0;padding:0;color:#5a5a68}
+.tc-app .tc-impact p {color:#5a5a68;margin-top:4px;line-height:1.5}
+.tc-app .tc-choice {align-items:center;gap:8px;min-height:56px;padding:11px 12px;border:1px solid #93939c;border-radius:4px;background:transparent}
+.tc-app .tc-choice>div {flex:1;min-width:0}
+.tc-app .tc-choice strong {font-size:16px;font-weight:600;line-height:20px;color:#32323c}
+.tc-app .tc-choice p {font-size:12px;line-height:16px;color:#5a5a68;margin:2px 0 0}
+.tc-app .tc-choice:has(input:checked) {background:#f0e8ff;border-color:#6e3ddd;box-shadow:inset 0 0 0 1px #6e3ddd}
+.tc-app .tc-choice:has(input:checked) :is(strong,p) {color:#42168a}
+.tc-app .tc-choice:hover {background:#f6f2fc}
+.tc-app .tc-choice input[type=radio] {appearance:none;width:20px;height:20px;margin:2px;border:2px solid #6e3ddd;border-radius:50%;background:transparent}
+.tc-app .tc-choice input[type=radio]:checked {border:5px solid #42168a}
+.tc-default-chip {background:#ddcfff;color:#42168a;font-size:12px;line-height:18px;padding:2px 6px;border-radius:4px}
+.tc-choice-hint {font-size:12px;color:#5a5a68}
+.tc-app .tc-modal-heading .tc-close-button {width:32px;height:32px;min-width:32px;background:transparent;color:#19191f;border:0;padding:0}
+.tc-app .tc-modal-heading .tc-close-button:hover {background:rgba(62,62,76,.1)}
+.tc-close-button i {display:block;width:20px;height:20px;background:currentColor;mask:url('/assets/report-controls/close.svg') center/contain no-repeat}
+.tc-ux-notes {font-size:12px;color:#5a5a68;margin-top:16px}
+.tc-ux-notes summary {cursor:pointer;display:list-item;width:fit-content;padding:5px 10px;border-radius:1000px;color:#5a5a68;list-style-position:inside}
+.tc-ux-notes summary:hover {background:rgba(62,62,76,.1)}
+.tc-ux-notes summary:focus-visible {outline:2px solid #42168a;outline-offset:2px}
+.tc-ux-notes>div {background:#f4f4f6;border-radius:4px;padding:12px;margin-top:8px}
+.tc-ux-notes ul {padding-left:18px;margin-bottom:0}
+.tc-ux-notes li+li {margin-top:6px}
+
+/* Shared report typography and group chips, aligned with the task report library. */
+.tc-app .tc-group-name {gap:4px;padding:3px 6px;min-height:28px;font-size:14px;line-height:20px;font-weight:600}
+.tc-app .tc-group-name.tone-lavender {background:#d999ff;color:#2e003e}
+.tc-app .tc-group-name.tone-sunshine {background:#ffe066;color:#4d3d00}
+.tc-app .tc-group-name.tone-crimson {background:#ff8080;color:#4d0000}
+.tc-chip-group-icon {display:block;flex:0 0 16px;width:16px;height:16px;background:currentColor;mask:url('/assets/report-controls/group.svg') center/contain no-repeat}
+.tc-app.tc-app table th {background:white;color:#42168a;font:600 14px/18px 'Proxima Nova',Arial,sans-serif;padding:10px 12px;border-color:#dfdfe5;height:40px}
+.tc-app.tc-app table td {font-size:14px;line-height:20px;border-color:#dfdfe5}
+.tc-app.tc-app table :is(.tc-student strong,.tr-student-link,.tr-result,.tc-status,.tr-question-breakdown>span) {font-size:14px;line-height:20px}
+.tc-app.tc-app table :is(small,.tr-phase) {font-size:12px;line-height:16px;color:#5a5a68}
+.tc-app.tc-app table th small {font-weight:400;white-space:normal;max-width:220px}
+.tc-app.tc-app .tc-report-tabs {gap:0}
+.tc-app.tc-app .tc-report-tabs button {display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:8px 12px;border:0;border-bottom:4px solid transparent;border-radius:0;background:transparent;color:#32323c;font:600 16px/22px 'Proxima Nova',Arial,sans-serif}
+.tc-app.tc-app .tc-report-tabs button.active {color:#6e3ddd;border-bottom-color:#6e3ddd}
+.tc-app.tc-app .tc-report-tabs button:hover {background:#f0e8ff}
+.tc-report-tab-icon {display:block;width:24px;height:24px;flex:0 0 24px;background:currentColor;mask-position:center;mask-size:contain;mask-repeat:no-repeat}
+.tc-app.tc-app .tc-group-tabs .tc-tab-count {font-size:12px;opacity:1}
+.tc-app.tc-app .tr-question-breakdown .zero {color:#93939c}
+.tc-app.tc-app .rp-sort {padding:0;border:0;background:transparent;color:#42168a;font:inherit;display:flex;align-items:center;gap:6px;min-height:28px}
+.tc-app.tc-app .rp-sort:hover {background:#f0e8ff}
+.rp-sort span {color:#8972b0}
+.rp-name-sort {display:flex;flex-direction:column;gap:4px}
+.tc-app .rp-name-sort select {font-size:12px;color:#42168a;background:white;border:0;max-width:160px}
+.tc-app .tc-status.closed {background:#c6f7ed;color:#005048}
+.rp-closed-icon {display:inline-block;width:16px;height:16px;background:currentColor;mask:url('/assets/report-controls/closed.svg') center/contain no-repeat}
+.tc-app .rp-progress-options {justify-content:flex-start;margin:4px 0 8px;flex-wrap:wrap}
+.rp-progress {position:relative;width:140px;min-height:24px;outline-offset:3px;cursor:help;color:#0047b3}
+.rp-progress:focus-visible {outline:2px solid #6e3ddd;border-radius:12px}
+.rp-progress-label {display:flex;align-items:center;gap:4px;font-size:12px;line-height:16px;white-space:nowrap}
+.rp-progress-label span {flex:1}
+.rp-progress-label i {width:16px;height:16px;flex:0 0 16px;mask-position:center;mask-size:contain;mask-repeat:no-repeat;background:currentColor}
+.rp-progress-label img {width:16px;height:16px;object-fit:contain}
+.rp-progress-track {display:flex;overflow:hidden;border-radius:1000px;background:#ebecec}
+.rp-before {background:#00bfff}.rp-late {background:#ff6b00}.rp-unfinished {background:#ebecec}
+.rp-v01 .rp-progress-track {position:absolute;inset:0;height:24px}
+.rp-v01 .rp-progress-label {position:relative;z-index:1;height:24px;padding:2px 4px}
+.rp-v02 {color:#003080}
+.rp-v02 .rp-progress-track {height:6px;margin-top:2px;gap:1px}
+.rp-v02 .rp-before {background:#007aff}
+.rp-v02.is-late .rp-before,.rp-v02.is-closed .rp-before {background:#00c367}
+.rp-v02 .rp-unfinished {background:#003080}
+.rp-v02.is-closed {color:#00532c}
+.rp-v02.is-closed .rp-unfinished,.rp-v02.not-attempted .rp-unfinished {background:#b92435}
+.rp-v02.not-attempted {color:#b92435}
+.rp-v02.is-zero:not(.not-attempted) {color:#19191f}
+.rp-v02.is-zero:not(.not-attempted) .rp-unfinished {background:#19191f}
+.rp-progress-tooltip {position:fixed;z-index:1000;pointer-events:none;width:240px;background:#32323c;color:white;border-radius:8px;padding:12px;font:12px/16px 'Proxima Nova',Arial,sans-serif;box-shadow:0 3px 12px #0003;white-space:normal}
+.rp-progress-tooltip strong {font-size:16px;line-height:20px}
+.rp-progress-tooltip p {display:flex;align-items:center;gap:4px;margin:6px 0}
+.rp-progress-tooltip i {display:inline-block;width:20px;height:20px;background:white;mask:url('/assets/report-controls/subproblem.svg') center/contain no-repeat}
+.rp-progress-tooltip>div {display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #93939c}
+.rp-progress-tooltip small {font-size:12px;color:#dfdfe5}
+
+/* Full-page reports: only horizontal table overflow is contained. */
+.tc-app.tc-app .tc-main {height:auto;min-height:100vh;max-width:none;display:block;overflow:visible;padding-right:0;padding-bottom:24px}
+.tc-app.tc-app .tc-report {display:block;min-height:0;border:0;border-radius:0;box-shadow:none;overflow:visible;margin-left:-24px;width:calc(100% + 24px)}
+.tc-app.tc-app :is(.tc-table-scroll,.tr-scroll) {height:auto;max-height:none;min-height:0;flex:none;overflow-x:auto;overflow-y:visible}
+.tc-app.tc-app .tr-report-content {display:block}
+.tc-app.tc-app .tc-main>.tc-group-tabs+.tc-report {border:0;border-radius:0}
+.tc-app.tc-app .tc-main>:is(.tc-header,.tc-dashboard,.tc-overview,.tc-insights,.rp-prototype-toolbar) {margin-right:24px}
+.tc-app.tc-app .rp-name-sort {flex-direction:row;align-items:center;gap:8px;white-space:nowrap}
+.tc-app.tc-app .rp-name-sort select {color:#5a5a68;font-weight:400;padding:4px 22px 4px 6px;border:0;border-radius:4px;background:transparent url('/assets/report-controls/arrow-down.svg') right 2px center/16px no-repeat;appearance:none;max-width:none}
+.tc-app.tc-app .rp-name-sort select:hover {background-color:#f4f5f5}
+.rp-sort-icon {display:block;width:16px;height:16px;flex:0 0 16px;background:currentColor;mask-position:center;mask-size:contain;mask-repeat:no-repeat}
+.tc-app .rp-prototype-toolbar {display:flex;align-items:center;gap:12px;padding:6px 10px;margin:0 0 12px;border:1px solid #dfdfe5;border-radius:8px;background:#f4f5f5;white-space:nowrap;overflow-x:auto;font-size:12px;color:#5a5a68}
+.rp-prototype-toolbar>span {font-size:10px;letter-spacing:1px}
+.rp-prototype-toolbar label {display:flex;align-items:center;gap:5px}
+.tc-app .rp-prototype-toolbar select {border:1px solid #93939c;border-radius:1000px;padding:4px 7px;color:#32323c;background:white;font-size:12px;height:28px}
+.tc-app .rp-prototype-toolbar button {font-size:12px;border:0;background:transparent;padding:4px 6px;color:#5a5a68}
+.tc-app .rp-prototype-toolbar button:hover {background:#dfdfe5}
+.tc-app td small:empty {display:none}
+@media(max-width:760px){.tc-app.tc-app .tc-report {margin-left:0;width:100%}.tc-app.tc-app .tc-main>:is(.tc-header,.tc-dashboard,.tc-overview,.tc-insights,.rp-prototype-toolbar){margin-right:12px}}
