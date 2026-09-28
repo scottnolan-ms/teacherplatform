@@ -174,3 +174,10 @@
 .tc-app .rp-prototype-toolbar button:hover {background:#dfdfe5}
 .tc-app td small:empty {display:none}
 @media(max-width:760px){.tc-app.tc-app .tc-report {margin-left:0;width:100%}.tc-app.tc-app .tc-main>:is(.tc-header,.tc-dashboard,.tc-overview,.tc-insights,.rp-prototype-toolbar){margin-right:12px}}
+
+/* Describe the result denominator once, in the sortable column headers. */
+.tc-app .rp-heading-label{display:flex;flex-direction:column;align-items:flex-start;gap:1px;font-size:14px;line-height:18px}
+.tc-app th .rp-heading-label small{display:block;margin:0;color:inherit;font-size:12px;font-weight:500;line-height:12px}
+.tc-app .rp-result-state{display:inline-flex;align-items:center;white-space:nowrap;border-radius:4px;background:#bde6ff;color:#004f85;padding:4px 6px;font-size:12px;line-height:16px;margin-left:auto}
+
+.tc-app th .rp-heading-label{white-space:nowrap;text-align:left;color:#42168a}.tc-app.tc-app table th .rp-heading-label small{white-space:nowrap;color:#42168a;text-align:left}.tc-app .tc-report-title>.rp-result-state{margin-right:8px}
