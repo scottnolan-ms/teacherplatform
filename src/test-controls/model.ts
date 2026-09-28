@@ -44,7 +44,7 @@ export function demoRows(scenario:DemoScenario='Mixed states'):Attempt[] {
   const iso=(hours:number)=>new Date(NOW+hours*3600000).toISOString();
   return {...s,progress:progress[i],dueProgress:Math.max(0,progress[i]-20),accuracy:accuracy[i],timeSpent:progress[i]?12+i*3:0,
    status:end?'Closed':done?'Completed':i===6?'Scheduled':i===2||i===9?'Paused':'In progress',
-   start:iso(i===6&&!end?1:-48),due:iso(state==='Before due date'?4:-24),expires:iso(state==='Before due date'?28:state==='After due date'?24:-2),
+   start:iso(i===6&&!end?2:i<6?-48:-72),due:iso(state==='Before due date'?(i<6?4:28):(i<6?-24:-12)),expires:iso(state==='Before due date'?(i<6?28:52):state==='After due date'?(i<6?24:36):(i<6?-2:-1)),
    closedAt:state==='Closed'||done?iso(-3):undefined,remaining:end||done?0:(45-i)*60,pausedAt:i===2||i===9?NOW-12*60000:undefined};
  });
 }
@@ -61,4 +61,10 @@ export function tickAttempts(rows:Attempt[],now:number):Attempt[] {
   const remaining=Math.max(0,s.remaining-1);
   return {...s,remaining,status:remaining===0?'Closed':s.status,closedAt:remaining===0?new Date(now).toISOString():s.closedAt};
  });
+}
+
+// Upgrade only untouched demo schedules; keep teacher rescheduling and reassigned groups.
+export function migrateDemoSchedules(rows:Attempt[],scenario:DemoScenario):Attempt[]{
+ const fresh=demoRows(scenario);const iso=(hours:number)=>new Date(NOW+hours*3600000).toISOString();
+ return rows.map(s=>{const fixture=fresh.find(f=>f.id===s.id&&f.group===s.group);return fixture&&[iso(-48),iso(1)].includes(s.start)&&[iso(4),iso(-24)].includes(s.due)&&[iso(28),iso(24),iso(-2)].includes(s.expires||'')?{...s,start:fixture.start,due:fixture.due,expires:fixture.expires}:s});
 }

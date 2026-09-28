@@ -28,7 +28,10 @@ export function response(student:Attempt,q:Question) {
  const accuracy=student.accuracy??[10,8,6,4,2,0][(student.id-1)%6];
  const outcome:Outcome=q.id>answered?(inProgress?'In progress':'Not started'):n<accuracy?'Correct':n<accuracy+2&&q.marks>1?'Partial':'Incorrect';
  const earned=outcome==='Correct'?q.marks:outcome==='Partial'?1:0;
- return {outcome,earned,answer:outcome==='Not started'||outcome==='In progress'?null:outcome==='Correct'?q.answer:q.answer+(student.id%3+1)};
+ const subproblems=q.marks+1;
+ const completedSubproblems=inProgress?Math.max(1,Math.min(subproblems-1,Math.floor(((student.progress/100*questions.length)%1)*subproblems))):q.id<=answered?subproblems:0;
+ const retried=student.reportMode==='custom'&&q.id<=answered+1&&student.progress>0&&(student.id+q.id)%5===0;
+ return {outcome,earned,subproblems,completedSubproblems,retried,answer:outcome==='Not started'||outcome==='In progress'?null:outcome==='Correct'?q.answer:q.answer+(student.id%3+1)};
 }
 export function studentResult(s:Attempt) {
  const attempted=questions.filter(q=>['Correct','Partial','Incorrect'].includes(response(s,q).outcome));

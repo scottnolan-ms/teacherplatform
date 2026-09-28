@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import ts from 'typescript';
 async function load(file){const source=ts.transpileModule(fs.readFileSync(new URL(file,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;return import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)}
-const {seed,demoRows,NOW}=await load('./model.ts');
+const {seed,demoRows,NOW,migrateDemoSchedules}=await load('./model.ts');
 const {questions,response,studentResult,questionResult,tierMatches,matchesProgress,resultTiers,scorecardResult,reportAttempt,customDemoRows}=await load('./report-data.ts');
 assert.equal(questions.length,15);
 for(const s of seed){const r=studentResult(s);assert.ok(r.earned<=r.available);assert.equal(r.answered,Math.floor(s.progress/100*15));assert.equal(resultTiers.filter(t=>tierMatches(r.percent,t)).length,1);if(!s.progress){assert.equal(r.percent,null);assert.ok(questions.every(q=>response(s,q).outcome==='Not started'))}}
@@ -63,3 +63,24 @@ assert.equal(reportAttempt({...live,status:'Completed'},NOW,false).markingPendin
 assert.ok(questions.every(q=>response(dueTest,q).outcome!=='In progress'));
 assert.ok(customDemoRows(demoRows()).every(s=>s.status!=='Paused'&&s.mode==='Untimed'));
 console.log('Separate test milestones, fixed due snapshot, final marking and custom live results passed.');
+
+for(const scenario of ['Before due date','After due date','After expiry','Closed']){
+ const rows=demoRows(scenario),a=rows[0],b=rows[7];
+ assert.notEqual(a.start,b.start);assert.notEqual(a.due,b.due);
+ assert.ok(Date.parse(a.start)<Date.parse(a.due));assert.ok(Date.parse(b.start)<Date.parse(b.due));
+}
+const customProgressDemo=customDemoRows(demoRows('Before due date')).map(s=>reportAttempt(s,NOW,true));
+const cells=customProgressDemo.flatMap(s=>questions.map(q=>response(s,q)));
+assert.ok(cells.some(r=>r.retried));
+assert.ok(cells.some(r=>r.outcome==='In progress'&&r.completedSubproblems>0&&r.completedSubproblems<r.subproblems));
+assert.ok(cells.every(r=>r.completedSubproblems>=0&&r.completedSubproblems<=r.subproblems));
+assert.ok(demoRows().map(s=>reportAttempt(s,NOW,false)).every(s=>questions.every(q=>!response(s,q).retried)));
+console.log('Distinct group schedules, partial cell progress and custom-only retries passed.');
+
+const oldSchedules=demoRows('Before due date').map(s=>({...s,start:new Date(NOW-48*3600000).toISOString(),due:new Date(NOW+4*3600000).toISOString(),expires:new Date(NOW+28*3600000).toISOString()}));
+const migrated=migrateDemoSchedules(oldSchedules,'Before due date');
+assert.notEqual(migrated[0].due,migrated[7].due);
+assert.deepEqual(migrateDemoSchedules(migrated,'Before due date'),migrated);
+const rescheduled={...oldSchedules[7],due:'2026-10-10T12:00:00Z'};
+assert.deepEqual(migrateDemoSchedules([rescheduled],'Before due date')[0],rescheduled);
+console.log('Demo schedule migration is idempotent and preserves teacher changes.');

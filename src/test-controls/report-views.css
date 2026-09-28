@@ -74,3 +74,32 @@
 .tc-custom-live{padding:10px 14px}.tc-custom-live h3{margin:0;font-size:13px}.tc-custom-live p{font-size:11px;color:#62616e;margin:5px 0 8px}.tc-custom-live button{margin-right:8px;font-size:11px}
 .tc-app.tr-menu-portal{position:static;background:transparent}.tr-menu-dismiss{position:fixed;inset:0;z-index:220}.tr-row-menu{position:fixed;z-index:221;width:248px;max-height:calc(100vh - 16px);overflow:auto;background:white;border:1px solid #dfdfe5;border-radius:8px;box-shadow:0 8px 20px #32323c40;padding:12px}
 .tr-row-menu header{display:flex;gap:8px;align-items:center;font-size:12px}.tr-row-menu h4{font-size:10px;text-transform:uppercase;color:#5a5a68;font-weight:500;margin:14px 4px 4px}.tc-app .tr-row-menu button,.tc-app .tr-row-menu a{display:flex;align-items:center;gap:8px;width:100%;border:0;border-radius:4px;background:white;color:#6e3ddd;font-size:13px;text-align:left;padding:8px;font-weight:500}.tc-app .tr-row-menu a:hover{background:#eee5ff}.tr-row-menu i{width:24px;height:24px;flex:0 0 24px;background:currentColor;mask-size:contain;mask-repeat:no-repeat;mask-position:center}
+/* Compact question outcomes, with room for rich question content. */
+.tc-app .tr-questions{min-width:1140px;width:100%;table-layout:auto}
+.tc-app .tr-questions :is(th,td):first-child{min-width:360px;width:38%;max-width:560px}
+.tc-app .tr-questions .tr-question-link{width:100%;white-space:normal;text-align:left;align-items:flex-start}
+.tc-app .tr-questions .tr-question-link>span:last-child{white-space:normal;overflow-wrap:anywhere}
+.tc-app .tr-questions :is(th,td){padding:8px}
+.tc-app .tr-questions :is(th,td):nth-child(n+4):nth-child(-n+7){min-width:48px;width:48px;padding:4px}
+.tc-app .tr-questions :is(th,td):last-child{min-width:128px;width:128px}
+.tr-breakdown-header-icon{display:inline-block;flex:0 0 20px;width:20px;height:20px;background:currentColor;mask-position:center;mask-size:contain;mask-repeat:no-repeat}
+.tr-breakdown-cell .tr-breakdown-header-icon{width:16px;height:16px;flex-basis:16px}
+.tc-app .tr-questions .rp-sort{gap:2px;padding:2px}
+.tr-question-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.tc-app .tr-question-actions button{display:flex;align-items:center;gap:4px;padding:4px;border-radius:100px}
+.tc-app .tr-question-actions .tr-add-question{width:32px;height:32px;justify-content:center;border:2px solid #6e3ddd}
+.tr-try-icon,.tr-add-question i{display:block;width:20px;height:20px;background:currentColor;mask:url('/assets/report-refinements/try.svg') center/contain no-repeat}
+.tr-add-question i{mask-image:url('/assets/report-refinements/add.svg')}
+.tr-try-panel{display:flex;align-items:center;flex-wrap:wrap;gap:12px;background:#f0e8ff;padding:16px}
+.tr-try-panel input{width:90px;padding:6px;border:1px solid #93939c;border-radius:4px}
+.tc-app .tr-result.tr-ongoing{background:white;color:#00609c;border:1px dashed #00609c}
+.tc-app .tr-result.tr-ongoing.tr-perfect{background:#c6f7ed;color:#005048;border:0}
+.tc-app .tr-result.tr-ongoing:not(.tr-perfect) .tr-result-chip-icon{background:#00609c;mask-image:url('/assets/report-refinements/result-ongoing.svg')}
+.tc-app .tr-marks td.tr-mark.in-progress{background:white;color:#00609c}
+.tc-app .tr-marks td.tr-mark button{position:relative;overflow:hidden;min-width:78px}
+.tr-cell-progress{position:absolute;inset:0 auto 0 0;background:#bde6ff;pointer-events:none}
+.tr-cell-content{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:4px}
+.tr-cell-progress-label{font-size:14px;font-weight:600;white-space:nowrap}
+.tr-retry-marker{position:absolute;right:3px;top:3px;width:16px;height:16px;border-radius:50%;background:white;z-index:2}
+.tr-retry-marker:after{content:'';position:absolute;inset:1px;background:#00609c;mask:url('/assets/report-refinements/retry.svg') center/contain no-repeat}
+.tc-app .tr-mark.not-started{background:white}
