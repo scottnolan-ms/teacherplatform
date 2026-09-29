@@ -4,6 +4,8 @@ import Prototypes, { ProgressiveResults } from './pages/Prototypes';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 import Dashboard from './dashboard/Dashboard';
+import DashboardReportPage from './dashboard/DashboardReportPage';
+import ClassTaskPage from './dashboard/ClassTaskPage';
 import TodayDashboard from './pages/TodayDashboard';
 import { DashboardPrototypes } from './pages/Prototypes';
 import ClassesList from './pages/ClassesList';
@@ -25,7 +27,7 @@ function AppContent() {
   return (
     <div className={`portal-shell ${collapsed?'nav-collapsed':''}`}>
       <PortalNavigation collapsed={collapsed} onToggle={toggleNav}/>
-      {isTest||isCustom?<TestControls key={isCustom?'custom':'test'} progressive={isCustom}/>:<main className="main-content">
+      {/^\/classes\/[^/]+\/tasks\/[^/]+\/report$/.test(location.pathname)?<Routes><Route path="/classes/:classId/tasks/:taskId/report" element={<DashboardReportPage/>}/></Routes>:isTest||isCustom?<TestControls key={isCustom?'custom':'test'} progressive={isCustom}/>:<main className="main-content">
         <Routes>
           <Route path="/prototypes/progressive-results" element={<ProgressiveResults/>}/>
           <Route path="/prototypes/dashboards" element={<DashboardPrototypes/>}/>
@@ -37,6 +39,8 @@ function AppContent() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/classes" element={<ClassesList />} />
+          <Route path="/classes/:classId/tasks/:taskId/report" element={<DashboardReportPage/>}/>
+          <Route path="/classes/:classId/tasks" element={<ClassTaskPage/>}/>
           <Route path="/classes/:classId" element={<ClassDetail />} />
           <Route path="/classes/:classId/tasks/:taskId" element={<ClassDetail />} />
           <Route path="/students" element={<StudentsList />} />
