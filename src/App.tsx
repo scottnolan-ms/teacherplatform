@@ -3,7 +3,9 @@ import PortalNavigation from './components/PortalNavigation';
 import Prototypes, { ProgressiveResults } from './pages/Prototypes';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './dashboard/Dashboard';
+import TodayDashboard from './pages/TodayDashboard';
+import { DashboardPrototypes } from './pages/Prototypes';
 import ClassesList from './pages/ClassesList';
 import ClassDetail from './pages/ClassDetail';
 import StudentsList from './pages/StudentsList';
@@ -26,6 +28,8 @@ function AppContent() {
       {isTest||isCustom?<TestControls key={isCustom?'custom':'test'} progressive={isCustom}/>:<main className="main-content">
         <Routes>
           <Route path="/prototypes/progressive-results" element={<ProgressiveResults/>}/>
+          <Route path="/prototypes/dashboards" element={<DashboardPrototypes/>}/>
+          <Route path="/prototypes/dashboards/today" element={<TodayDashboard/>}/>
           <Route path="/prototypes" element={<Prototypes />} />
           <Route path="/skills" element={<Stub page="Skills" />} />
           <Route path="/support" element={<Stub page="Live support" />} />
