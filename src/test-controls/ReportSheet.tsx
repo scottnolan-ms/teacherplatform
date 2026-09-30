@@ -1,0 +1,14 @@
+import {useState,useEffect,useRef,useCallback} from 'react';
+import type {ReactNode} from 'react';
+import {createPortal} from 'react-dom';
+import questionTabIcon from '../assets/Icons/Question-Multiple-Angle.svg';
+export function ReportSheet({title,view,onViewChange,onClose,workbook=false,children}:{title:string;view:string;onViewChange:(view:'Scorecards'|'Questions')=>void;onClose:()=>void;workbook?:boolean;children:ReactNode}){
+ const [closing,setClosing]=useState(false);
+ const requestClose=useCallback(()=>setClosing(true),[]);
+ // Keep the dialog mounted (and focus trapped) until the exit motion finishes.
+ useEffect(()=>{if(!closing)return;const timeout=window.setTimeout(onClose,300);return()=>window.clearTimeout(timeout)},[closing,onClose]);
+ const ref=useRef<HTMLDivElement>(null);
+ useEffect(()=>{const previous=document.activeElement as HTMLElement;ref.current?.focus({preventScroll:true});const key=(e:KeyboardEvent)=>{if(e.key==='Escape')requestClose();if(e.key==='Tab'){const elements=ref.current?.querySelectorAll<HTMLElement>('button:not(:disabled),summary,input,select,[tabindex="0"]');if(!elements?.length)return;const first=elements[0],last=elements[elements.length-1];if(e.shiftKey&&(document.activeElement===first||document.activeElement===ref.current)){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}};document.addEventListener('keydown',key);return()=>{document.removeEventListener('keydown',key);previous?.focus({preventScroll:true})}},[requestClose]);
+ return createPortal(<div className={`tc-app tr-detail-portal ${closing?'tr-sheet-closing':''}`}><div className="tr-sheet-backdrop" onClick={requestClose}><div className="tr-sheet" onAnimationEnd={e=>{if(closing&&e.target===e.currentTarget&&e.animationName==='tr-sheet-exit')onClose();if(!closing&&e.target===e.currentTarget&&workbook){const main=ref.current?.querySelector<HTMLElement>('.tr-sheet-main');const section=main?.querySelector<HTMLElement>('.tr-section-bar');if(main&&section)main.scrollTop=section.offsetTop-main.offsetTop}}} role="dialog" aria-modal="true" aria-label="Task report details" tabIndex={-1} ref={ref} onClick={e=>e.stopPropagation()}><header className="tr-sheet-header"><div className="tc-report-tabs" role="tablist" aria-label="Detail views">{(['Scorecards','Questions'] as const).map(t=><button key={t} role="tab" aria-selected={view===t} className={view===t?'active':''} onClick={()=>{onViewChange(t)}}>{t==='Scorecards'?<i className="tr-scorecard-icon" aria-hidden="true"/>:<img className="tr-question-tab-icon" src={questionTabIcon} alt=""/>}{t}</button>)}</div><span>{title} · Demo responses</span><button className="tc-icon-button" aria-label="Close report details" onClick={requestClose}>×</button></header><div className={`tr-sheet-body ${view==='Questions'?'tr-question-sheet':''}`}>{children}
+ </div></div></div></div>,document.body)
+}

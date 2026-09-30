@@ -2,7 +2,7 @@ import { Children, createContext, useContext, useEffect, useRef, useState } from
 import type { ReactNode } from 'react';
 import { StudentAvatar } from './StudentAvatar';
 import './table-display.css';
-const labels: Record<string,string> = {status:'Status',remaining:'Remaining',controls:'Test controls',progress:'Progress',results:'Result',marks:'Mark',questions:'Question breakdown',time:'Time spent',group:'Task group',due:'Due date',expires:'Expiry date',participation:'Participation',average:'Average result',correct:'Correct',partial:'Partial',incorrect:'Incorrect',unanswered:'Not started',difficulty:'Difficulty',subproblems:'Subproblems',available:'Available marks'};
+const labels: Record<string,string> = {status:'Status',remaining:'Remaining',controls:'Test controls',progress:'Progress',mastery:'Subtopic mastery',answered:'Questions answered',results:'Result',marks:'Mark',questions:'Question breakdown',time:'Time spent',group:'Task group',due:'Due date',expires:'Expiry date',participation:'Participation',average:'Average result',correct:'Correct',partial:'Partial',incorrect:'Incorrect',unanswered:'Not started',difficulty:'Difficulty',subproblems:'Subproblems',available:'Available marks',grade:'Grade',skill:'Skill'};
 const formats = ['First name Last name','Last name, First name','First initial. Last name','First name Last initial.'];
 type Settings = {order:string[];hidden:string[];avatars:boolean;format:number};
 const defaults = ():Settings => ({order:Object.keys(labels),hidden:[],avatars:true,format:0});

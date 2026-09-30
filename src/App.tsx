@@ -17,6 +17,7 @@ import TaskDetail from './pages/TaskDetail';
 import TaskReport from './pages/TaskReport';
 import Stub from './pages/Stub';
 import TestControls from './test-controls/TestControls';
+import AdaptiveResults from './test-controls/AdaptiveResults';
 
 function AppContent() {
   const location = useLocation();
@@ -24,10 +25,11 @@ function AppContent() {
   const toggleNav=()=>setCollapsed(value=>{localStorage.setItem('portal-nav-collapsed',String(!value));return !value});
   const isTest = ['/test-controls','/classes/class-test-controls/tasks/linear-equations-test','/tasks/linear-equations-test/report','/tasks/linear-equations-test'].includes(location.pathname);
   const isCustom=['/classes/class-progressive-results/tasks/linear-equations-custom','/tasks/linear-equations-custom/report','/tasks/linear-equations-custom'].includes(location.pathname);
+  const isAdaptive=['/classes/class-progressive-results/tasks/linear-equations-adaptive','/tasks/linear-equations-adaptive/report','/tasks/linear-equations-adaptive'].includes(location.pathname);
   return (
     <div className={`portal-shell ${collapsed?'nav-collapsed':''}`}>
       <PortalNavigation collapsed={collapsed} onToggle={toggleNav}/>
-      {/^\/classes\/[^/]+\/tasks\/[^/]+\/report$/.test(location.pathname)?<Routes><Route path="/classes/:classId/tasks/:taskId/report" element={<DashboardReportPage/>}/></Routes>:isTest||isCustom?<TestControls key={isCustom?'custom':'test'} progressive={isCustom}/>:<main className="main-content">
+      {/^\/classes\/[^/]+\/tasks\/[^/]+\/report$/.test(location.pathname)?<Routes><Route path="/classes/:classId/tasks/:taskId/report" element={<DashboardReportPage/>}/></Routes>:isAdaptive?<AdaptiveResults/>:isTest||isCustom?<TestControls key={isCustom?'custom':'test'} progressive={isCustom}/>:<main className="main-content">
         <Routes>
           <Route path="/prototypes/progressive-results" element={<ProgressiveResults/>}/>
           <Route path="/prototypes/dashboards" element={<DashboardPrototypes/>}/>
