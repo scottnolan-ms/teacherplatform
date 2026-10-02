@@ -218,6 +218,9 @@ export interface StudentTaskDetail {
 
   // Readiness/Confidence
   readiness: ReadinessLevel;
+  priorReadiness?: ReadinessLevel;
+  latestReadiness?: ReadinessLevel;
+  evidence?: { priorCount:number; priorProficient:number; total:number; snapshot:Record<string,MasteryLevel>; latest:Record<string,MasteryLevel> };
   confidence: ConfidenceLevel;
 
   // Results
@@ -262,6 +265,8 @@ export interface QuestionDetail {
 }
 
 export interface SkillMasteryData {
+  skillType?: 'prerequisite' | 'topic-standard';
+  yearLevel?: number;
   skillId: string;
   skillName: string;
   skillCode?: string;

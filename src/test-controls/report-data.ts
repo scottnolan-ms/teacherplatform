@@ -19,7 +19,7 @@ const equations = [
  ['3(x + 4) − 2(x − 1) = 20',6,'Expand and collect terms to get x + 14 = 20.','Hard'],
 ] as const;
 export const questions = equations.map(([equation,answer,solution,difficulty],i)=>({id:i+1,equation,answer,solution,difficulty,marks:i<6?1:2,skill:['One-step equations','Inverse operations','Two-step equations','Brackets','Variables on both sides','Fractional equations'][Math.floor(i*6/15)]}));
-export type Question = typeof questions[number];
+export type Question = {id:number;equation:string;answer:number;solution:string;difficulty:string;marks:number;skill:string};
 // Deterministic demo responses are derived from existing attempt progress, never stored over it.
 export function response(student:Attempt,q:Question) {
  const answered=Math.floor((student.markingProgress??student.progress)/100*questions.length);

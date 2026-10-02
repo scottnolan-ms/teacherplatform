@@ -76,9 +76,9 @@ export default function StudentsTab({ students, taskGroups, selectedStudentIds, 
 
   const getConfidenceLabel = (readiness: string) => {
     switch (readiness) {
-      case 'ready': return { label: 'Soaring', icon: <SoaringIcon /> };
-      case 'partially-ready': return { label: 'Flying', icon: <FlyingIcon /> };
-      case 'not-ready': return { label: 'Hatchling', icon: <HatchlingIcon /> };
+      case 'ready': return { label: 'Ready', icon: <SoaringIcon /> };
+      case 'partially-ready': return { label: 'Partially', icon: <FlyingIcon /> };
+      case 'not-ready': return { label: 'Not ready', icon: <HatchlingIcon /> };
       default: return { label: readiness, icon: null };
     }
   };

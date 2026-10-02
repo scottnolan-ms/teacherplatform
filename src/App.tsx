@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import PortalNavigation from './components/PortalNavigation';
-import Prototypes, { ProgressiveResults } from './pages/Prototypes';
+import Prototypes, { ProgressiveResults, TopicReadinessPrototypes } from './pages/Prototypes';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 import Dashboard from './dashboard/Dashboard';
 import DashboardReportPage from './dashboard/DashboardReportPage';
-import ClassTaskPage from './dashboard/ClassTaskPage';
 import TodayDashboard from './pages/TodayDashboard';
 import { DashboardPrototypes } from './pages/Prototypes';
-import ClassesList from './pages/ClassesList';
+import ClassWorkspace from './pages/ClassWorkspace';
 import ClassDetail from './pages/ClassDetail';
 import StudentsList from './pages/StudentsList';
 import StudentDetail from './pages/StudentDetail';
@@ -31,6 +30,7 @@ function AppContent() {
       <PortalNavigation collapsed={collapsed} onToggle={toggleNav}/>
       {/^\/classes\/[^/]+\/tasks\/[^/]+\/report$/.test(location.pathname)?<Routes><Route path="/classes/:classId/tasks/:taskId/report" element={<DashboardReportPage/>}/></Routes>:isAdaptive?<AdaptiveResults/>:isTest||isCustom?<TestControls key={isCustom?'custom':'test'} progressive={isCustom}/>:<main className="main-content">
         <Routes>
+          <Route path="/prototypes/topic-readiness-check-in" element={<TopicReadinessPrototypes/>}/>
           <Route path="/prototypes/progressive-results" element={<ProgressiveResults/>}/>
           <Route path="/prototypes/dashboards" element={<DashboardPrototypes/>}/>
           <Route path="/prototypes/dashboards/today" element={<TodayDashboard/>}/>
@@ -40,10 +40,10 @@ function AppContent() {
           <Route path="/test-controls" element={<TestControls />} />
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/classes" element={<ClassesList />} />
+          <Route path="/classes" element={<ClassWorkspace />} />
           <Route path="/classes/:classId/tasks/:taskId/report" element={<DashboardReportPage/>}/>
-          <Route path="/classes/:classId/tasks" element={<ClassTaskPage/>}/>
-          <Route path="/classes/:classId" element={<ClassDetail />} />
+          <Route path="/classes/:classId/tasks" element={<ClassWorkspace tasks/>}/>
+          <Route path="/classes/:classId" element={<ClassWorkspace />} />
           <Route path="/classes/:classId/tasks/:taskId" element={<ClassDetail />} />
           <Route path="/students" element={<StudentsList />} />
           <Route path="/students/:studentId" element={<StudentDetail />} />

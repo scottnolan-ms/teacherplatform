@@ -1,0 +1,10 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="arrow_drop_down">
+<mask id="mask0_0_173" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="20" height="20">
+<rect id="Bounding box" width="20" height="20" fill="#D9D9D9"/>
+</mask>
+<g mask="url(#mask0_0_173)">
+<path id="Bigger triangle" d="M5.70748 8.3254C5.42948 8.00106 5.65993 7.5 6.08711 7.5L13.9129 7.5C14.3401 7.5 14.5705 8.00106 14.2925 8.3254L10.3796 12.8904C10.1801 13.1232 9.81992 13.1232 9.62037 12.8904L5.70748 8.3254Z" fill="#32323C"/>
+</g>
+</g>
+</svg>

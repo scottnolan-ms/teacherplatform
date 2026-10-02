@@ -1,0 +1,16 @@
+import {useState} from 'react';
+import type {SkillReference,StudentTaskDetail} from '../../types';
+import {RecommendationCard,RecommendationSheet,RecommendationHeading} from '../../test-controls/Recommendations';
+import type {Recommendation} from '../../test-controls/Recommendations';
+import {StudentAvatar} from '../../test-controls/StudentAvatar';
+
+export default function ReadinessRecommendations({title,students,skills}:{title:string;students:StudentTaskDetail[];skills:SkillReference[]}){
+ const [active,setActive]=useState<string|null>(null),[selected,setSelected]=useState(students.map(s=>s.studentId)),[selectedSkills,setSelectedSkills]=useState(skills.map(s=>s.id)),[notice,setNotice]=useState('');
+ const items:Recommendation[]=[...(students.length?[{id:'support',title:`Support ${students.length} at-risk students`,description:'Prerequisite evidence shows these students are not yet ready, even when their task results are high.',action:'Review students',icon:'students',tone:'amber'}]:[]),...(skills.length?[{id:'quick-wins',title:`${skills.length} quick-win ${skills.length===1?'skill':'skills'}`,description:'A little more practice could bring these skills to proficiency.',action:'Review skills',icon:'progress',tone:'green'}]:[])];
+ if(!items.length)return null;
+ const open=(id:string)=>{setNotice('');setActive(id)};
+ return <div className="readiness-recommendations"><RecommendationHeading count={items.length} onViewAll={()=>open(items[0].id)}/><RecommendationCard item={items[0]} onClick={()=>open(items[0].id)}/>{active&&<RecommendationSheet initial={active} items={items} taskTitle={title} rows={[]} pausedRows={[]} struggling={[]} released={false} policy="manual" releaseTime="" now={Date.now()} onClose={()=>setActive(null)} onSave={()=>{}} onReview={()=>{}} onQuestion={()=>{}} onViewSupport={()=>{}} onControls={()=>{}} renderContent={id=>{
+ const support=id==='support',ids=support?selected:selectedSkills,all=support?students.map(s=>s.studentId):skills.map(s=>s.id),setIds=support?setSelected:setSelectedSkills;
+ return <><p>{items.find(i=>i.id===id)?.description}</p><label className="rc-choice"><input type="checkbox" checked={all.length>0&&ids.length===all.length} onChange={e=>{setIds(e.target.checked?all:[]);setNotice('')}}/>Select all ({all.length})</label><div className="rc-student-list">{(support?students.map(s=>({id:s.studentId,name:s.studentName,avatar:s.avatarUrl,detail:`${s.resultPercentage}% result · ${s.questionsAnswered}/${s.totalQuestions} answered`})):skills.map(s=>({id:s.id,name:s.name,avatar:'',detail:s.code??''}))).map(row=><div key={row.id}><input type="checkbox" aria-label={`Select ${row.name}`} checked={ids.includes(row.id)} onChange={e=>{setIds(e.target.checked?[...ids,row.id]:ids.filter(v=>v!==row.id));setNotice('')}}/>{support&&<StudentAvatar name={row.name} src={row.avatar}/>}<strong>{row.name}</strong><span>{row.detail}</span></div>)}</div><footer>{(support?['Assign revision','Create group','Send reminder']:['Assign targeted practice']).map(action=><button key={action} className="rc-primary" disabled={!ids.length} onClick={()=>setNotice(`${action} preview prepared for ${ids.length} selected ${support?'students':'skills'}. No assignment or message has been sent.`)}>{action}</button>)}</footer>{notice&&<p role="status" className="rc-notice">{notice}</p>}</>;
+ }}/>}</div>;
+}

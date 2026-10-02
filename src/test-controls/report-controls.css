@@ -181,3 +181,7 @@
 .tc-app .rp-result-state{display:inline-flex;align-items:center;white-space:nowrap;border-radius:4px;background:#bde6ff;color:#004f85;padding:4px 6px;font-size:12px;line-height:16px;margin-left:auto}
 
 .tc-app th .rp-heading-label{white-space:nowrap;text-align:left;color:#42168a}.tc-app.tc-app table th .rp-heading-label small{white-space:nowrap;color:#42168a;text-align:left}.tc-app .tc-report-title>.rp-result-state{margin-right:8px}
+
+.rp-prototype-toolbar .rp-prototype-back{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;font-size:20px;text-decoration:none;border-radius:50%;color:#5a5a68}.rp-prototype-back:hover{background:#ddcfff}
+
+.dashboard-prototype-switch .rp-prototype-back{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;font-size:20px;text-decoration:none;color:#5a5a68;border-radius:50%}

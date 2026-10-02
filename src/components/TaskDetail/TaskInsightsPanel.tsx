@@ -1,3 +1,4 @@
+import type {ReactNode} from 'react';
 import type { TaskInsights, ReadinessLevel, SkillFilterBucket, SkillReference, TaskType } from '../../types';
 import Tooltip from '../Tooltip';
 
@@ -33,6 +34,7 @@ const MasteryIconMastered = () => (
 );
 
 interface TaskInsightsPanelProps {
+  recommendations?: ReactNode;
   insights: TaskInsights;
   taskType: TaskType;
   readinessFilters: ReadinessLevel[];
@@ -47,6 +49,7 @@ interface TaskInsightsPanelProps {
 
 export default function TaskInsightsPanel({
   insights,
+  recommendations,
   taskType,
   readinessFilters,
   onReadinessFilterChange,
@@ -68,7 +71,7 @@ export default function TaskInsightsPanel({
   const partialPercent = readinessBreakdown.total > 0
     ? Math.round((readinessBreakdown.partiallyReady / readinessBreakdown.total) * 100)
     : 0;
-  const notReadyPercent = 100 - readyPercent - partialPercent;
+  const notReadyPercent = readinessBreakdown.total > 0 ? Math.round(readinessBreakdown.notReady / readinessBreakdown.total * 100) : 0;
 
   // Render skill chips with truncation
   const renderSkillChips = (skills: SkillReference[], maxVisible: number = 2) => {
@@ -175,7 +178,7 @@ export default function TaskInsightsPanel({
                     }}
                   />
                   <span className="legend-icon"><SoaringIcon /></span>
-                  <span className="legend-text">Soaring</span>
+                  <span className="legend-text">Ready</span>
                   <span className="legend-count">{readinessBreakdown.ready} ({readyPercent}%)</span>
                 </label>
                 <label
@@ -193,7 +196,7 @@ export default function TaskInsightsPanel({
                     }}
                   />
                   <span className="legend-icon"><FlyingIcon /></span>
-                  <span className="legend-text">Flying</span>
+                  <span className="legend-text">Partially</span>
                   <span className="legend-count">{readinessBreakdown.partiallyReady} ({partialPercent}%)</span>
                 </label>
                 <label
@@ -211,7 +214,7 @@ export default function TaskInsightsPanel({
                     }}
                   />
                   <span className="legend-icon"><HatchlingIcon /></span>
-                  <span className="legend-text">Hatchling</span>
+                  <span className="legend-text">Not ready</span>
                   <span className="legend-count">{readinessBreakdown.notReady} ({notReadyPercent}%)</span>
                 </label>
               </div>
@@ -295,7 +298,7 @@ export default function TaskInsightsPanel({
             </div>
           </div>
 
-          {(atRiskStudents.length > 0 || quickWinSkills.length > 0) && (
+          {recommendations ?? ((atRiskStudents.length > 0 || quickWinSkills.length > 0) && (
             <>
               <div className="insights-divider"></div>
               <div className="insights-section insights-section-narrow insights-alerts-stacked">
@@ -307,7 +310,7 @@ export default function TaskInsightsPanel({
                         <span className="alert-text">
                           <strong>{atRiskStudents.length}</strong> at-risk students
                         </span>
-                        <Tooltip content="Students who are Hatchling (not ready) and scored below 50%">
+                        <Tooltip content="Students who are not ready and scored below 50%">
                           <span className="alert-info-icon">?</span>
                         </Tooltip>
                       </div>
@@ -358,7 +361,7 @@ export default function TaskInsightsPanel({
                 )}
               </div>
             </>
-          )}
+          ))}
         </>
       ) : (
         // Simpler completion-focused insights for other task types

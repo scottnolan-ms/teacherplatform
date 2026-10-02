@@ -1,0 +1,48 @@
+Deferred by user on 2 October 2026. Do not implement until requested.
+
+## 4. Adaptive-task tooltip and scorecard framework
+
+Reuse the evidence structure, but describe subtopic mastery rather than topic readiness.
+
+Tooltip:
+**{Student} is {mastery level} in {subtopic}. {Level explanation} {Relationship between prior evidence and task work}**
+
+Select the relationship independently of the mastery level:
+- Established before task, no answers: “Previous work had already established this level before the task began. No answers from this task have been added yet.”
+- Unchanged: “The estimated level is unchanged from the start of this task.”
+- Increased: “The estimate has risen from {previous level} to {level} since the task began.”
+- Decreased: “The estimate has moved from {previous level} to {level} as new evidence became available.”
+- Other work contributed: “The estimate includes work in this task and other relevant Mathspace activity.”
+- No starting estimate: “There isn’t a reliable starting estimate to compare with. This level reflects the available Mathspace evidence.”
+
+Do not attribute growth solely to the task unless supported.
+
+Scorecard tiles:
+
+**Prior evidence**
+- Headline: {level} before task / Limited prior evidence / No prior evidence.
+- Body: “Before this task began, {Student} was {level} in this subtopic, based on previous Mathspace work.”
+- Use an appropriate alternative sentence when no reliable starting level exists.
+
+**Task progress**
+- Title: Task progress.
+- Headline: “{counted questions} / {questions needed} questions counted”.
+- Breakdown: “{count} before due date · {count} during extension”.
+- Progress bar and percentage.
+- Only show extension breakdown when applicable.
+- Use Not started only when the student genuinely has not started.
+
+For adaptive tasks, questions answered without skips count towards completion regardless of whether the answer is correct, partial or incorrect. Do not equate counted questions with correct answers.
+
+**Subtopic mastery**
+- Headline: {level}.
+- Body: Personalised level explanation, followed by change since the task began when available.
+
+Concrete examples for “Linear equations”, with 18 counted questions required:
+
+| Student | Prior evidence | Task progress | Subtopic mastery and tooltip |
+|---|---|---|---|
+| Liam | **Proficient before task** — Previous Mathspace work had already established strong understanding of this subtopic. | **Not started · 0/18 counted · 0%** | **Proficient** — Liam has shown strong understanding across most questions in this subtopic. Previous work had already established this level before the task began. No answers from this task have been added yet. |
+| Noah | **Emerging before task** — Previous work showed some established understanding, with substantial practice still needed. | **12/18 counted · 67%** — 9 before due date · 3 during extension. | **Familiar** — Noah has established a working understanding of this subtopic, with further practice needed for consistency. The estimate has risen from Emerging to Familiar since the task began. |
+| Emma | **Proficient before task** — Previous work had established strong understanding across most questions. | **18/18 counted · 100%** — 12 before due date · 6 during extension. | **Mastered** — Emma’s understanding is well established across this subtopic. The estimate has risen from Proficient to Mastered since the task began. |
+

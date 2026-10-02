@@ -1,0 +1,3 @@
+import { Link } from 'react-router-dom';
+export function PrototypeBack({to='/prototypes'}:{to?:string}) {return <Link className="rp-prototype-back" to={to} aria-label="Back to prototypes" title="Back to prototypes">←</Link>}
+export function OrganiseStudents({value,onChange}:{value:string;onChange:(value:string)=>void}) {return <select aria-label="Organise students" value={value} onChange={e=>onChange(e.target.value)}><option value="" disabled>Organise students</option><option value="first-asc">First name A–Z</option><option value="first-desc">First name Z–A</option><option value="last-asc">Last name A–Z</option><option value="last-desc">Last name Z–A</option></select>}

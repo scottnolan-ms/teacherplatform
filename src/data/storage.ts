@@ -1,3 +1,4 @@
+import {adaptiveRows,adaptiveDates} from '../test-controls/adaptive-data';
 import { scorecardResult } from '../test-controls/report-data';
 import { seed as testStudents, demoRows, NOW } from '../test-controls/model';
 import type { AppData, PersistentGroup, Task, TaskResult, Student } from '../types';
@@ -143,5 +144,7 @@ function ensureTestClass(data: AppData): AppData {
  for(const attempt of testStudents){const source=data.students.find(s=>s.id===`test-student-${attempt.id}`)!;const id=`progressive-student-${attempt.id}`;if(!data.students.some(s=>s.id===id))data.students.push({...source,id,classId:progressiveId});}
  if(!data.tasks.some(t=>t.id==='linear-equations-custom')){const source=data.tasks.find(t=>t.id===taskId)!;data.tasks.push({...source,id:'linear-equations-custom',title:'Linear equations custom task',classId:progressiveId,taskType:'custom',testStatus:undefined,taskGroups:source.taskGroups?.map(g=>({...g,id:`progressive-${g.id}`,studentIds:g.studentIds.map(id=>id.replace('test-student','progressive-student')),resultsLocked:false}))});}
  if(!data.taskResults.some(t=>t.taskId==='linear-equations-custom'))data.taskResults.push({taskId:'linear-equations-custom',perStudent:demoRows().map(s=>({studentId:`progressive-student-${s.id}`,status:s.status==='Completed'?'Completed':s.progress?'In Progress':'Not Started',score:scorecardResult(s,NOW).percent??0}))});
+ for(const attempt of adaptiveRows('Before due date')){if(!data.students.some(s=>s.classId===progressiveId&&s.name===attempt.name)){const id=`progressive-adaptive-${attempt.id}`;data.students.push({id,name:attempt.name,firstName:attempt.name.split(' ')[0],lastName:attempt.name.split(' ').slice(1).join(' '),classId:progressiveId,mathspaceGroup:'Adventurer',avatarUrl:data.students[0].avatarUrl});}}
+ if(!data.tasks.some(t=>t.id==='linear-equations-adaptive'))data.tasks.push({id:'linear-equations-adaptive',title:'Linear equations adaptive task',classId:progressiveId,taskType:'adaptive',areaOfStudy:'Algebra',startDate:adaptiveDates.start,dueDate:adaptiveDates.due,expiryDate:adaptiveDates.expiry,createdAt:adaptiveDates.start,questionsCount:12,skillsCount:6,status:'active',assignments:[]});
  saveData(data); return data;
 }

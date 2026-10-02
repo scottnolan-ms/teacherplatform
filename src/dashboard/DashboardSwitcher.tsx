@@ -1,2 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-export default function DashboardSwitcher(){const location=useLocation(),navigate=useNavigate();return <div className="dashboard-prototype-switch"><Link to="/prototypes/dashboards">Dashboard prototypes</Link><label>View <select aria-label="Dashboard prototype" value={location.pathname.includes('/today')?'today':'classes'} onChange={e=>navigate(e.target.value==='today'?'/prototypes/dashboards/today':'/dashboard')}><option value="classes">My classes · Default</option><option value="today">Today · Exploration</option></select></label></div>}
+import {PrototypeBack} from '../test-controls/PrototypeNavigation';
+import '../test-controls/report-controls.css';
+import { useLocation, useNavigate } from 'react-router-dom';
+export default function DashboardSwitcher(){const location=useLocation(),navigate=useNavigate();return <div className="dashboard-prototype-switch"><PrototypeBack to="/prototypes/dashboards"/><label>View <select aria-label="Dashboard prototype" value={location.pathname.includes('/today')?'today':'classes'} onChange={e=>navigate(e.target.value==='today'?'/prototypes/dashboards/today':'/dashboard')}><option value="classes">My classes · Default</option><option value="today">Today · Exploration</option></select></label></div>}

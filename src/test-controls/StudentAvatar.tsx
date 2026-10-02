@@ -12,7 +12,7 @@ import corgi from '../assets/Avatars/Avatar-Pet-Dog-Corgi.png';
 import tiger from '../assets/Avatars/Avatar-Animal-Tiger.png';
 const avatars=[glasses,dog,pink,rock,green,dino,bunny,astronaut,giraffe,basketball,corgi,tiger];
 const names=['Emma Johnson','Liam Martinez','Sophia Okonkwo','Noah Okafor','Olivia Petrov','Davis Mason','Amelia Chen','Lucas Wilson','Isla Patel','Ethan Nguyen','Mia Thompson','Oliver Lee'];
-export function StudentAvatar({name,large=false}:{name:string;large?:boolean}) {
+export function StudentAvatar({name,large=false,src}:{name:string;large?:boolean;src?:string}) {
  const index=names.indexOf(name);
- return <img className={`tr-avatar${large?' tr-avatar-large':''}`} src={avatars[index<0?0:index]} alt=""/>;
+ return <img className={`tr-avatar${large?' tr-avatar-large':''}`} src={src||avatars[index<0?Array.from(name).reduce((sum,c)=>sum+c.charCodeAt(0),0)%avatars.length:index]} alt=""/>;
 }
