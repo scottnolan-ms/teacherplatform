@@ -1,15 +1,15 @@
-import {ReportIconButton} from './ReportIconButton';
-import { createPortal } from 'react-dom';
-import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import type { Action, Attempt } from './model';
-import { StudentAvatar } from './StudentAvatar';
+import type {Action,Attempt} from './model';
+import {StudentActionsMenu} from './StudentActionsMenu';
+import type {StudentActionItem} from './StudentActionsMenu';
 export function StudentRowMenu({student,avatarUrl,progressive,onScorecard,onWorkbook,onControls,onAction,reportingOnly=false}:{avatarUrl?:string;reportingOnly?:boolean;student:Attempt;progressive:boolean;onScorecard:()=>void;onWorkbook:()=>void;onControls:()=>void;onAction:(a:Action)=>void}){
- const [position,setPosition]=useState<{top:number;left:number}|null>(null);const trigger=useRef<HTMLButtonElement>(null);const menu=useRef<HTMLDivElement>(null);
- useEffect(()=>{if(!position)return;menu.current?.querySelector<HTMLButtonElement>('button')?.focus({preventScroll:true});const close=(e:KeyboardEvent)=>{if(e.key==='Escape'){setPosition(null);trigger.current?.focus({preventScroll:true})}if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const items=Array.from(menu.current?.querySelectorAll<HTMLElement>('button:not(:disabled),a')??[]);const i=items.indexOf(document.activeElement as HTMLElement);items[(i+(e.key==='ArrowDown'?1:items.length-1))%items.length]?.focus()} };document.addEventListener('keydown',close);return()=>document.removeEventListener('keydown',close)},[position]);
- const act=(fn:()=>void)=>{setPosition(null);trigger.current?.focus({preventScroll:true});fn()};
- const icon=(name:string)=><i aria-hidden="true" style={{maskImage:`url(/assets/report-details/${name}.svg)`}}/>;
- const personId=student.name.replace(/ /g,''); // Find the original demo student even after reassignment.
- const names=['EmmaJohnson','LiamMartinez','SophiaOkonkwo','NoahOkafor','OliviaPetrov','DavisMason','AmeliaChen','LucasWilson','IslaPatel','EthanNguyen','MiaThompson','OliverLee'];
- return <><ReportIconButton icon="more" ref={trigger} label={`More actions for ${student.name}`} aria-expanded={!!position} aria-haspopup="dialog" onClick={()=>{const rect=trigger.current!.getBoundingClientRect();setPosition(position?null:{left:Math.max(8,Math.min(rect.right-248,window.innerWidth-256)),top:Math.max(8,Math.min(rect.bottom+4,window.innerHeight-390))})}}/>{position&&createPortal(<div className="tc-app tr-menu-portal"><div className="tr-menu-dismiss" onClick={()=>{setPosition(null);trigger.current?.focus({preventScroll:true})}}/><div className="tr-row-menu" ref={menu} role="dialog" aria-label={`Actions for ${student.name}`} style={position}><header><StudentAvatar name={student.name} src={avatarUrl}/><strong>{student.name}</strong></header><h4>Reporting</h4><button onClick={()=>act(onScorecard)}>{icon('30327')}Scorecard</button><button onClick={()=>act(onWorkbook)}>{icon('7a08a')}Student workbook</button>{!reportingOnly&&<><h4>Actions</h4>{!progressive&&<button onClick={()=>act(onControls)}>Test controls</button>}<button onClick={()=>act(()=>onAction('Reassign'))}>{icon('ce252')}Reassign</button><button disabled={student.status==='Completed'} onClick={()=>act(()=>onAction('Reschedule'))}>Reschedule</button><h4>Student</h4><Link to={`/students/${progressive?'progressive':'test'}-student-${names.indexOf(personId)+1}`} onClick={()=>setPosition(null)}>{icon('60406')}Student details &amp; insights</Link></>}</div></div>,document.body)}</>;
+ const icon=(id:string)=>`/assets/report-details/${id}.svg`;
+ const actions:StudentActionItem[]=[{section:'Reporting',label:'Scorecard',icon:icon('30327'),onClick:onScorecard},{section:'Reporting',label:'Student workbook',icon:icon('7a08a'),onClick:onWorkbook}];
+ if(!reportingOnly){
+  if(!progressive)actions.push({section:'Actions',label:'Test controls',onClick:onControls});
+  actions.push({section:'Actions',label:'Reassign',icon:icon('ce252'),onClick:()=>onAction('Reassign')},{section:'Actions',label:'Reschedule',disabled:student.status==='Completed',onClick:()=>onAction('Reschedule')});
+  const names=['EmmaJohnson','LiamMartinez','SophiaOkonkwo','NoahOkafor','OliviaPetrov','DavisMason','AmeliaChen','LucasWilson','IslaPatel','EthanNguyen','MiaThompson','OliverLee'];
+  const index=names.indexOf(student.name.replace(/ /g,''));
+  if(index>=0)actions.push({section:'Student',label:'Student details & insights',icon:icon('60406'),href:`/students/${progressive?'progressive':'test'}-student-${index+1}`});
+ }
+ return <StudentActionsMenu name={student.name} avatarUrl={avatarUrl} actions={actions}/>;
 }

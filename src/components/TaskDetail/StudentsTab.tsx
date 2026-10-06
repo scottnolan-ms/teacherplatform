@@ -1,3 +1,4 @@
+import {ReportIconButton} from '../../test-controls/ReportIconButton';
 import { useState, useEffect } from 'react';
 import type { StudentTaskDetail, TaskType, TaskGroup } from '../../types';
 import Tooltip from '../Tooltip';
@@ -233,12 +234,7 @@ export default function StudentsTab({ students, taskGroups, selectedStudentIds, 
                       Reassign
                     </button>
                     <div className="more-menu-container">
-                      <button
-                        className="more-btn"
-                        onClick={() => setOpenMenuId(openMenuId === student.studentId ? null : student.studentId)}
-                      >
-                        ⋮
-                      </button>
+                      <ReportIconButton icon="more" label={`More actions for ${student.firstName} ${student.lastName}`} onClick={() => setOpenMenuId(openMenuId === student.studentId ? null : student.studentId)}/>
                       {openMenuId === student.studentId && (
                         <StudentActionMenu
                           studentName={`${student.firstName} ${student.lastName}`}
@@ -262,12 +258,7 @@ export default function StudentsTab({ students, taskGroups, selectedStudentIds, 
                       </div>
                     </div>
                     <div className="more-menu-container">
-                      <button
-                        className="more-btn"
-                        onClick={() => setOpenMenuId(openMenuId === student.studentId ? null : student.studentId)}
-                      >
-                        ⋮
-                      </button>
+                      <ReportIconButton icon="more" label={`More actions for ${student.firstName} ${student.lastName}`} onClick={() => setOpenMenuId(openMenuId === student.studentId ? null : student.studentId)}/>
                       {openMenuId === student.studentId && (
                         <StudentActionMenu
                           studentName={`${student.firstName} ${student.lastName}`}

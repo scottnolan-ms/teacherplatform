@@ -32,14 +32,14 @@ export function applyAction(rows:Attempt[],ids:number[],action:Action,opts:Optio
  });return [...changed,...extra];
 }
 
-export const demoScenarios = ['Mixed states','Before due date','After due date','After expiry','Closed'] as const;
+export const demoScenarios = ['Mixed states','Before due date','After due date','Closed'] as const;
 export type DemoScenario = typeof demoScenarios[number];
-export function demoRows(scenario:DemoScenario='Mixed states'):Attempt[] {
+export function demoRows(scenario:DemoScenario|'After expiry'='Mixed states'):Attempt[] {
  const progress=[100,100,87,73,100,40,0,93,67,80,100,53];
  const accuracy=[10,9,8,7,5,2,10,9,6,4,10,3];
  return seed.map((s,i)=>{
-  const state=scenario==='Mixed states'?(['Closed','Closed','Before due date','After due date','After expiry','After expiry','Before due date','Before due date','After due date','After due date','Closed','After expiry'] as const)[i]:scenario;
-  const end=state==='Closed'||state==='After expiry';
+  const state=scenario==='After expiry'?'Closed':scenario==='Mixed states'?(['Closed','Closed','Before due date','After due date','Closed','Closed','Before due date','Before due date','After due date','After due date','Closed','Closed'] as const)[i]:scenario;
+  const end=state==='Closed';
   const done=state==='Closed'||(!end&&progress[i]===100);
   const iso=(hours:number)=>new Date(NOW+hours*3600000).toISOString();
   return {...s,progress:progress[i],dueProgress:Math.max(0,progress[i]-20),accuracy:accuracy[i],timeSpent:progress[i]?12+i*3:0,

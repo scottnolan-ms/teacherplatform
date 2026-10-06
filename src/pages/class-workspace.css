@@ -15,3 +15,14 @@
 .cw-activity-table{table-layout:fixed;width:100%}.cw-activity-table td{overflow:hidden;text-overflow:ellipsis}.cw-activity-table td button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cw-textbook{padding:24px}.cw-textbook .textbook-progress-tab{width:100%}
 
 .cw-more-classes{margin:12px;border:0;background:transparent;color:#6e3ddd;cursor:pointer;text-align:left;font-size:12px}.insights-panel .readiness-recommendations{align-self:center}
+/* One header appearance for class pages and dashboard sheets. */
+:is(.cw-workspace,.class-sheet-shared) .cw-heading{background:#fff;gap:12px;flex-wrap:wrap}
+:is(.cw-workspace,.class-sheet-shared) .cw-heading>div{flex:1;min-width:180px}
+:is(.cw-workspace,.class-sheet-shared) .cw-tabs button{border:0!important;border-bottom:4px solid transparent!important;border-radius:0!important;box-shadow:none;background:#fff;color:#32323c;font:14px/20px 'Proxima Nova',sans-serif;padding:12px 8px 8px;min-height:48px}
+:is(.cw-workspace,.class-sheet-shared) .cw-tabs button[aria-current=page]{border-bottom-color:#6e3ddd!important;color:#6e3ddd}
+:is(.cw-workspace,.class-sheet-shared) .cw-tabs .dash-icon{width:20px;height:20px;flex:0 0 20px}
+:is(.cw-workspace,.class-sheet-shared) .cw-metadata-chip{background:#fff}
+.class-sheet-shared .cw-heading .cw-full-page{display:inline-flex;align-items:center;justify-content:center;border:1px solid #6e3ddd;border-radius:999px;color:#6e3ddd;text-decoration:none;padding:4px 12px;height:32px;box-sizing:border-box;white-space:nowrap;font:14px/20px 'Proxima Nova',sans-serif}
+.class-sheet-shared .cw-heading .dash-close{margin-left:0;border-radius:50%;border:0;flex:0 0 32px}
+.class-sheet-shared .ca-table-scroll{max-height:calc(100dvh - 275px)}
+.cw-workspace .cw-content,:is(.cw-workspace,.class-sheet-shared) :is(.cw-tabs,.cw-quick){background:#fff}
