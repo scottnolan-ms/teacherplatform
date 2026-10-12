@@ -15,10 +15,10 @@ Open `/test-controls`, or choose Test controls from the sidebar. Local preview: 
 
 ## Try it
 
-1. Pause Class sitting: four eligible students pause, one already paused and one completed remain unchanged.
+1. Choose Before due date and pause Group 1: Noah and Sophia pause; Emma and Liam remain completed.
 2. Resume that sitting: inspect the automatic timing policy and preserved individual timers.
 3. Select students across sittings: bulk controls show eligible counts for each action.
-4. Resume Ethan Nguyen: his deadline has passed, so a deliberate date or completion choice is required.
+4. Choose Mixed states and resume Sophia: her due date extends by five minutes while the 40-minute allowance stays unchanged.
 5. Toggle Results already released, then resume or restart: review the acknowledgement.
 6. Select students and reassign with fresh numbers: a new sitting appears while original rows remain.
 7. Use Reset demo to restore the initial scenario.
@@ -33,12 +33,22 @@ Local browser state only; no real students, APIs, questions, server clock or liv
 
 `node src/test-controls/model.test.mjs`
 
+`node src/test-controls/test-demo.test.mjs`
+
 State checks cover mixed batch eligibility, completed protection, per-mode deadline behavior, timer retention, pending resume, reassignment preservation, restart variants, rescheduling, early start and overdue completion.
 
 
 ## Layout exploration update
 
-The demo now has Group 1 and Group 2, six students each. The former Independent sitting existed to exercise untimed tests and overdue/mixed date cases; those students are now in Group 2. No third initial group remains. New reassignments create Group 3 onward.
+The test demo has three groups of four using the same 12 students. The intended duration is 40 minutes: Group 1 has 40 minutes with calculators off, Group 2 has 45 minutes (+5) with calculators on, and Group 3 is untimed with calculators on. Penalties are off for all three. Duration, timer-start behaviour, calculator settings and initial schedules are consistent within each group. Individual control actions can change a student's due date without changing the group's allotted duration. New reassignments create Group 4 onward.
+
+- Pending: all 12 students are scheduled, with zero progress and no marks/results.
+- Before due date: Group 1 started 30 minutes ago; Emma and Liam have completed, Sophia has 10 minutes remaining at 80% progress. Noah is absent, paused before starting, with his full 40-minute allowance preserved. Group 2 starts the following day. Group 3 has been working for 20 minutes, with Mia finished and three students still working.
+- After due date: the original group due dates have passed and results are available, including partial submissions. Noah remains paused with a make-up sitting scheduled for the following day and no result yet.
+- Closed: every group has expired. Noah completed a make-up test one day after the rest of Group 1; his individual start, due and completion times reflect that later sitting, with the same 40-minute allowance.
+- Mixed states: Group 1 includes Sophia paused with 15 minutes preserved, Group 2 is past due, and Group 3 has expired.
+
+Marks and question outcomes are withheld until completion or the student's due date. At the due-date boundary, marking uses actual progress, retaining that snapshot during subsequent extension work. The Students table follows the Figma test column order and includes start, due, expiry, timer-start, calculator and penalties columns.
 
 - Direction 01 preserves the original status-led composition, with neutral group names and a Show all filter.
 - Direction 02 uses Show all / group tabs, a compact live overview only in Show all, and scoped summary insights. Test controls sit beside remaining time.
@@ -64,4 +74,6 @@ Student filters now combine status, progress conditions, result tiers and search
 
 Questions supports difficulty and average-result tier filters. Marks shows a horizontally scrolling question grid with pinned student and result columns. Open a student scorecard from the student row or Marks; open collective responses from Questions. Both sheets share navigation, response filters, expandable answers and worked solutions. Escape closes the sheet and restores focus. Existing Students column order and task-control data are preserved.
 
-Validation: `node src/test-controls/report-data.test.mjs`, `node src/test-controls/model.test.mjs`, and `npm run build`.
+Validation: `node src/test-controls/report-data.test.mjs`, `node src/test-controls/model.test.mjs`
+
+`node src/test-controls/test-demo.test.mjs`, and `npm run build`.

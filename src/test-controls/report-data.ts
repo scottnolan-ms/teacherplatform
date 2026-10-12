@@ -73,6 +73,6 @@ export function reportAttempt(s:Attempt,now:number,progressive:boolean):Attempt 
  if(progressive)return {...s,reportMode:'custom',markingPending:false,markingProgress:undefined};
  const finished=s.status==='Completed'||s.status==='Closed'||!!s.closedAt||!!s.expires&&now>=new Date(s.expires).getTime();
  const due=now>=new Date(s.due).getTime();
- return {...s,reportMode:'test',markingPending:!finished&&!due,markingProgress:finished?s.progress:due?(s.dueProgress??Math.max(0,s.progress-20)):0};
+ return {...s,reportMode:'test',markingPending:!finished&&!due,markingProgress:finished?s.progress:due?(s.dueProgress??s.progress):0};
 }
 export function customDemoRows(rows:Attempt[]):Attempt[]{return rows.map(s=>({...s,mode:'Untimed',status:s.status==='Paused'?'In progress':s.status,pausedAt:undefined}))}

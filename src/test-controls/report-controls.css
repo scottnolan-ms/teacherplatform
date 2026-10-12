@@ -185,3 +185,13 @@
 .rp-prototype-toolbar .rp-prototype-back{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;font-size:20px;text-decoration:none;border-radius:50%;color:#5a5a68}.rp-prototype-back:hover{background:#ddcfff}
 
 .dashboard-prototype-switch .rp-prototype-back{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;font-size:20px;text-decoration:none;color:#5a5a68;border-radius:50%}
+
+.tc-test-settings{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
+.tc-test-settings>div{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #dfdfe5;border-radius:8px;background:white;font-size:12px;color:#5a5a68}
+.tc-test-settings strong{color:#42168a}
+.tc-test-settings span+span{border-left:1px solid #dfdfe5;padding-left:10px}
+.tc-setting-flag{display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:4px}
+.tc-setting-flag.on{background:#c6f7ed;color:#005048}.tc-setting-flag.off{background:#fbcfd3;color:#98001c}
+.tc-setting-flag i{display:block;width:20px;height:20px;background:currentColor;mask:center / contain no-repeat}
+.tc-setting-flag.off i{mask-image:url('/assets/report-controls/setting-no.svg')}
+.tc-setting-flag.on i{mask-image:url('/assets/report-controls/setting-yes.svg')}
