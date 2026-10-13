@@ -77,3 +77,39 @@ Questions supports difficulty and average-result tier filters. Marks shows a hor
 Validation: `node src/test-controls/report-data.test.mjs`, `node src/test-controls/model.test.mjs`
 
 `node src/test-controls/test-demo.test.mjs`, and `npm run build`.
+
+## Direction 05 — persistent report and control concepts
+
+Test reports now open in Direction 05 with **Scheduled (not started)** selected. Direction 04 remains available in the Layout menu. The summary is always visible; the report has no dashboard collapse or Live overview accordion. Test controls and task-level help open from the heading. Only eligible task actions appear beside the report tabs (excluding Reassign). Display sits beside student search, or in a view toolbar for Questions and Marks. Group rule variants are omitted from the summary; individual schedules and settings remain available in controls.
+
+The prototype **Controls** menu compares **01 · Modal**, **02 · Bottom sheet**, and **03 · Side panel**. All use the same attempts and action confirmations. The sheet and side panel use the shared 260 ms slide timing for opening and closing. The side panel omits summary tiles and repeated student dates, keeping the report visible beside it. Groups expose schedules and settings on demand. Students support search, group/status filters, select matching students, and individual actions. Selection is shared with the report; the report's bulk control button opens Students with that selection. The action bar explicitly identifies whether it targets everyone or selected students, including selections hidden by filters.
+
+Validation: production TypeScript/Vite build; test-demo, model, report-data, and table-sort suites; browser checks of all three surfaces, student filtering, pause confirmation and applied state, help modal, and Direction 04 availability.
+
+### Start, pause and resume confirmations
+
+Direction 05's **Confirmations** menu compares a compact modal, an expanded-review modal, and a right slide-out with an always-visible review list. Other actions and Directions 01–04 retain their existing confirmation flows. The compact modal shows one student's details directly; multiple students use an accordion. All variants keep the scope, affected and unchanged counts visible, with persistent action/cancel buttons. The review shows status, remaining time, group, timer policy and due dates, using the same action model to preview date changes.
+
+Resume retains the established automatic/custom/complete choices and date validation. It does not add a future-start date: scheduling future access remains a Reschedule action. Start copy now accurately describes the existing timed-test due-date adjustment. No lifecycle rules were changed by this UI refinement.
+
+## Contextual messaging and validation (12 October 2026)
+
+Direction 05 uses the supplied DS2 message colours and icons. Information explains a required choice; warnings explain consequences; red field errors identify blocking input. Do not use a generic warning for every action.
+
+- Resume with mixed timing or passed due dates requires an explicit due-date choice. Confirmation explains why it is unavailable.
+- Reschedule/reassign require a valid start at or after the demo clock and a future due date after that start. Custom resume/restart due dates must be valid and future. Time allowance is validated only where editable (1–240 minutes); reassignment requires a group name.
+- Zero eligible attempts show a defensive warning and prevent confirmation. Normal action entry points continue to hide unavailable actions.
+- Reopening released results requires acknowledgement that students may have seen answers. Closing overdue attempts does not require that acknowledgement: it removes access, preserves saved answers and does not release results. The label now says **Close attempts**, matching the Closed status.
+- Restart with fresh numbers warns that progress and timer are reset.
+- Release settings distinguish teacher marking visibility from student access. Missing/past custom times show field errors; releasing while attempts remain open requires acknowledgement.
+- Inputs expose `aria-invalid` and associated error text. Errors use alert semantics; informational/warning/success messages use status semantics. Text and icons carry meaning alongside colour.
+- Cancel, close and Escape discard edits. Browser verification confirmed Cancel/Escape preserve the student table and restore focus to the Reschedule trigger. No success activity is created on cancellation.
+- Empty student results offer **Clear filters and search**.
+
+The prototype-only **Validation** menu reproduces invalid date ordering, missing due-date choice, zero eligible students and released-results acknowledgement. These examples replace the demo rows; use Reset demo or the Scenario selector to return to a lifecycle scenario.
+
+### Documentation vocabulary
+
+Read a journey as **Starting state → Teacher action → Decision/Validation → Outcome**. “Before” means before that journey’s action; “After” means after successful confirmation. A **Decision** is a teacher’s choice, while an **Open question** is unresolved product policy. An **Alternative** is another branch of the same journey. A **Check** is behaviour to verify interactively, not something a static screenshot proves. **Current** denotes implemented prototype behaviour; **Proposed** denotes exploration.
+
+Figma section 06.2 now separates invalid dates, missing due-date choice, zero eligibility and cancellation checks. Updated screenshots also cover released-results warnings and release-setting validation. Existing editable explorations remain intact. The journey glossary sits beside the overview; older captures are historical references. Production request failure, concurrency and permissions remain to be specified; the prototype does not simulate a backend.
