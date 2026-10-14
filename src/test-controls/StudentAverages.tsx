@@ -1,5 +1,5 @@
 import type { Attempt } from './model';
-import { questions, response, scorecardResult } from './report-data';
+import { isTestExtension, questions, response, scorecardResult } from './report-data';
 import { DisplayRow } from './TableDisplay';
 import { ResultChip } from './ReportViews';
 
@@ -28,7 +28,7 @@ export function StudentAverages({ students, columns, now, progressive }: {
     <td><AveragesLabel /></td>
     {columns.map(column => <td key={column}>
       {column === 'progress' && progress !== null && `${Math.round(progress)}%`}
-      {column === 'results' && result !== null && <ResultChip percent={Math.round(result)} provisional={progressive && results.some(r => r.stage !== 'Closed')} ongoing={progressive && results.every(r => r.stage === 'Before due date')} />}
+      {column === 'results' && result !== null && <ResultChip percent={Math.round(result)} provisional={progressive && results.some(r => r.stage !== 'Closed') || students.some(s=>isTestExtension(s,now))} ongoing={progressive && results.every(r => r.stage === 'Before due date')} />}
       {column === 'marks' && results.length > 0 && `${number(mean(results.map(r => r.earned))!)} / ${number(mean(results.map(r => r.available))!)}`}
       {column === 'questions' && marked.length > 0 && <div className="tr-question-breakdown">{outcomes.map(outcome => {
         const average = mean(marked.map(student => questions.filter(question => outcome.matches.includes(response(student, question).outcome)).length))!;

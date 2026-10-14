@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import ts from 'typescript';
+const compile=name=>ts.transpileModule(fs.readFileSync(new URL(name,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const url=source=>`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
+const modelUrl=url(compile('./model.ts'));
+const {groupChanges}=await import(url(compile('./review-groups.ts').replace("'./model'",JSON.stringify(modelUrl))));
+const {seed,NOW,applyAction}=await import(modelUrl);
+const opts={policy:'automatic',due:'2026-09-29T15:00',start:'2026-09-29T09:00',fresh:false,minutes:60,group:'New'};
+const base={...seed[0],status:'Paused',previous:'In progress',pausedAt:NOW-300000};
+const rows=[base,{...base,id:99,name:'Other student',group:'Different group'},{...base,id:100,pausedAt:NOW-600000}];
+const groups=groupChanges(rows,applyAction(rows,rows.map(s=>s.id),'Resume',opts,NOW),'Resume',opts);
+assert.equal(groups.length,2);assert.equal(groups[0].members.length,2);assert.match(groups[0].description,/5 minutes/);assert.match(groups[1].description,/10 minutes/);
+const restartRows=[{...base,durationMinutes:40},{...base,id:99,durationMinutes:45}];
+assert.equal(groupChanges(restartRows,applyAction(restartRows,[1,99],'Restart',opts,NOW),'Restart',opts).length,2);
+console.log('Outcome grouping combines assignment groups and separates timing differences.');

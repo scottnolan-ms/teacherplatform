@@ -35,3 +35,28 @@ console.log('Lifecycle fixtures, expiry, clock and reassignment checks passed.')
 assert.equal(effectiveStatus({...seed[4],expires:new Date(NOW+1000).toISOString()},NOW),'Completed');
 assert.equal(tickAttempts([{...active,status:'Paused',expires:new Date(NOW-1).toISOString()}],NOW)[0].status,'Closed');
 assert.equal(eligible({...seed[0],status:'Closed'},'Pause'),false);
+
+// Resume can restore scheduled access or explicitly start only students who have not begun.
+const waitingTimed={...seed[0],id:101,status:'Paused',previous:'Scheduled',start:new Date(NOW+3600000).toISOString(),due:new Date(NOW+7200000).toISOString(),expires:new Date(NOW+93600000).toISOString(),remaining:2400,progress:0,pausedAt:NOW-600000};
+const waitingUntimed={...waitingTimed,id:102,mode:'Untimed',remaining:0};
+const alreadyStarted={...waitingTimed,id:103,previous:'In progress',progress:45};
+const completed={...waitingTimed,id:104,status:'Completed',progress:100};
+const resumeBatch=[waitingTimed,waitingUntimed,alreadyStarted,completed];
+const kept=applyAction(resumeBatch,[101,102,103,104],'Resume',opts,NOW);
+assert.equal(kept[0].status,'Scheduled');assert.equal(kept[0].start,waitingTimed.start);assert.equal(kept[0].due,waitingTimed.due);
+const startedNow=applyAction(resumeBatch,[101,102,103,104],'Resume',{...opts,waitingAction:'now'},NOW);
+assert.equal(startedNow[0].status,'In progress');assert.equal(Date.parse(startedNow[0].start),NOW);assert.equal(Date.parse(startedNow[0].due),NOW+2400000);assert.equal(startedNow[0].remaining,2400);assert.equal(startedNow[0].progress,0);
+assert.equal(startedNow[1].status,'In progress');assert.equal(startedNow[1].due,waitingUntimed.due);
+assert.equal(startedNow[2].start,alreadyStarted.start);assert.equal(Date.parse(startedNow[2].due),Date.parse(alreadyStarted.due)+600000);assert.equal(startedNow[2].progress,45);
+assert.deepEqual(startedNow[3],completed);
+const customNow=applyAction(resumeBatch,[101,102],'Resume',{...opts,waitingAction:'now',policy:'custom'},NOW);
+assert.equal(customNow[0].due,opts.due);assert.equal(customNow[1].due,opts.due);
+const closeNow=applyAction(resumeBatch,[101],'Resume',{...opts,waitingAction:'now',policy:'close'},NOW);
+assert.equal(closeNow[0].status,'Closed');assert.equal(closeNow[0].start,waitingTimed.start);assert.equal(closeNow[0].due,waitingTimed.due);
+console.log('Resume scheduling choice, mixed selection, custom dates and closure checks passed.');
+const passedStart={...waitingTimed,start:new Date(NOW-600000).toISOString()};
+const defaultAccess=applyAction([passedStart,waitingUntimed,alreadyStarted],[101,102,103],'Resume',opts,NOW);
+assert.equal(defaultAccess[0].status,'In progress');assert.equal(Date.parse(defaultAccess[0].due),NOW+passedStart.remaining*1000);assert.equal(defaultAccess[0].remaining,passedStart.remaining);
+assert.equal(defaultAccess[1].status,'Scheduled');assert.equal(defaultAccess[1].start,waitingUntimed.start);
+assert.equal(defaultAccess[2].progress,alreadyStarted.progress);
+console.log('Passed scheduled start resumes access without blocking; future starts stay scheduled.');

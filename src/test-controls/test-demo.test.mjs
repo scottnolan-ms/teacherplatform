@@ -62,3 +62,21 @@ assert.equal(makeup.durationMinutes,peer.durationMinutes);assert.equal(makeup.pr
 assert.ok(Date.parse(makeup.closedAt)<Date.parse(makeup.due)&&Date.parse(makeup.expires)<NOW);
 assert.equal(testDemoRows('After due date').find(s=>s.id===absent.id).status,'Paused');
 console.log('Absent student and next-day make-up schedule passed.');
+
+const {isTestExtension}=await load('./report-data.ts');
+const extension=testDemoRows('Extension');
+for(const raw of extension){
+ const s=reportAttempt(raw,NOW,false);
+ if(raw.group!=='Group 3'||raw.status==='Completed'){assert.equal(isTestExtension(s,NOW),false);continue;}
+ assert.ok(raw.progress>raw.dueProgress);
+ assert.equal(isTestExtension(s,NOW),true);
+ assert.equal(s.markingProgress,raw.dueProgress);
+ assert.equal(isTestExtension(s,Date.parse(raw.due)-1),false);
+ assert.equal(isTestExtension({...s,mode:'Scheduled'},NOW),false);
+ const final=reportAttempt(raw,Date.parse(raw.expires),false);
+ assert.equal(isTestExtension(final,Date.parse(raw.expires)),false);
+ assert.equal(final.markingProgress,raw.progress);
+ const submitted=reportAttempt({...raw,status:'Completed'},NOW,false);
+ assert.equal(submitted.markingProgress,raw.progress);
+}
+console.log('Extension snapshots, eligibility and expiry finalisation passed.');

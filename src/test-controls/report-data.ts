@@ -59,6 +59,9 @@ export function matchesProgress(value:number,filter:ProgressFilter) {
 
 export type ScoreStage = 'Before due date' | 'After due date' | 'Closed';
 export type ScorePreview = 'Current attempt' | ScoreStage;
+export function isTestExtension(s:Attempt,now:number) {
+ return s.reportMode==='test'&&s.mode!=='Scheduled'&&Date.parse(s.due)-Date.parse(s.start)>=86400000&&now>=Date.parse(s.due)&&!!s.expires&&now<Date.parse(s.expires)&&s.status!=='Closed'&&!s.closedAt;
+}
 export function scorecardResult(s:Attempt, now:number, preview:ScorePreview='Current attempt') {
  const result=studentResult(s);
  const stage:ScoreStage=preview!=='Current attempt'?preview:(s.status==='Completed'||s.status==='Closed'||!!s.closedAt||!!s.expires&&now>=new Date(s.expires).getTime())?'Closed':now>=new Date(s.due).getTime()?'After due date':'Before due date';

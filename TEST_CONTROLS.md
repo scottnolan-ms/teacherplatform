@@ -7,7 +7,7 @@ Open `/test-controls`, or choose Test controls from the sidebar. Local preview: 
 - Task sittings are assignment groups with their own schedules, not reusable classroom groups. Global controls expose Groups and Students tabs; the report gives direct group and labelled student actions.
 - Pause is one operation. Timed attempts freeze; untimed attempts retain their deadline. Pending attempts can be paused. Completed attempts are excluded and explicitly counted as unchanged.
 - Actions expand to eligible attempts. A group resume intentionally includes individual pauses in that group. The review step makes this explicit; pauses are not nested locks.
-- Resume preserves answers and remaining time. Default scheduled deadlines move by each student's pause duration. Self-paced timers retain time without moving the access deadline; untimed and unstarted deadlines stay fixed.
+- Resume preserves answers and remaining time. Default scheduled deadlines move by each student's pause duration. Self-paced timers retain time without moving the access deadline; untimed tests and tests students have not started keep their deadlines.
 - After any selected paused deadline has expired, automatic resume is blocked. Teachers choose a new deadline or explicitly complete all selected paused attempts. This deliberately conservative policy needs product validation for already-started self-paced tests.
 - Proposed release policy: any paused attempt holds automatic results release. The demo toggle represents results released previously; reopening requires acknowledgement because seen answers cannot be recalled.
 - Restart resets the timer with a choice to keep answers or reset progress with a new variant. Completed attempts use reassignment instead. Reassignment creates new attempt rows and a new sitting while preserving original records.
@@ -64,7 +64,7 @@ Suggested discussion: Direction 02 suits a familiar report workflow. Direction 0
 
 Show all has a collapsible Task dashboard: Summary, then Live overview with nested, independently collapsible group status rows. Hide dashboard removes the panel and provides a Show dashboard restore action. Filters and global Test controls remain available. Group tabs show only the scoped summary and controls.
 
-Global Start pending, Pause all eligible and Resume paused actions display eligibility counts and use the existing review flow. Pause includes unstarted attempts to prevent starting; completed attempts are skipped. Stop is deliberately omitted because ending a test is distinct from pausing. Status counters filter the report without changing attempt state.
+Global Start pending, Pause all eligible and Resume paused actions display eligibility counts and use the existing review flow. Pause includes attempts students have not started to prevent starting; completed attempts are skipped. Stop is deliberately omitted because ending a test is distinct from pausing. Status counters filter the report without changing attempt state.
 
 At 1280 × 720 the roster expands as dashboard content collapses (approximately 170px expanded, 243px with group rows collapsed, 392px with dashboard collapsed). Collapse/hide preferences last for the mounted session. Existing directions remain available.
 
@@ -113,3 +113,21 @@ The prototype-only **Validation** menu reproduces invalid date ordering, missing
 Read a journey as **Starting state → Teacher action → Decision/Validation → Outcome**. “Before” means before that journey’s action; “After” means after successful confirmation. A **Decision** is a teacher’s choice, while an **Open question** is unresolved product policy. An **Alternative** is another branch of the same journey. A **Check** is behaviour to verify interactively, not something a static screenshot proves. **Current** denotes implemented prototype behaviour; **Proposed** denotes exploration.
 
 Figma section 06.2 now separates invalid dates, missing due-date choice, zero eligibility and cancellation checks. Updated screenshots also cover released-results warnings and release-setting validation. Existing editable explorations remain intact. The journey glossary sits beside the overview; older captures are historical references. Production request failure, concurrency and permissions remain to be specified; the prototype does not simulate a backend.
+
+## Confirmation expectations (14 October 2026)
+
+Resume, Reschedule and Restart now show a teacher-facing “What will happen” summary in every layout. Counts reflect the selected attempts, with excluded students broken down by status. Resume distinguishes students who have started and those who have not, and explains due-date handling by timing mode. The summary updates for custom dates and closure so default-policy explanations cannot contradict the chosen option. Reschedule describes the wait for a new start; Restart describes immediate access, retained/reset work and timer resets. Released-results acknowledgement remains conditional on reopening access.
+
+Resume now offers Keep scheduled start (default) or Start now for students who have not started the test. This choice affects only that subset; other paused students resume their previous activity. A scheduled start that has passed no longer blocks Resume: Keep scheduled start opens access now for those students and retains future starts for everyone else. “Let all N begin now” also opens access for students scheduled for later. Timed tests starting now use their remaining allowance from now unless a custom due date is selected; untimed tests retain their due date under existing timing rules. Close attempts ignores the start choice.
+
+Choice consequences now sit alongside each option. The “What will happen” summary appears below valid choices and dates, before the affected-student review. It reflects the selected outcome rather than describing hypothetical alternatives. Per-student review includes resulting start time, status and due date.
+
+Resume scope clarification: the start-time question explicitly names the subset who have not started the test. A divided “Time and due dates · all N students” section makes the wider scope explicit. A plain helper sentence replaces the information banner. Repeated scope/affected-count lines were removed from the confirmation introduction and outcome summary; excluded-student explanations remain in the summary. Review format is unchanged pending design feedback.
+
+Passed-start recovery: opening access now preserves work and remaining time, recalculating timed due dates from now unless a custom date is chosen. Already-started students retain their usual resume behaviour. This replaces the earlier blocking start-time error; review grouping remains a discussion only.
+
+## L1 / L2 confirmation comparison
+
+Every action confirmation now has a header toggle. L1 retains the collapsed “Review changes” accordion. L2 replaces the separate outcome summary with cards grouped by shared resulting behaviour, not assignment group. Expand a card to see names and changed start/due dates. Different pause extensions, resulting scheduled starts, deadlines or restart allowances stay separate. Excluded students are listed as unchanged. Choices and action state are preserved when switching layouts. Incomplete/invalid choices show guidance instead of a misleading preview.
+
+Pause, Start, Resume, Restart and Reschedule share the modal confirmation treatment in Direction 05. The old confirmation slide-out selector is removed; the Test controls management-panel concepts remain separate. Saved work, access and timing consequences are shown where relevant. No additional sorting/filtering is added to the review.

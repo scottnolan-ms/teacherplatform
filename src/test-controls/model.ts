@@ -12,7 +12,7 @@ export function effectiveStatus(s:Attempt,now:number):Status {
 export function eligible(s:Attempt,a:Action) { return a==='Pause'?s.status==='In progress'||s.status==='Scheduled':a==='Resume'?s.status==='Paused':a==='Start now'?s.status==='Scheduled':a==='Restart'?s.status!=='Completed'&&s.status!=='Closed':a==='Reschedule'?s.status!=='Completed'&&s.status!=='Closed':true }
 export function clock(n:number) { return `${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}` }
 export function date(v:string) {return new Date(v).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}
-export interface Options { policy: string; due: string; start: string; fresh: boolean; minutes: number; group: string }
+export interface Options { waitingAction?: 'scheduled' | 'now'; policy: string; due: string; start: string; fresh: boolean; minutes: number; group: string }
 export function applyAction(rows:Attempt[],ids:number[],action:Action,opts:Options,now:number):Attempt[] {
  let nextId=Math.max(...rows.map(s=>s.id))+1;
  const extra:Attempt[]=[];
@@ -23,8 +23,9 @@ export function applyAction(rows:Attempt[],ids:number[],action:Action,opts:Optio
  if(action==='Pause')return {...s,status:'Paused' as Status,previous:s.status,pausedAt:now};
  if(action==='Resume'){
  const wasStarted=s.previous!=='Scheduled';
- const due=opts.policy==='custom'?opts.due:opts.policy==='automatic'&&s.mode==='Scheduled'&&wasStarted?new Date(new Date(s.due).getTime()+now-(s.pausedAt??now)).toISOString():s.due;
- return {...s,due,expires:due!==s.due?new Date(new Date(due).getTime()+86400000).toISOString():s.expires,closedAt:opts.policy==='close'?new Date(now).toISOString():undefined,status:opts.policy==='close'?'Closed' as Status:s.previous??'In progress',pausedAt:undefined};
+ const startNow=!wasStarted&&(opts.waitingAction==='now'||Date.parse(s.start)<=now)&&opts.policy!=='close';
+ const due=opts.policy==='custom'?opts.due:startNow&&s.mode!=='Untimed'?new Date(now+s.remaining*1000).toISOString():opts.policy==='automatic'&&s.mode==='Scheduled'&&wasStarted?new Date(new Date(s.due).getTime()+now-(s.pausedAt??now)).toISOString():s.due;
+ return {...s,...(startNow?{start:new Date(now).toISOString()}:{}),due,expires:due!==s.due?new Date(new Date(due).getTime()+86400000).toISOString():s.expires,closedAt:opts.policy==='close'?new Date(now).toISOString():undefined,status:opts.policy==='close'?'Closed' as Status:startNow?'In progress' as Status:s.previous??'In progress',pausedAt:undefined};
  }
  if(action==='Start now'){const due=s.durationMinutes&&s.mode==='Scheduled'?new Date(now+s.remaining*1000).toISOString():s.due;return {...s,status:'In progress' as Status,start:new Date(now).toISOString(),due,expires:due!==s.due?new Date(Date.parse(due)+86400000).toISOString():s.expires};}
  if(action==='Restart')return {...s,status:'In progress' as Status,start:new Date(now).toISOString(),due:opts.due,remaining:s.durationMinutes===null?0:(s.durationMinutes??opts.minutes)*60,progress:opts.fresh?0:s.progress,dueProgress:opts.fresh?0:s.progress,version:s.version+(opts.fresh?1:0),pausedAt:undefined,closedAt:undefined,expires:new Date(new Date(opts.due).getTime()+86400000).toISOString(),timeSpent:opts.fresh?0:s.timeSpent};
@@ -32,7 +33,7 @@ export function applyAction(rows:Attempt[],ids:number[],action:Action,opts:Optio
  });return [...changed,...extra];
 }
 
-export const demoScenarios = ['Pending','Mixed states','Before due date','After due date','Closed'] as const;
+export const demoScenarios = ['Pending','Mixed states','Before due date','After due date','Extension','Closed'] as const;
 export type DemoScenario = typeof demoScenarios[number];
 export function demoRows(scenario:DemoScenario|'After expiry'='Mixed states'):Attempt[] {
  const progress=[100,100,87,73,100,40,0,93,67,80,100,53];
@@ -82,6 +83,7 @@ export function timerStartLabel(student: Attempt) {
 
 // Group settings are shared; individual control actions may adjust a student's due date.
 export function testDemoRows(scenario: DemoScenario = 'Before due date'): Attempt[] {
+ if(scenario==='Extension')return testDemoRows('After due date').map((s,i)=>i<8?s:{...s,mode:'Untimed',durationMinutes:null,start:new Date(NOW-3*86400000).toISOString(),due:new Date(NOW-12*3600000).toISOString(),expires:new Date(NOW+36*3600000).toISOString(),status:i===10?'Completed':'In progress',closedAt:i===10?new Date(NOW-18*3600000).toISOString():undefined,progress:[80,87,100,67][i-8],dueProgress:[53,60,100,40][i-8],timeSpent:[85,95,75,70][i-8]});
  const iso = (minutes: number) => new Date(NOW + minutes * 60000).toISOString();
  const beforeProgress = [100, 100, 80, 73, 0, 0, 0, 0, 53, 67, 100, 40];
  const finalProgress = [100, 100, 87, 80, 100, 73, 93, 67, 80, 87, 100, 60];

@@ -53,3 +53,14 @@
 .ac-side.tc-overlay{backdrop-filter:none}
 .ac-review .tc-status.in-progress{background:#bde6ff;color:#004f85}
 .ac-review .tc-status.paused{background:#fff0c2;color:#794c00}
+
+.ac-expectations{font-size:14px;line-height:1.55;margin-bottom:24px}.ac-expectations h3{margin:0 0 10px}.ac-expectations p{margin:8px 0}.ac-expectations ul{padding-left:22px;margin:12px 0}.ac-expectations li+li{margin-top:8px}.ac-excluded{border-top:1px solid #e6e1ee;padding-top:12px;color:#5e5a6c}
+
+.ac-start-choice{border:0;padding:0;margin:0 0 24px;min-width:0}.ac-start-choice legend{font-weight:700;margin-bottom:12px}.ac-expectations{border-top:1px solid #e6e1ee;padding-top:20px}
+
+.ac-timing-heading h3{margin:0 0 6px}.ac-timing-heading .ac-choice-hint{margin:0 0 16px;color:#5e5a6c;font-size:14px;line-height:1.5}.ac-timing-separated{border-top:1px solid #e6e1ee;padding-top:24px;margin-top:8px}
+.ac-layout-switch{display:flex;flex-shrink:0;gap:2px;border:1px solid #d8cbea;border-radius:20px;padding:3px;margin-left:auto;margin-right:12px}.tc-app .ac-layout-switch button{min-width:36px;border:0;background:transparent;padding:6px 9px;border-radius:16px;font-size:12px}.tc-app .ac-layout-switch button[aria-pressed=true]{background:#7135df;color:white}.ac-outcome-group{border:1px solid #e6e1ee;border-radius:8px;padding:16px;margin:12px 0}.ac-outcome-group h4{font-size:14px;margin:0 0 6px}.ac-outcome-group p{font-size:14px;line-height:1.5;margin:0 0 10px}.ac-outcome-group summary{font-size:13px;cursor:pointer;color:#6434a3}.ac-outcome-group ul{list-style:none;padding:0}.ac-outcome-group li{padding:10px 0;border-top:1px solid #eee}.ac-outcome-group li span{display:block;font-size:13px;margin-top:4px}.tc-modal-heading>div:first-child{min-width:0}.ac-grouped-review h3{margin-bottom:12px}
+
+.ac-choice-details{margin:0 0 20px 20px;padding:4px 0 4px 20px;border-left:2px solid #d8cbea;color:#5e5a6c;font-size:14px;line-height:1.5}.ac-choice-details ul{margin:0;padding-left:18px}.ac-choice-details li+li{margin-top:8px}.ac-choice-details strong{color:#32323c}.tc-app .ac-choice-details .tc-field{margin:0}
+
+.tc-bulk:has(.tc-selected-actions){flex-wrap:wrap;gap:12px}.tc-selected-actions{display:flex;flex-wrap:wrap;gap:8px;min-width:0}.tc-selected-actions button{white-space:nowrap}
