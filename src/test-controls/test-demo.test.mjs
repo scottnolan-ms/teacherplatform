@@ -80,3 +80,27 @@ for(const raw of extension){
  assert.equal(submitted.markingProgress,raw.progress);
 }
 console.log('Extension snapshots, eligibility and expiry finalisation passed.');
+const {questions,response,questionOneParts}=await load('./report-data.ts');
+const amelia=reportAttempt(testDemoRows('Closed').find(s=>s.name==='Amelia Chen'),NOW,false);
+const parts=questionOneParts(amelia);
+assert.equal(parts.length,2);
+assert.equal(parts[0].aiMark,0.5);
+assert.equal(parts[0].earned,1);
+assert.equal(parts[0].override,true);
+assert.ok(parts[1].lines.length>1);
+assert.ok(parts.every(p=>p.rationale.length>0));
+assert.equal(response(amelia,questions[0]).earned,parts.reduce((sum,p)=>sum+p.earned,0));
+assert.equal(questions[0].marks,2);
+console.log('Multipart marks, teacher override and rationale fixtures passed.');
+const closedExtension=testDemoRows('Closed with extension');
+for(const raw of closedExtension){
+ const original=extension.find(s=>s.id===raw.id);
+ assert.equal(raw.progress,original.progress);
+ assert.equal(raw.dueProgress,original.dueProgress);
+ assert.equal(raw.status,'Closed');
+ assert.ok(Date.parse(raw.expires)<NOW);
+ assert.equal(reportAttempt(raw,NOW,false).markingProgress,raw.progress);
+ assert.equal(isTestExtension(reportAttempt(raw,NOW,false),NOW),false);
+ assert.equal(!!raw.submittedAt,original.status==='Completed');
+}
+console.log('Closed extension preserves progress snapshots and final marking.');

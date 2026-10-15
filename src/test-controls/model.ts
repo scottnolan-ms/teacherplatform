@@ -1,7 +1,7 @@
 export type Status = 'In progress' | 'Paused' | 'Scheduled' | 'Completed' | 'Closed';
 export type Action = 'Pause' | 'Resume' | 'Start now' | 'Restart' | 'Reschedule' | 'Reassign';
 export type Mode = 'Scheduled' | 'Self-paced' | 'Untimed';
-export interface Attempt { id: number; name: string; group: string; mode: Mode; status: Status; previous?: Status; remaining: number; progress: number; start: string; due: string; pausedAt?: number; version: number; expires?: string; closedAt?: string; accuracy?: number; timeSpent?: number; dueProgress?: number; markingProgress?: number; markingPending?: boolean; reportMode?: 'test' | 'custom'; durationMinutes?: number | null; calculator?: boolean; penalties?: boolean; attendanceNote?: string }
+export interface Attempt { id: number; name: string; group: string; mode: Mode; status: Status; previous?: Status; remaining: number; progress: number; start: string; due: string; pausedAt?: number; version: number; expires?: string; closedAt?: string; submittedAt?: string; accuracy?: number; timeSpent?: number; dueProgress?: number; markingProgress?: number; markingPending?: boolean; reportMode?: 'test' | 'custom'; durationMinutes?: number | null; calculator?: boolean; penalties?: boolean; attendanceNote?: string }
 export const NOW = new Date('2026-09-25T10:20:00').getTime();
 export const seed: Attempt[] = ['Emma Johnson','Liam Martinez','Sophia Okonkwo','Noah Okafor','Olivia Petrov','Davis Mason','Amelia Chen','Lucas Wilson','Isla Patel','Ethan Nguyen','Mia Thompson','Oliver Lee'].map((name,i) => ({id:i+1,name,group:i<6?'Group 1':'Group 2',mode:i<6?'Scheduled':i<9?'Self-paced':'Untimed',status:i===4?'Completed':i===2||i===9?'Paused':i>=6&&i<9?'Scheduled':'In progress',previous:'In progress',remaining: i===2?28*60:40*60-i*61,progress:i===4?100:i>=6&&i<9?0:Math.min(85,20+i*7),start:i>=6&&i<9?'2026-09-28T09:00':'2026-09-25T10:00',due:i===9?'2026-09-24T15:00':i<6?'2026-09-25T11:00':'2026-09-28T15:00',pausedAt:i===2||i===9?NOW-12*60000:undefined,version:1}));
 export function effectiveStatus(s:Attempt,now:number):Status {
@@ -33,7 +33,7 @@ export function applyAction(rows:Attempt[],ids:number[],action:Action,opts:Optio
  });return [...changed,...extra];
 }
 
-export const demoScenarios = ['Pending','Mixed states','Before due date','After due date','Extension','Closed'] as const;
+export const demoScenarios = ['Pending','Mixed states','Before due date','After due date','Extension','Closed','Closed with extension'] as const;
 export type DemoScenario = typeof demoScenarios[number];
 export function demoRows(scenario:DemoScenario|'After expiry'='Mixed states'):Attempt[] {
  const progress=[100,100,87,73,100,40,0,93,67,80,100,53];
@@ -83,6 +83,7 @@ export function timerStartLabel(student: Attempt) {
 
 // Group settings are shared; individual control actions may adjust a student's due date.
 export function testDemoRows(scenario: DemoScenario = 'Before due date'): Attempt[] {
+ if(scenario==='Closed with extension')return testDemoRows('Extension').map(s=>{const shift=(v:string)=>new Date(Date.parse(v)-3*86400000).toISOString();return {...s,start:shift(s.start),due:shift(s.due),expires:s.expires?shift(s.expires):undefined,status:'Closed',remaining:0,submittedAt:s.status==='Completed'&&s.closedAt?shift(s.closedAt):undefined,closedAt:s.closedAt?shift(s.closedAt):s.expires?shift(s.expires):shift(s.due)};});
  if(scenario==='Extension')return testDemoRows('After due date').map((s,i)=>i<8?s:{...s,mode:'Untimed',durationMinutes:null,start:new Date(NOW-3*86400000).toISOString(),due:new Date(NOW-12*3600000).toISOString(),expires:new Date(NOW+36*3600000).toISOString(),status:i===10?'Completed':'In progress',closedAt:i===10?new Date(NOW-18*3600000).toISOString():undefined,progress:[80,87,100,67][i-8],dueProgress:[53,60,100,40][i-8],timeSpent:[85,95,75,70][i-8]});
  const iso = (minutes: number) => new Date(NOW + minutes * 60000).toISOString();
  const beforeProgress = [100, 100, 80, 73, 0, 0, 0, 0, 53, 67, 100, 40];

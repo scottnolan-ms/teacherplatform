@@ -18,7 +18,7 @@ const equations = [
  ['0.5x + 1.5 = 4',5,'Subtract 1.5, then divide by 0.5.','Hard'],
  ['3(x + 4) − 2(x − 1) = 20',6,'Expand and collect terms to get x + 14 = 20.','Hard'],
 ] as const;
-export const questions = equations.map(([equation,answer,solution,difficulty],i)=>({id:i+1,equation,answer,solution,difficulty,marks:i<6?1:2,skill:['One-step equations','Inverse operations','Two-step equations','Brackets','Variables on both sides','Fractional equations'][Math.floor(i*6/15)]}));
+export const questions = equations.map(([equation,answer,solution,difficulty],i)=>({id:i+1,equation,answer,solution,difficulty,marks:i===0?2:i<6?1:2,skill:['One-step equations','Inverse operations','Two-step equations','Brackets','Variables on both sides','Fractional equations'][Math.floor(i*6/15)]}));
 export type Question = {id:number;equation:string;answer:number;solution:string;difficulty:string;marks:number;skill:string};
 // Deterministic demo responses are derived from existing attempt progress, never stored over it.
 export function response(student:Attempt,q:Question) {
@@ -26,9 +26,10 @@ export function response(student:Attempt,q:Question) {
  const inProgress=q.id===answered+1 && student.progress>0 && student.status!=='Completed'&&student.status!=='Closed'&&student.reportMode!=='test';
  const n=(student.id*3+q.id*7+student.version)%10;
  const accuracy=student.accuracy??[10,8,6,4,2,0][(student.id-1)%6];
- const outcome:Outcome=q.id>answered?(inProgress?'In progress':'Not started'):n<accuracy?'Correct':n<accuracy+2&&q.marks>1?'Partial':'Incorrect';
- const earned=outcome==='Correct'?q.marks:outcome==='Partial'?1:0;
- const subproblems=q.marks+1;
+ let outcome:Outcome=q.id>answered?(inProgress?'In progress':'Not started'):n<accuracy?'Correct':n<accuracy+2&&q.marks>1?'Partial':'Incorrect';
+ let earned=outcome==='Correct'?q.marks:outcome==='Partial'?1:0;
+ if(q.id===1&&q.id<=answered){const parts=questionOneParts(student);earned=parts.reduce((n,p)=>n+p.earned,0);outcome=earned===2?'Correct':earned>0?'Partial':'Incorrect';}
+ const subproblems=q.id===1?2:q.marks+1;
  const completedSubproblems=inProgress?Math.max(1,Math.min(subproblems-1,Math.floor(((student.progress/100*questions.length)%1)*subproblems))):q.id<=answered?subproblems:0;
  const retried=student.reportMode==='custom'&&q.id<=answered+1&&student.progress>0&&(student.id+q.id)%5===0;
  return {outcome,earned,subproblems,completedSubproblems,retried,answer:outcome==='Not started'||outcome==='In progress'?null:outcome==='Correct'?q.answer:q.answer+(student.id%3+1)};
@@ -79,3 +80,12 @@ export function reportAttempt(s:Attempt,now:number,progressive:boolean):Attempt 
  return {...s,reportMode:'test',markingPending:!finished&&!due,markingProgress:finished?s.progress:due?(s.dueProgress??s.progress):0};
 }
 export function customDemoRows(rows:Attempt[]):Attempt[]{return rows.map(s=>({...s,mode:'Untimed',status:s.status==='Paused'?'In progress':s.status,pausedAt:undefined}))}
+
+export function questionOneParts(student:Attempt) {
+ const correct=(student.accuracy??8)>=7;
+ const override=student.id===7;
+ return [
+ {label:'1a',prompt:'Solve x + 5 = 12.',lines:override?['x + 5 − 5 = 12 − 5','x = 7 (shown in working)']:student.id%3===0?['x + 5 − 5 = 12 − 5',correct?'x = 7':'x = 8']:[correct?'x = 7':'x = 8'],earned:correct||override?1:0,aiMark:override?0.5:correct?1:0,override,rationale:override?'Awarded 0.5 / 1: the subtraction method is correct, but the AI did not recognise the answer written within the working.':correct?'Awarded 1 / 1: subtracting 5 gives x = 7, which satisfies the original equation.':'Awarded 0 / 1: x = 8 gives 13 on the left, so it does not satisfy x + 5 = 12.'},
+ {label:'1b',prompt:'Solve 2x + 3 = 11. Show your working.',lines:[...([1,2,3,7,9,10].includes(student.id)?['2x + 3 − 3 = 11 − 3','2x = 8','x = 8 ÷ 2']:[]),correct||override?'x = 4':'x = 5'],earned:correct||override?1:0,aiMark:correct||override?1:0,override:false,rationale:correct||override?'Awarded 1 / 1: x = 4 satisfies 2x + 3 = 11. The answer is correct.':'Awarded 0 / 1: x = 5 gives 13 rather than 11. Subtract 3, then divide by 2 to obtain x = 4.'}
+ ];
+}
