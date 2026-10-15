@@ -199,3 +199,13 @@
 .rp-marking-info{position:fixed;inset:90px 24px auto auto;margin:0;width:min(360px,calc(100vw - 32px));padding:16px;border:1px solid #dfdfe5;border-radius:8px;background:white;color:#32323c;box-shadow:0 4px 16px #0003;white-space:normal;font:14px/20px 'Proxima Nova',Arial,sans-serif}
 .rp-marking-info strong{font-size:16px}.rp-marking-info p{margin:8px 0 12px}.rp-marking-info::backdrop{background:transparent}
 @supports(position-anchor:--prototype-marking-info){.rp-marking-info{position-anchor:--prototype-marking-info;top:anchor(bottom);left:anchor(left);right:auto;margin-top:8px;position-try-fallbacks:flip-inline}}
+
+/* Progress breakdown matches the scorecard subproblem totals. */
+.rp-progress-tooltip strong{display:block;line-height:16px;font-weight:600}
+.rp-progress-tooltip .rp-progress-count{font-size:14px;font-weight:600;line-height:18px;min-height:32px;margin:4px 0 0}
+.rp-progress-tooltip i{mask-image:url('/assets/progress-tooltip/subproblem.svg')}
+.rp-progress-tooltip>.rp-progress-breakdown{display:block;border:0;padding:0;margin-top:4px}
+.rp-progress-breakdown>div{display:flex;align-items:center;gap:6px;padding:4px 0;color:#dfdfe5;font-size:12px;line-height:16px}
+.rp-progress-breakdown>div:first-child{border-bottom:1px solid #93939c}.rp-progress-breakdown>div>span:nth-child(2){flex:1}.rp-progress-breakdown img{width:8px;height:8px;flex:0 0 8px}
+.rp-progress-tooltip .rp-progress-percent{font-size:12px;line-height:12px;margin:12px 0 0}
+.rp-progress-tooltip::after{content:'';position:absolute;left:50%;top:100%;width:12px;height:6px;transform:translateX(-50%);background:url('/assets/progress-tooltip/pointer.svg') center/contain no-repeat}
