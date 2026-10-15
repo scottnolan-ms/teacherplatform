@@ -195,3 +195,7 @@
 .tc-setting-flag i{display:block;width:20px;height:20px;background:currentColor;mask:center / contain no-repeat}
 .tc-setting-flag.off i{mask-image:url('/assets/report-controls/setting-no.svg')}
 .tc-setting-flag.on i{mask-image:url('/assets/report-controls/setting-yes.svg')}
+.tc-app .rp-prototype-toolbar .rp-marking-info-button{font-size:18px;padding:0;width:28px;height:28px;flex:none;color:#6e3ddd;border-radius:50%;anchor-name:--prototype-marking-info}
+.rp-marking-info{position:fixed;inset:90px 24px auto auto;margin:0;width:min(360px,calc(100vw - 32px));padding:16px;border:1px solid #dfdfe5;border-radius:8px;background:white;color:#32323c;box-shadow:0 4px 16px #0003;white-space:normal;font:14px/20px 'Proxima Nova',Arial,sans-serif}
+.rp-marking-info strong{font-size:16px}.rp-marking-info p{margin:8px 0 12px}.rp-marking-info::backdrop{background:transparent}
+@supports(position-anchor:--prototype-marking-info){.rp-marking-info{position-anchor:--prototype-marking-info;top:anchor(bottom);left:anchor(left);right:auto;margin-top:8px;position-try-fallbacks:flip-inline}}
