@@ -1,0 +1,38 @@
+/* Shared report filters: Figma Report Filters, with native keyboard-operable controls. */
+.tc-app .rf-trigger{display:flex;align-items:center;gap:4px;min-height:32px;border:1px solid #93939c;border-radius:100px;background:white;color:#32323c;padding:5px 8px;font:400 14px/20px 'Proxima Nova',Arial,sans-serif;white-space:nowrap}
+.tc-app .rf-trigger>span{padding:0 4px}.rf-trigger .rf-icon:last-child{margin-left:8px}
+.rf-icon{display:inline-block;width:20px;height:20px;flex:0 0 20px;background:currentColor;mask-position:center;mask-size:contain;mask-repeat:no-repeat}
+.tc-app .rf-active>.rf-trigger{border-color:#6e3ddd;background:#f0e8ff;color:#42168a}
+.tc-app .rf-open>.rf-trigger,.tc-app .rf-trigger:focus-visible{border-color:#6e3ddd;outline:2px solid #6e3ddd;outline-offset:1px;box-shadow:0 0 0 4px #ddcfff}
+.rf-popover.tr-filter-popover{position:fixed;inset:auto;margin:0;box-sizing:border-box;width:240px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;border:0;border-radius:8px;background:white;color:#32323c;box-shadow:0 2px 8px #0003;padding:0;gap:0;font:14px/20px 'Proxima Nova',Arial,sans-serif;white-space:normal}
+.rf-popover:not(:popover-open){display:none}.rf-popover:popover-open{display:block}.rf-popover.rf-wide{width:272px}.rf-popover::backdrop{background:transparent}
+.rf-content{padding:24px 14px 16px}.rf-content>strong{display:block;font-size:16px;line-height:20px;font-weight:600;text-align:left;margin:0 2px 24px;color:#32323c}
+.rf-options{display:flex;flex-direction:column;gap:4px}
+.rf-popover .rf-option{display:flex;flex-direction:row!important;align-items:center;gap:4px;min-height:32px;box-sizing:border-box;padding:4px;border:0;border-radius:4px;font-size:14px;line-height:18px;font-weight:600;background:var(--rf-bg,#dfdfe5)!important;color:var(--rf-ink,#32323c)!important;cursor:pointer}
+.rf-option>span{flex:1;min-width:0}.rf-option small{font:inherit;opacity:.8}.rf-option .rf-icon{width:20px;height:20px}
+.rf-option input[type=checkbox]{appearance:none;display:block;flex:0 0 16px;width:16px;height:16px;min-height:0;margin:0 2px;border:1.5px solid currentColor;border-radius:2px;background:transparent;cursor:pointer;color:inherit;accent-color:#6e3ddd}
+.rf-option input[type=checkbox]:checked{background:currentColor}.rf-option input[type=checkbox]:checked:after{content:'';display:block;width:8px;height:4px;border-left:2px solid white;border-bottom:2px solid white;transform:rotate(-45deg);margin:3px 2px}
+.rf-option:has(input:checked){outline:1px solid currentColor;outline-offset:-1px}.rf-option:has(input:focus-visible){outline:2px solid #6e3ddd;outline-offset:2px}.rf-option:has(input:disabled){opacity:.4;filter:grayscale(1);cursor:not-allowed}.rf-option input:disabled{cursor:not-allowed}
+.rf-group-0{--rf-bg:#edccff;--rf-ink:#4b0073}.rf-group-1{--rf-bg:#ffeb99;--rf-ink:#806600}.rf-group-2{--rf-bg:#ffb3b3;--rf-ink:#800000}.rf-group-3{--rf-bg:#b3d1ff;--rf-ink:#003080}
+.rf-green{--rf-bg:#c6f7ed;--rf-ink:#005048}.rf-amber{--rf-bg:#fdebb8;--rf-ink:#754800}.rf-orange{--rf-bg:#ffe0c7;--rf-ink:#913a00}.rf-red{--rf-bg:#fbcfd3;--rf-ink:#98001c}.rf-blue{--rf-bg:#bde6ff;--rf-ink:#004f85}.rf-cyan{--rf-bg:#a9e8ef;--rf-ink:#0b5f68}.rf-purple{--rf-bg:#ddcfff;--rf-ink:#42168a}.rf-plain{--rf-bg:white;--rf-ink:#19191f}
+.rf-popover.tr-filter-popover>footer{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:0;padding:16px;border-top:1px solid #dfdfe5}
+.rf-popover>footer>button{border:0;background:transparent;color:#6e3ddd;text-decoration:underline;font:600 16px/20px 'Proxima Nova',Arial,sans-serif;padding:0;cursor:pointer}.rf-popover>footer>button:disabled{opacity:.4;cursor:not-allowed}
+.rf-mode{display:flex;background:#f4f5f5;border-radius:24px;padding:3px;margin:-10px 0 20px;gap:4px}
+.rf-mode button{flex:1;border:0;border-radius:24px;padding:5px 8px;background:transparent;color:#5a5a68;font:600 13px/18px 'Proxima Nova',Arial,sans-serif;cursor:pointer}.rf-mode button[aria-pressed=true]{background:#ddcfff;color:#42168a}
+.rf-distribution{display:flex;align-items:flex-end;height:60px;gap:3px;margin:0 8px}.rf-bin{flex:1;min-width:0;position:relative;display:block;background:#ddcfff;border-radius:4px;outline:none}.rf-bin.in-range{background:#6e3ddd}.rf-bin:hover,.rf-bin:focus-visible{background:#42168a}.rf-bin[data-tip]:hover:after,.rf-bin[data-tip]:focus-visible:after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);white-space:nowrap;z-index:1;background:#32323c;color:white;border-radius:6px;padding:6px 8px;font-size:12px;pointer-events:none}
+.rf-range-count{font-size:11px;color:#5a5a68;text-align:center;margin:10px 0 0}
+.rf-dual-slider{position:relative;height:44px;margin:0 8px}
+.rf-slider-track{position:absolute;left:0;right:0;top:19px;height:6px;border-radius:8px;background:linear-gradient(to right,#dfdfe5 var(--range-from),#6e3ddd var(--range-from),#6e3ddd var(--range-to),#dfdfe5 var(--range-to));cursor:pointer}
+.rf-dual-slider input[type=range]{position:absolute;inset:0;width:100%;height:44px;margin:0;padding:0;border:0;background:transparent;pointer-events:none;appearance:none;outline:none}
+.rf-dual-slider input[type=range]::-webkit-slider-runnable-track{height:6px;background:transparent}.rf-dual-slider input[type=range]::-moz-range-track{height:6px;background:transparent}
+/* M3-inspired slim handles retain a generous drag/focus target. */
+.rf-dual-slider input[type=range]::-webkit-slider-thumb{appearance:none;width:6px;height:28px;border:0;border-radius:4px;background:#6e3ddd;margin-top:-11px;pointer-events:auto;cursor:ew-resize;box-shadow:0 0 0 4px white}
+.rf-dual-slider input[type=range]::-moz-range-thumb{width:6px;height:28px;border:0;border-radius:4px;background:#6e3ddd;pointer-events:auto;cursor:ew-resize;box-shadow:0 0 0 4px white}
+.rf-dual-slider input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px #ddcfff,0 0 0 6px #6e3ddd}.rf-dual-slider input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 4px #ddcfff,0 0 0 6px #6e3ddd}
+.rf-ticks{display:flex;justify-content:space-between;margin:0 4px 24px;color:#6e3ddd;font-size:12px;line-height:12px}
+.rf-range-inputs{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}.rf-range-inputs>label{display:flex;flex-direction:column;gap:4px!important;color:#32323c!important;font-weight:600;width:88px;max-width:42%}.rf-range-inputs>span{padding-bottom:12px}.rf-range-inputs label>div{display:flex;align-items:center;border:1px solid #93939c;border-radius:100px;padding:0 10px;overflow:hidden}.rf-range-inputs label>div:focus-within{outline:2px solid #6e3ddd;outline-offset:1px;box-shadow:0 0 0 4px #ddcfff}
+.rf-popover .rf-range-inputs input[type=number]{width:100%;min-width:0;height:38px;padding:8px 0;border:0;border-radius:0;background:transparent;box-shadow:none;outline:none;font:400 16px/20px 'Proxima Nova',Arial,sans-serif;color:#32323c;appearance:textfield}
+.rf-range-inputs input::-webkit-inner-spin-button,.rf-range-inputs input::-webkit-outer-spin-button{appearance:none;margin:0}.rf-range-inputs label>div>span{color:#5a5a68}
+.rf-unmarked,.rf-error{font-size:12px;line-height:16px;margin:12px 0 0;color:#5a5a68}.rf-error{color:#98001c}.rf-condition{display:grid;gap:12px}.rf-condition>label{display:flex;gap:6px;color:#32323c!important}
+.rf-popover .ar-mastery-option{display:flex;justify-content:space-between;align-items:center;flex-direction:row!important;margin:4px 0}.rf-popover .ar-mastery-option .ar-mastery-chip{flex:1}
+.rf-popover.tr-filter-popover>footer{position:sticky;bottom:0;background:white;z-index:2}

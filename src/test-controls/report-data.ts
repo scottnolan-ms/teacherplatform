@@ -50,12 +50,13 @@ export const questionTiers=['80–100%','50–79%','25–49%','0–24%','Not sta
 export function tierMatches(percent:number|null,tier:string) {
  if(percent===null)return tier==='Not started'||tier==='Awaiting marking';
  if(tier==='100%')return percent===100;
+ if(tier==='Below 50%')return percent<50;
  const bounds=tier.match(/(\d+)–(\d+)/);return !!bounds&&percent>=Number(bounds[1])&&percent<=Number(bounds[2]);
 }
-export type ProgressFilter={condition:string;amount:number}|null;
+export type ProgressFilter={condition:string;amount:number;maximum?:number}|null;
 export function matchesProgress(value:number,filter:ProgressFilter) {
  if(!filter)return true;
- switch(filter.condition){case 'Less than':return value<filter.amount;case 'At most':return value<=filter.amount;case 'Exactly':return value===filter.amount;case 'At least':return value>=filter.amount;case 'More than':return value>filter.amount;default:return true;}
+ switch(filter.condition){case 'Between':return value>=filter.amount&&value<=(filter.maximum??100);case 'Less than':return value<filter.amount;case 'At most':return value<=filter.amount;case 'Exactly':return value===filter.amount;case 'At least':return value>=filter.amount;case 'More than':return value>filter.amount;default:return true;}
 }
 
 export type ScoreStage = 'Before due date' | 'After due date' | 'Closed';
@@ -89,3 +90,6 @@ export function questionOneParts(student:Attempt) {
  {label:'1b',prompt:'Solve 2x + 3 = 11. Show your working.',lines:[...([1,2,3,7,9,10].includes(student.id)?['2x + 3 − 3 = 11 − 3','2x = 8','x = 8 ÷ 2']:[]),correct||override?'x = 4':'x = 5'],earned:correct||override?1:0,aiMark:correct||override?1:0,override:false,rationale:correct||override?'Awarded 1 / 1: x = 4 satisfies 2x + 3 = 11. The answer is correct.':'Awarded 0 / 1: x = 5 gives 13 rather than 11. Subtract 3, then divide by 2 to obtain x = 4.'}
  ];
 }
+
+// Equal four-point bins; include 100% in the final bin and omit unmarked students.
+export function resultDistribution(samples:(number|null)[]){return Array.from({length:25},(_,i)=>samples.filter(v=>v!==null&&Math.min(24,Math.floor(v/4))===i).length)}
