@@ -3,8 +3,7 @@ import type {AdaptiveStage} from '../test-controls/adaptive-data';
 import {progressiveStudentStatus} from './progressive-class';
 import ClassTaskList from './ClassTaskList';
 import ClassActivity from './ClassActivity';
-import TextbookProgressTab from '../components/TextbookProgressTab';
-import {generateCurriculumData} from '../data/curriculumData';
+import TextbookProgress from '../textbook/TextbookProgress';
 import {loadData} from '../data/storage';
 import type {Student} from '../types';
 import type {TaskFilters} from './task-list-model';
@@ -15,7 +14,7 @@ export default function ClassContent({item,section,stage,onSection,onReport,onAs
  if(section==='students')return <div className="cw-table-scroll"><table><thead><tr><th>Student</th><th>Assigned tasks</th><th>Class</th></tr></thead><tbody>{item.students.map(name=><tr key={name}><td>{name}</td><td>{item.tasks.filter(t=>!progressive||progressiveStudentStatus(t.id,name,stage)!=='Not assigned').map(t=><button key={t.id} onClick={()=>onReport(t.id)}>{t.title}</button>)}</td><td>{item.name}</td></tr>)}</tbody></table></div>;
  if(section==='textbook'){
   const data=loadData();const roster:Student[]=item.students.map((name,i)=>data.students.find(s=>s.classId===item.id&&s.name===name)??({id:`${item.id}-${i}`,name,firstName:name.split(' ')[0],lastName:name.split(' ').slice(1).join(' '),classId:item.id,mathspaceGroup:'Explorer',avatarUrl:''}));
-  return <div className="cw-textbook"><TextbookProgressTab curriculumData={generateCurriculumData(item.id,roster)}/></div>;
+  return <div className="cw-textbook"><TextbookProgress key={item.id} item={item} learners={roster.map(s=>({id:s.id,name:s.name}))}/></div>;
  }
  return <div className="cw-empty"><h2>{section[0].toUpperCase()+section.slice(1)}</h2><p>This view is outside the current class activity prototype.</p><button onClick={()=>onSection('activity')}>Return to activity</button></div>;
 }

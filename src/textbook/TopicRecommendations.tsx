@@ -1,0 +1,9 @@
+import {useState} from 'react';
+import {RecommendationCard,RecommendationHeading,RecommendationSheet} from '../test-controls/Recommendations';
+import type {Recommendation} from '../test-controls/Recommendations';
+type TopicRecommendation=Recommendation&{review:()=>void;investigate?:()=>void;discard?:()=>void};
+export function TopicRecommendations({topic,items}:{topic:string;items:TopicRecommendation[]}){
+ const [active,setActive]=useState('');
+ const perform=(action:()=>void)=>{setActive('');action()};
+ return <section className="tp-recommendations"><RecommendationHeading count={items.length} onViewAll={()=>setActive(items[0]?.id??'')}/><div className="tp-recommendation-cards">{items.map(item=><RecommendationCard key={item.id} item={item} onClick={()=>setActive(item.id)}/>)}</div>{!items.length&&<p>No recommended actions right now. Review learning as new evidence becomes available.</p>}{active&&<RecommendationSheet initial={active} items={items} taskTitle={topic} rows={[]} pausedRows={[]} struggling={[]} released={false} policy="manual" releaseTime="" now={0} onClose={()=>setActive('')} onSave={()=>{}} onReview={()=>{}} onQuestion={()=>{}} onViewSupport={()=>{}} onControls={()=>{}} renderContent={id=>{const item=items.find(i=>i.id===id);return item?<><p>{item.description}</p><p className="rc-insight-note">Based on the latest illustrative evidence for this class. Review student evidence before deciding whether this action fits your teaching plan. No task is assigned automatically.</p><footer><button className="rc-primary" onClick={()=>perform(item.review)}>{item.id==='draft'?'Review saved draft':item.id==='readiness'?'Review check-in':'Review practice'}</button>{item.investigate&&<button className="rc-primary" onClick={()=>perform(item.investigate!)}>View student evidence</button>}{item.discard&&<button onClick={()=>perform(item.discard!)}>Discard draft</button>}</footer></>:null}}/>}</section>
+}

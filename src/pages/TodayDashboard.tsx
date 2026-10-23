@@ -471,7 +471,7 @@ function OverviewView() {
 
               <div className="button-row">
                 <Link className="dashboard-btn dashboard-btn--primary" to={item.classPath}>Open class</Link>
-                <Link className="dashboard-btn dashboard-btn--secondary" to={`${item.classPath}?tab=textbook-progress`}>Topic report</Link>
+                <Link className="dashboard-btn dashboard-btn--secondary" to={`${item.classPath}?tab=textbook&topic=focus`}>Topic report</Link>
               </div>
             </article>
           ))}

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import TextbookProgress from '../textbook/TextbookProgress';
+import {legacyClasses} from '../dashboard/class-data';
 import { loadData, updateStudent, addStudentToGroup, removeStudentFromGroup, saveData } from '../data/storage';
 import type { Student, Class, PersistentGroup, MathspaceGroup } from '../types';
 
@@ -15,6 +17,7 @@ export default function StudentDetailContent({ studentId, isCompact = false }: S
   const [allGroups, setAllGroups] = useState<PersistentGroup[]>([]);
   const [showAddToGroup, setShowAddToGroup] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [section,setSection]=useState('profile');
 
   const loadStudentData = () => {
     const data = loadData();
@@ -102,6 +105,8 @@ export default function StudentDetailContent({ studentId, isCompact = false }: S
         </div>
       )}
 
+      <nav className="cw-tabs" aria-label="Student sections"><button aria-current={section==='profile'?'page':undefined} onClick={()=>setSection('profile')}>Student details</button><button aria-current={section==='textbook'?'page':undefined} onClick={()=>setSection('textbook')}>Textbook progress</button></nav>
+      {section==='textbook' ? (()=>{const item=legacyClasses(loadData()).find(c=>c.id===student.classId);return item?<TextbookProgress key={student.id} item={item} learners={[{id:student.id,name:student.name}]} studentId={student.id}/>:<p>No class textbook is available.</p>})() : <>
       <div className="card">
         <h3>Mathspace Group</h3>
         <div style={{ marginTop: '1rem' }}>
@@ -230,6 +235,7 @@ export default function StudentDetailContent({ studentId, isCompact = false }: S
           }}
         />
       )}
+      </>}
     </div>
   );
 }

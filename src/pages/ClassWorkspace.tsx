@@ -21,7 +21,7 @@ export default function ClassWorkspace({tasks=false}:{tasks?:boolean}){
  const data=loadData();const dashboard=loadDashboard();
  const classes:DashboardClass[]=[progressiveClass(stage),...dashboard,...legacyClasses(data)];
  const item=classes.find(c=>c.id===classId)??(!classId?classes[0]:undefined);if(!item)return <div className="prototype-page"><h1>Class not found</h1><Link to="/classes">Classes</Link></div>;
- const progressive=item.id==='class-progressive-results',section=tasks||search.get('tab')==='tasks'?'tasks':search.get('tab')??'activity';
+ const progressive=item.id==='class-progressive-results',section=tasks||search.get('tab')==='tasks'?'tasks':search.get('tab')==='textbook-progress'?'textbook':search.get('tab')??'activity';
  const openSection=(name:string)=>{navigate(`/classes/${item.id}${name==='tasks'?'/tasks':`?tab=${name}`}`)};
  const openReport=(id:string)=>navigate(`/classes/${item.id}/tasks/${id}${progressive||item.id==='class-test-controls'?'':'/report'}`);
  const abbreviation=(c:DashboardClass)=>c.id==='class-progressive-results'?'8P':c.id==='class-test-controls'?'8T':c.name.match(/\d+[A-Z]/i)?.[0]??String(c.year);
