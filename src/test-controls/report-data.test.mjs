@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import ts from 'typescript';
 async function load(file){const source=ts.transpileModule(fs.readFileSync(new URL(file,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;return import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)}
 const {seed,demoRows,NOW,migrateDemoSchedules}=await load('./model.ts');
-const {questions,response,studentResult,questionResult,tierMatches,matchesProgress,resultTiers,scorecardResult,reportAttempt,customDemoRows}=await load('./report-data.ts');
+const {questions,response,studentResult,questionResult,tierMatches,matchesProgress,resultTiers,scorecardResult,reportAttempt,customDemoRows,customProgress}=await load('./report-data.ts');
 assert.equal(questions.length,15);
 for(const s of seed){const r=studentResult(s);assert.ok(r.earned<=r.available);assert.equal(r.answered,Math.floor(s.progress/100*15));assert.equal(resultTiers.filter(t=>tierMatches(r.percent,t)).length,1);if(!s.progress){assert.equal(r.percent,null);assert.ok(questions.every(q=>response(s,q).outcome==='Not started'))}}
 for(const q of questions){const r=questionResult(seed,q);assert.equal(Object.values(r.counts).reduce((a,b)=>a+b,0),seed.length);assert.equal(r.participation,seed.length-r.counts['Not started']);assert.equal(questionResult([],q).percent,null)}
@@ -22,13 +22,13 @@ const before=scorecardResult(partial,due-1);
 const after=scorecardResult(partial,due);
 assert.equal(before.stage,'Before due date');
 assert.equal(after.stage,'After due date');
-assert.equal(before.available,6);
-assert.equal(after.available,24);
+assert.equal(before.available,7);
+assert.equal(after.available,25);
 assert.equal(before.earned,after.earned);
-assert.equal(after.percent,Math.round(after.earned/24*100));
+assert.equal(after.percent,Math.round(after.earned/25*100));
 assert.equal(before.unattempted,9);
 assert.equal(scorecardResult({...partial,status:'Completed'},due-1).stage,'Closed');
-assert.equal(scorecardResult(partial,due-1,'Closed').available,24);
+assert.equal(scorecardResult(partial,due-1,'Closed').available,25);
 assert.equal(scorecardResult({...partial,progress:0},due-1).percent,null);
 assert.equal(scorecardResult({...partial,progress:0},due).percent,0);
 assert.equal(partial.status,'Paused');
@@ -39,7 +39,7 @@ assert.ok(expiredResults.some(r=>r.percent===100));
 assert.ok(expiredResults.some(r=>r.percent>=80&&r.percent<100));
 assert.ok(expiredResults.some(r=>r.percent>=50&&r.percent<80));
 assert.ok(expiredResults.some(r=>r.percent<50));
-assert.ok(expiredResults.every(r=>r.stage==='Closed'&&r.available===24));
+assert.ok(expiredResults.every(r=>r.stage==='Closed'&&r.available===25));
 const pausedExpired={...demoRows()[2],expires:new Date(NOW-1).toISOString()};
 assert.equal(scorecardResult(pausedExpired,NOW).stage,'Closed');
 console.log('Expired demo has a spread of result tiers and uses final denominators.');
@@ -58,7 +58,7 @@ const extraWork=reportAttempt({...live,progress:100},atDue+1000,false);
 assert.deepEqual(studentResult(extraWork),studentResult(dueTest));
 const finalTest=reportAttempt({...live,progress:100},new Date(live.expires).getTime(),false);
 assert.equal(finalTest.markingProgress,100);
-assert.equal(scorecardResult(finalTest,atDue).available,24);
+assert.equal(scorecardResult(finalTest,atDue).available,25);
 assert.equal(reportAttempt({...live,status:'Completed'},NOW,false).markingPending,false);
 assert.ok(questions.every(q=>response(dueTest,q).outcome!=='In progress'));
 assert.ok(customDemoRows(demoRows()).every(s=>s.status!=='Paused'&&s.mode==='Untimed'));
@@ -84,3 +84,18 @@ assert.deepEqual(migrateDemoSchedules(migrated,'Before due date'),migrated);
 const rescheduled={...oldSchedules[7],due:'2026-10-10T12:00:00Z'};
 assert.deepEqual(migrateDemoSchedules([rescheduled],'Before due date')[0],rescheduled);
 console.log('Demo schedule migration is idempotent and preserves teacher changes.');
+
+for(const stage of ['Before due date','After due date','Closed']){
+ for(const raw of customDemoRows(demoRows(stage))){
+  const s=reportAttempt(raw,NOW,true),p=customProgress(s,NOW);
+  assert.equal(p.done,questions.reduce((n,q)=>n+response(s,q).completedSubproblems,0));
+  assert.equal(p.percent,Math.round(p.done/p.total*100));
+  assert.ok(p.before<=p.done);
+  if(NOW<Date.parse(s.due))assert.equal(p.before,p.done);
+ }
+}
+const completed=reportAttempt({...seed[0],status:'Completed',progress:100,due:new Date(NOW+86400000).toISOString()},NOW,true);
+assert.equal(scorecardResult(completed,NOW).stage,'Closed');
+assert.equal(scorecardResult(completed,NOW).available,questions.reduce((n,q)=>n+q.marks,0));
+assert.equal(customProgress(completed,NOW).percent,100);
+console.log('Custom progress agrees with responses and completion uses the final denominator.');

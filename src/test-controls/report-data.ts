@@ -23,7 +23,7 @@ export type Question = {id:number;equation:string;answer:number;solution:string;
 // Deterministic demo responses are derived from existing attempt progress, never stored over it.
 export function response(student:Attempt,q:Question) {
  const answered=Math.floor((student.markingProgress??student.progress)/100*questions.length);
- const inProgress=q.id===answered+1 && student.progress>0 && student.status!=='Completed'&&student.status!=='Closed'&&student.reportMode!=='test';
+ const inProgress=(!('adaptiveStarted' in student)||student.adaptiveStarted)&&q.id===answered+1 && student.progress>0 && student.status!=='Completed'&&student.status!=='Closed'&&student.reportMode!=='test';
  const n=(student.id*3+q.id*7+student.version)%10;
  const accuracy=student.accuracy??[10,8,6,4,2,0][(student.id-1)%6];
  let outcome:Outcome=q.id>answered?(inProgress?'In progress':'Not started'):n<accuracy?'Correct':n<accuracy+2&&q.marks>1?'Partial':'Incorrect';
@@ -93,3 +93,12 @@ export function questionOneParts(student:Attempt) {
 
 // Equal four-point bins; include 100% in the final bin and omit unmarked students.
 export function resultDistribution(samples:(number|null)[]){return Array.from({length:25},(_,i)=>samples.filter(v=>v!==null&&Math.min(24,Math.floor(v/4))===i).length)}
+
+// One progress measure for custom table, filters, averages and scorecards.
+export function customProgress(s:Attempt,now:number){
+ const total=questions.reduce((n,q)=>n+response(s,q).subproblems,0);
+ const done=questions.reduce((n,q)=>n+response(s,q).completedSubproblems,0);
+ const snapshot={...s,progress:s.dueProgress??s.progress,markingProgress:undefined,status:'In progress' as const};
+ const before=now<Date.parse(s.due)?done:Math.min(done,questions.reduce((n,q)=>n+response(snapshot,q).completedSubproblems,0));
+ return {done,before,total,percent:Math.round(done/total*100)};
+}

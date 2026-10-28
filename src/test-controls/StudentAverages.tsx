@@ -1,5 +1,5 @@
 import type { Attempt } from './model';
-import { isTestExtension, questions, response, scorecardResult } from './report-data';
+import { customProgress, isTestExtension, questions, response, scorecardResult } from './report-data';
 import { DisplayRow } from './TableDisplay';
 import { ResultChip } from './ReportViews';
 
@@ -15,7 +15,7 @@ export function StudentAverages({ students, columns, now, progressive }: {
 }) {
   const results = students.map(student => scorecardResult(student, now)).filter(result => result.percent !== null);
   const marked = students.filter(student => !student.markingPending);
-  const progress = mean(students.map(student => student.progress));
+  const progress = mean(students.map(student => progressive?customProgress(student,now).percent:student.progress));
   const result = mean(results.map(result => result.percent!));
   const time = mean(students.map(student => student.timeSpent ?? (student.progress ? 12 + student.id % 9 : 0)));
   const outcomes = [

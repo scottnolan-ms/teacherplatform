@@ -1,9 +1,9 @@
 import type {Action,Attempt} from './model';
 import {StudentActionsMenu} from './StudentActionsMenu';
 import type {StudentActionItem} from './StudentActionsMenu';
-export function StudentRowMenu({student,avatarUrl,progressive,onScorecard,onWorkbook,onControls,onAction,reportingOnly=false}:{avatarUrl?:string;reportingOnly?:boolean;student:Attempt;progressive:boolean;onScorecard:()=>void;onWorkbook:()=>void;onControls:()=>void;onAction:(a:Action)=>void}){
+export function StudentRowMenu({student,avatarUrl,progressive,onScorecard,onWorkbook,onControls,onAction,reportingOnly=false,reportingDisabled=false}:{avatarUrl?:string;reportingOnly?:boolean;reportingDisabled?:boolean;student:Attempt;progressive:boolean;onScorecard:()=>void;onWorkbook:()=>void;onControls:()=>void;onAction:(a:Action)=>void}){
  const icon=(id:string)=>`/assets/report-details/${id}.svg`;
- const actions:StudentActionItem[]=[{section:'Reporting',label:'Scorecard',icon:icon('30327'),onClick:onScorecard},{section:'Reporting',label:'Student workbook',icon:icon('7a08a'),onClick:onWorkbook}];
+ const actions:StudentActionItem[]=[{section:'Reporting',label:'Scorecard',disabled:reportingDisabled,icon:icon('30327'),onClick:onScorecard},{section:'Reporting',label:'Student workbook',disabled:reportingDisabled,icon:icon('7a08a'),onClick:onWorkbook}];
  if(!reportingOnly){
   if(!progressive)actions.push({section:'Actions',label:'Test controls',onClick:onControls});
   actions.push({section:'Actions',label:'Reassign',icon:icon('ce252'),onClick:()=>onAction('Reassign')},{section:'Actions',label:'Reschedule',disabled:student.status==='Completed',onClick:()=>onAction('Reschedule')});
