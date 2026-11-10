@@ -75,10 +75,10 @@ export function scorecardResult(s:Attempt, now:number, preview:ScorePreview='Cur
 
 // Tests expose a marking snapshot, never the live accuracy of unfinished work.
 export function reportAttempt(s:Attempt,now:number,progressive:boolean):Attempt {
- if(progressive)return {...s,reportMode:'custom',markingPending:false,markingProgress:undefined};
+ if(progressive)return withEditedMarkFlags({...s,reportMode:'custom',markingPending:false,markingProgress:undefined});
  const finished=s.status==='Completed'||s.status==='Closed'||!!s.closedAt||!!s.expires&&now>=new Date(s.expires).getTime();
  const due=now>=new Date(s.due).getTime();
- return {...s,reportMode:'test',markingPending:!finished&&!due,markingProgress:finished?s.progress:due?(s.dueProgress??s.progress):0};
+ return withEditedMarkFlags({...s,reportMode:'test',markingPending:!finished&&!due,markingProgress:finished?s.progress:due?(s.dueProgress??s.progress):0});
 }
 export function customDemoRows(rows:Attempt[]):Attempt[]{return rows.map(s=>({...s,mode:'Untimed',status:s.status==='Paused'?'In progress':s.status,pausedAt:undefined}))}
 
@@ -101,4 +101,13 @@ export function customProgress(s:Attempt,now:number){
  const snapshot={...s,progress:s.dueProgress??s.progress,markingProgress:undefined,status:'In progress' as const};
  const before=now<Date.parse(s.due)?done:Math.min(done,questions.reduce((n,q)=>n+response(snapshot,q).completedSubproblems,0));
  return {done,before,total,percent:Math.round(done/total*100)};
+}
+
+// Surface the same edited mark demonstrated in the question-one scorecard.
+function withEditedMarkFlags(student:Attempt):Attempt {
+ if(student.markingPending || (student.markingProgress??student.progress) < 7)return student;
+ const edited=questionOneParts(student).filter(part=>part.override);
+ const flags=[...(student.flags??[])];
+ for(const part of edited){const id=`mark-${part.label}`;if(!flags.some(flag=>flag.id===id))flags.push({id,kind:'edited',label:'Mark edited by Sarah',question:part.label,detail:`${part.aiMark} → ${part.earned} / 1. ${part.rationale}`});}
+ return {...student,flags};
 }

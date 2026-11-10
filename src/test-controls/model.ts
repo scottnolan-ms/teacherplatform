@@ -1,7 +1,8 @@
+import type {ReportActivity} from './report-flags';
 export type Status = 'In progress' | 'Paused' | 'Scheduled' | 'Completed' | 'Closed';
 export type Action = 'Pause' | 'Resume' | 'Start now' | 'Restart' | 'Reschedule' | 'Reassign';
 export type Mode = 'Scheduled' | 'Self-paced' | 'Untimed';
-export interface Attempt { id: number; name: string; group: string; mode: Mode; status: Status; previous?: Status; remaining: number; progress: number; start: string; due: string; pausedAt?: number; version: number; expires?: string; closedAt?: string; submittedAt?: string; accuracy?: number; timeSpent?: number; dueProgress?: number; markingProgress?: number; markingPending?: boolean; reportMode?: 'test' | 'custom'; durationMinutes?: number | null; calculator?: boolean; penalties?: boolean; attendanceNote?: string }
+export interface Attempt extends ReportActivity { id: number; name: string; group: string; mode: Mode; status: Status; previous?: Status; remaining: number; progress: number; start: string; due: string; pausedAt?: number; version: number; expires?: string; closedAt?: string; submittedAt?: string; accuracy?: number; timeSpent?: number; dueProgress?: number; markingProgress?: number; markingPending?: boolean; reportMode?: 'test' | 'custom'; durationMinutes?: number | null; calculator?: boolean; penalties?: boolean; attendanceNote?: string }
 export const NOW = new Date('2026-09-25T10:20:00').getTime();
 export const seed: Attempt[] = ['Emma Johnson','Liam Martinez','Sophia Okonkwo','Noah Okafor','Olivia Petrov','Davis Mason','Amelia Chen','Lucas Wilson','Isla Patel','Ethan Nguyen','Mia Thompson','Oliver Lee'].map((name,i) => ({id:i+1,name,group:i<6?'Group 1':'Group 2',mode:i<6?'Scheduled':i<9?'Self-paced':'Untimed',status:i===4?'Completed':i===2||i===9?'Paused':i>=6&&i<9?'Scheduled':'In progress',previous:'In progress',remaining: i===2?28*60:40*60-i*61,progress:i===4?100:i>=6&&i<9?0:Math.min(85,20+i*7),start:i>=6&&i<9?'2026-09-28T09:00':'2026-09-25T10:00',due:i===9?'2026-09-24T15:00':i<6?'2026-09-25T11:00':'2026-09-28T15:00',pausedAt:i===2||i===9?NOW-12*60000:undefined,version:1}));
 export function effectiveStatus(s:Attempt,now:number):Status {
@@ -19,7 +20,7 @@ export function applyAction(rows:Attempt[],ids:number[],action:Action,opts:Optio
  const changed=rows.map(original=>{
  const s={...original,status:effectiveStatus(original,now)};
  if(!ids.includes(s.id)||!eligible(s,action))return s;
- if(action==='Reassign'){extra.push({...s,id:nextId++,group:opts.group,...(s.durationMinutes!==undefined?{durationMinutes:opts.minutes,mode:'Scheduled' as Mode,calculator:rows.find(r=>ids.includes(r.id))?.calculator,penalties:rows.find(r=>ids.includes(r.id))?.penalties}:{}),status:'Scheduled',progress:opts.fresh?0:s.progress,dueProgress:opts.fresh?0:s.progress,version:s.version+(opts.fresh?1:0),remaining:opts.minutes*60,start:opts.start,due:opts.due,pausedAt:undefined,closedAt:undefined,expires:new Date(new Date(opts.due).getTime()+86400000).toISOString(),timeSpent:opts.fresh?0:s.timeSpent});return s;}
+ if(action==='Reassign'){extra.push({...s,flags:[...(opts.fresh?[]:s.flags??[]),{id:`reassigned-${nextId}-${now}`,kind:'reassigned',label:'Task reassigned',at:new Date(now).toISOString(),detail:`Reassigned from ${s.group} to ${opts.group}. ${opts.fresh?'Fresh attempt.':'Saved answers retained.'}`}],timeAwaySeconds:opts.fresh?undefined:s.timeAwaySeconds,id:nextId++,group:opts.group,...(s.durationMinutes!==undefined?{durationMinutes:opts.minutes,mode:'Scheduled' as Mode,calculator:rows.find(r=>ids.includes(r.id))?.calculator,penalties:rows.find(r=>ids.includes(r.id))?.penalties}:{}),status:'Scheduled',progress:opts.fresh?0:s.progress,dueProgress:opts.fresh?0:s.progress,version:s.version+(opts.fresh?1:0),remaining:opts.minutes*60,start:opts.start,due:opts.due,pausedAt:undefined,closedAt:undefined,expires:new Date(new Date(opts.due).getTime()+86400000).toISOString(),timeSpent:opts.fresh?0:s.timeSpent});return s;}
  if(action==='Pause')return {...s,status:'Paused' as Status,previous:s.status,pausedAt:now};
  if(action==='Resume'){
  const wasStarted=s.previous!=='Scheduled';
@@ -111,11 +112,13 @@ export function testDemoRows(scenario: DemoScenario = 'Before due date'): Attemp
    progress, dueProgress: pastDue || expired ? progress : undefined, timeSpent, accuracy: accuracy[index],
    closedAt: complete ? iso(startOffset + timeSpent) : expired || pastDue && durationMinutes !== null ? due : undefined,
    markingProgress: undefined, markingPending: undefined, reportMode: 'test',
+   timeAwaySeconds: pending ? undefined : index===1?162:index===8?609:0,
+   flags: pending ? [] : index===1 ? [{id:'exit-1',kind:'integrity',signal:'exit',label:'Exited fullscreen',at:iso(startOffset+2),question:'2'},{id:'exit-2',kind:'integrity',signal:'exit',label:'Exited fullscreen',at:iso(startOffset+5),question:'5'}] : index===8 ? [{id:'exit-8',kind:'integrity',signal:'exit',label:'Exited fullscreen',at:iso(startOffset+2),question:'2'},{id:'away-8',kind:'integrity',signal:'time',seconds:609,label:'Time away: 10m 9s',at:iso(startOffset+3),question:'3'},{id:'paste-8',kind:'integrity',signal:'paste',label:'Paste attempt',at:iso(startOffset+15),question:'8',detail:'The quadratic formula is x = (−b ± √(b² − 4ac)) / 2a'}] : [],
   };
  }).map((student, index): Attempt => {
   // Move the closed snapshot back so the next-day make-up sitting has also expired.
   const shift = (value: string, minutes: number) => new Date(Date.parse(value) + minutes * 60000).toISOString();
-  const row = scenario === 'Closed' ? {...student, start: shift(student.start, -2880), due: shift(student.due, -2880), expires: shift(student.expires!, -2880), closedAt: student.closedAt ? shift(student.closedAt, -2880) : undefined} : student;
+  const row = scenario === 'Closed' ? {...student, start: shift(student.start, -2880), due: shift(student.due, -2880), expires: shift(student.expires!, -2880), flags:student.flags?.map(flag=>({...flag,at:flag.at?shift(flag.at,-2880):undefined})), closedAt: student.closedAt ? shift(student.closedAt, -2880) : undefined} : student;
   if (index !== 3 || scenario === 'Pending' || scenario === 'Mixed states') return row as Attempt;
   if (scenario === 'Closed') {
    const start = shift(row.start, 1440), due = shift(row.due, 1440);

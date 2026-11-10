@@ -1,3 +1,5 @@
+import {FlagChips} from '../../test-controls/ReportFlags';
+import {hasReportFlags,timeAway} from '../../test-controls/report-flags';
 import {ReportIconButton} from '../../test-controls/ReportIconButton';
 import { useState, useEffect } from 'react';
 import type { StudentTaskDetail, TaskType, TaskGroup } from '../../types';
@@ -33,6 +35,7 @@ interface StudentsTabProps {
 }
 
 export default function StudentsTab({ students, taskGroups, selectedStudentIds, onSelectionChange, atRiskStudentIds = [], highlightAtRisk = false, taskType = 'custom', onReassignStudent }: StudentsTabProps) {
+  const showActivity = taskType === 'test' || students.some(hasReportFlags);
   const showConfidenceColumn = taskType === 'topic-readiness-checkin';
   const showGroupColumn = (taskGroups?.length ?? 0) > 1;
   const getStudentGroup = (id: string) => taskGroups?.find(g => g.studentIds.includes(id));
@@ -103,6 +106,7 @@ export default function StudentsTab({ students, taskGroups, selectedStudentIds, 
             <th>Result</th>
             <th>Mark</th>
             <th>Time</th>
+            {showActivity && <><th>Flags</th><th>Time away</th></>}
             <th style={{ width: '200px' }}>Actions</th>
           </tr>
         </thead>
@@ -224,6 +228,7 @@ export default function StudentsTab({ students, taskGroups, selectedStudentIds, 
               <td className="time-cell">
                 {student.timeSpentMinutes > 0 ? formatTime(student.timeSpentMinutes) : '-'}
               </td>
+              {showActivity && <><td><FlagChips student={student} name={student.studentName} avatarUrl={student.avatarUrl}/></td><td className="rf-time">{timeAway(student)}</td></>}
               <td className="actions-cell">
                 {student.status === 'not-started' ? (
                   <div className="action-buttons">

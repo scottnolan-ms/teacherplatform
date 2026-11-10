@@ -1,3 +1,4 @@
+import type {ReportActivity} from './test-controls/report-flags';
 export type MathspaceGroup = 'Explorer' | 'Adventurer' | 'Trailblazer';
 
 // Task Detail Types
@@ -201,7 +202,7 @@ export interface TaskDetailHeader {
   className: string;
 }
 
-export interface StudentTaskDetail {
+export interface StudentTaskDetail extends ReportActivity {
   studentId: string;
   studentName: string;
   firstName: string;
