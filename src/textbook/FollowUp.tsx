@@ -1,12 +1,5 @@
 import {useState,useRef,useEffect} from 'react';
 import type {ContextAction} from './TopicTools';
-type FollowUp={id:string;label:string;students:number;status:string;completed:number;improved:number};
-export function FollowUp({classId,topic,total,drafts,onReview}:{classId:string;topic:string;total:number;drafts:{kind:string;students:string[];content:string[]}[];onReview:(index:number)=>void}){
- const key=`textbook-followups-${classId}-${topic}`;
- const [items,setItems]=useState<FollowUp[]>(()=>{try{return JSON.parse(localStorage.getItem(key)??'[]')}catch{return []}});
- const save=(next:FollowUp[])=>{setItems(next);try{localStorage.setItem(key,JSON.stringify(next))}catch{/* Demo retained for session. */}};
- return <section className="tp-followups"><div className="tp-section-title"><h3>Follow-up work</h3><button onClick={()=>save([...items,{id:String(Date.now()),label:'Topic practice · demonstration',students:total,status:'Assigned (demo)',completed:0,improved:0}])}>Add illustrative follow-up</button></div><p>Drafts are local. Demonstration assignments below do not send work to students.</p>{drafts.map((d,i)=><article key={i}><strong>{d.kind}</strong><span>Draft · {d.students.length} students · {d.content.length} skills</span><button onClick={()=>onReview(i)}>Review draft</button></article>)}{items.map(item=><article key={item.id}><strong>{item.label}</strong><span>{item.status}</span><span>{item.completed} / {item.students} completed</span><span>{item.completed?`${item.improved} / ${item.completed} show growth in comparable evidence`:'Awaiting follow-up evidence'}</span>{!item.completed&&<button onClick={()=>save(items.map(x=>x.id===item.id?{...x,status:'Reviewed (demo)',completed:Math.ceil(x.students*.75),improved:Math.ceil(x.students*.5)}:x))}>Simulate results</button>}<button aria-label={`Remove ${item.label}`} onClick={()=>save(items.filter(x=>x.id!==item.id))}>Remove</button></article>)}{!drafts.length&&!items.length&&<p>No follow-up work yet. Review a recommendation to prepare a draft.</p>}</section>
-}
 export function TeachingPreview({action,onClose,onDraft}:{action:ContextAction;onClose:()=>void;onDraft:()=>void}){
  const ref=useRef<HTMLDialogElement>(null);const [answers,setAnswers]=useState(false);
  useEffect(()=>{const prior=document.activeElement as HTMLElement;ref.current?.showModal();return()=>{prior?.focus()}},[]);

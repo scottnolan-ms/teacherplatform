@@ -4,7 +4,7 @@ import ts from 'typescript';
 import {test} from 'node:test';
 const cache=new Map();
 function moduleUrl(file){const url=new URL(file,import.meta.url);if(cache.has(url.href))return cache.get(url.href);let code=ts.transpileModule(fs.readFileSync(url,'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;code=code.replace(/from ['"]([^'"]+)['"]/g,(_,path)=>`from '${moduleUrl(new URL(path+'.ts',url).href)}'`);const result=`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;cache.set(url.href,result);return result;}
-const {seedPlan,mastery,prerequisiteLevels,readiness,distribution,skillMastery,scenarioValue,snapshot}=await import(moduleUrl('./model.ts'));
+const {taskTopic,seedPlan,mastery,prerequisiteLevels,readiness,distribution,skillMastery,scenarioValue,snapshot}=await import(moduleUrl('./model.ts'));
 const plan=seedPlan({focus:{topic:'Decimals and percentages',done:3,total:5,end:''}});
 const topic=plan.topics.find(t=>t.name===plan.focus);
 test('teaching edits do not change learning evidence',()=>{
@@ -62,4 +62,14 @@ test('historical snapshots preserve missing evidence and compare consistent date
   assert.ok(snapshot(level,'student:0','2026-10-09')<=snapshot(level,'student:0','2026-10-16'));
   assert.ok(snapshot(level,'student:0','2026-10-16')<=level);
  }
+});
+
+test('tasks are matched to one topic from their title',()=>{
+ const topics=seedPlan({focus:{topic:'Decimals and percentages',done:3,total:5,end:''}}).topics;
+ assert.equal(taskTopic('Converting decimals to percentages and vice versa',topics),'Decimals and percentages');
+ assert.equal(taskTopic('Decimals and percentages practice',topics),'Decimals and percentages');
+ assert.equal(taskTopic('Equivalent fractions',topics),'Fractions');
+ assert.equal(taskTopic('Linear equations practice',topics),'Linear equations');
+ assert.equal(taskTopic('Algebra readiness',topics),'Algebraic expressions');
+ assert.equal(taskTopic('End of term quiz',topics),null);
 });

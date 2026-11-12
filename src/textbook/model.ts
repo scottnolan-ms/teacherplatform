@@ -23,10 +23,19 @@ const content:Record<string,[string[],string[]]>={
  'Linear relationships':[['Coordinates','Gradient','Intercepts','Graphing linear relationships'],['Substitute into expressions','Plot coordinates']],
  'Problem solving':[['Representing a problem','Choosing a strategy','Checking a solution'],['Use order of operations','Interpret mathematical statements']],
 };
+const DAY=86400000,iso=(ms:number)=>new Date(ms).toISOString().slice(0,10);
+// Illustrative plan dates: four days per subtopic, laid end to end so the focus topic's coverage matches the class pace.
+function seedDates(topics:TopicPlan[],focusIndex:number,focus:DashboardClass['focus']):TopicPlan[]{
+ if(focusIndex<0)return topics;
+ const days=(t:TopicPlan)=>t.subtopics.length*4,f=topics[focusIndex];
+ const through=Math.max(0,Math.min(.95,(f.introduced+(focus?.pace==='Behind'?.5:focus?.pace==='Ahead'?-1.5:-.5))/Math.max(1,f.subtopics.length)));
+ let cursor=Date.parse(DEMO_DATE)-Math.round(through*days(f))*DAY-topics.slice(0,focusIndex).reduce((n,t)=>n+days(t),0)*DAY;
+ return topics.map((t,i)=>{const start=cursor;cursor+=days(t)*DAY;return {...t,start:i===focusIndex&&focus?.start||iso(start),end:i===focusIndex&&focus?.end||iso(cursor-DAY)}});
+}
 export function seedPlan(item:Pick<DashboardClass,'textbook'|'focus'>):Plan{
  const names=[...new Set([...(item.textbook?.topics??defaultTopics),...(item.focus?[item.focus.topic]:[])])];
  const focus=item.focus?.topic??'';const focusIndex=names.indexOf(focus);
- return {focus,topics:names.map((name,i)=>{const [subtopics,prerequisites]=content[name]??[[`Representing ${name.toLowerCase()}`,`Working with ${name.toLowerCase()}`,`Applying ${name.toLowerCase()}`],['Use number operations','Interpret mathematical statements']];return {name,subtopics,prerequisites,state:i===focusIndex?'Teaching':i<focusIndex?'Taught':'Planned',start:i===focusIndex?item.focus?.start??'':'',end:i===focusIndex?item.focus?.end??'':'',introduced:i<focusIndex?subtopics.length:i===focusIndex?Math.min(item.focus?.done??0,subtopics.length):0}})};
+ return {focus,topics:seedDates(names.map((name,i)=>{const [subtopics,prerequisites]=content[name]??[[`Representing ${name.toLowerCase()}`,`Working with ${name.toLowerCase()}`,`Applying ${name.toLowerCase()}`],['Use number operations','Interpret mathematical statements']];return {name,subtopics,prerequisites,state:i===focusIndex?'Teaching':i<focusIndex?'Taught':'Planned',start:'',end:'',introduced:i<focusIndex?subtopics.length:i===focusIndex?Math.min(item.focus?.done??0,subtopics.length):0}}),focusIndex,item.focus??null)};
 }
 function hash(value:string){let h=[...value].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,17);h=Math.imul(h^(h>>>16),0x45d9f3b);return (h^(h>>>16))>>>0}
 // Illustrative evidence only. Zero is absence of evidence, never a low mastery level.
@@ -81,3 +90,41 @@ export function snapshot(value:number,key:string,date:string){
  if(days>seed%28+7)return 0;
  return Math.max(1,value-Math.floor(days/(7+seed%7)));
 }
+
+// Demo tasks carry no topic, so the topic is inferred from the title: an exact subtopic name wins, otherwise the
+// topic sharing the most significant words. Production tasks would carry their own topic reference.
+export function taskTopic(title:string,topics:Pick<TopicPlan,'name'|'subtopics'>[]):string|null{
+ const text=title.toLowerCase();
+ const exact=topics.find(t=>text.includes(t.name.toLowerCase())||t.subtopics.some(s=>text.includes(s.toLowerCase())));
+ if(exact)return exact.name;
+ const score=(name:string)=>name.toLowerCase().split(/\W+/).filter(w=>w.length>=5&&text.includes(w.slice(0,6))).length;
+ const best=topics.map(t=>({name:t.name,score:score(t.name)})).sort((a,b)=>b.score-a.score)[0];
+ return best&&best.score>0?best.name:null;
+}
+
+export const shortDate=(date:string,year=false)=>new Intl.DateTimeFormat('en-AU',{day:'numeric',month:'short',...(year?{year:'numeric'}:{}),timeZone:'UTC'}).format(new Date(`${date}T12:00:00Z`));
+// Subtopics the plan expects to be introduced by a date, spreading a topic's subtopics evenly across its dates.
+export function plannedBy(t:TopicPlan,today=DEMO_DATE){
+ const n=t.subtopics.length;
+ if(!t.start||!t.end||t.end<=t.start)return t.introduced;
+ if(today<t.start)return 0;
+ return Math.ceil(Math.min(1,(Date.parse(today)-Date.parse(t.start))/(Date.parse(t.end)-Date.parse(t.start)))*n);
+}
+export type Pace={status:'No dates'|'Upcoming'|'On track'|'Behind'|'Ahead'|'Complete';delta:number};
+export function paceStatus(t:TopicPlan,today=DEMO_DATE):Pace{
+ if(t.state==='Taught'||t.subtopics.length>0&&t.introduced>=t.subtopics.length)return {status:'Complete',delta:0};
+ if(!t.start||!t.end||t.end<=t.start)return {status:'No dates',delta:0};
+ const delta=t.introduced-plannedBy(t,today);
+ if(today<t.start&&!delta)return {status:'Upcoming',delta:0};
+ return {status:delta<0?'Behind':delta>0?'Ahead':'On track',delta};
+}
+
+export const shiftDate=(date:string,days:number)=>new Date(Date.parse(`${date}T12:00:00Z`)+days*86400000).toISOString().slice(0,10);
+// Weekdays between two dates, in weeks to the nearest half. Term holidays are not modelled.
+export function schoolWeeks(start:string,end:string){
+ let days=0;
+ for(let d=Date.parse(`${start}T12:00:00Z`);d<=Date.parse(`${end}T12:00:00Z`);d+=86400000){const day=new Date(d).getUTCDay();if(day!==0&&day!==6)days++}
+ return Math.max(.5,Math.round(days/5*2)/2);
+}
+// Illustrative guide length for a topic, from its number of subtopics.
+export const guideWeeks=(subtopics:number)=>{const low=Math.max(1,Math.round(subtopics*.6)),high=Math.max(low,Math.round(subtopics*.8));return low===high?`${low}`:`${low} – ${high}`};

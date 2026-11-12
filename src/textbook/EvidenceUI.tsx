@@ -25,3 +25,9 @@ export function AverageMastery({values,skill=false}:{values:number[];skill?:bool
  const tier=Math.floor(mean);const explanation=known.length?`Illustrative average: ${mean.toFixed(1)} out of 5 across ${known.length} of ${values.length} students with evidence. Missing evidence is excluded. Chip shows the lower whole level; Mastered requires an average of 5. This is a mean of levels, not a percentage mastery score.`:'No evidence available to calculate an average.';
  return <div className="tp-average" tabIndex={0} title={explanation} aria-label={explanation}><img src={`/assets/textbook-mastery/${skill?'skill':'subtopic'}-${tier}.svg`} alt={levels[tier]}/><strong>{known.length?`${mean.toFixed(1)} / 5`:'—'}</strong><small>{known.length} of {values.length} with evidence</small></div>
 }
+
+// The key for mastery levels; each chip takes the surface colour its level has in the distribution bars.
+export function MasteryKey(){
+ const {layout}=useEvidenceOptions();
+ return <div className={layout==='symbols'?'tp-legend tp-legend-symbols':'tp-legend'} aria-label="Mastery key">{levels.map((label,i)=><span key={label} className={`tp-legend-chip tp-segment-${i}`}><img className="tp-legend-symbol" src={`/assets/textbook-mastery/skill-${i}.svg`} alt=""/>{label}</span>)}</div>;
+}
