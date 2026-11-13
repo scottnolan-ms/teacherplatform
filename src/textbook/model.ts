@@ -128,3 +128,15 @@ export function schoolWeeks(start:string,end:string){
 }
 // Illustrative guide length for a topic, from its number of subtopics.
 export const guideWeeks=(subtopics:number)=>{const low=Math.max(1,Math.round(subtopics*.6)),high=Math.max(low,Math.round(subtopics*.8));return low===high?`${low}`:`${low} – ${high}`};
+
+// Mastery scores are shown out of 100 (never as a percentage, to avoid confusion with results). Level bands: 1 → 0, 3 → 50, 5 → 100.
+export const masteryScore=(mean:number)=>mean>0?Math.round(Math.max(0,Math.min(1,(mean-1)/4))*100):0;
+export type PageRange={start:number;end:number};
+export type TopicPages={number:number;start:number;end:number;subs:PageRange[]};
+// Illustrative print page numbers: topics in textbook order, an opener, six pages per subtopic and a review spread.
+export function pageRanges(topics:TopicPlan[],bookOrder:string[]){
+ const at=(t:TopicPlan)=>{const i=bookOrder.indexOf(t.name);return i<0?bookOrder.length:i};
+ const out=new Map<string,TopicPages>();let page=1;
+ [...topics].sort((a,b)=>at(a)-at(b)).forEach((t,i)=>{const start=page;page+=2;const subs=t.subtopics.map(()=>{const s=page;page+=6;return {start:s,end:page-1}});page+=2;out.set(t.name,{number:i+1,start,end:page-1,subs})});
+ return out;
+}

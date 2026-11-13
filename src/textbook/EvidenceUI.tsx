@@ -1,6 +1,7 @@
 import {useEffect,useId,useState} from 'react';
 import {AnchoredTooltip} from '../test-controls/AnchoredTooltip';
-import {distribution,levels} from './model';
+import {distribution,levels,masteryScore} from './model';
+import type {PageRange} from './model';
 import {useEvidenceOptions} from './distribution-options';
 const descriptions=['There is not enough evidence to estimate mastery. This does not mean low ability.','Understanding is developing; success is not yet consistent.','Some understanding is established, with substantial practice still needed.','Working understanding is established; more practice supports consistency.','Strong understanding is established across most questions.','Understanding is well established across the skill or subtopic.'];
 export function Level({value,compact=false}:{value:number;compact?:boolean}){return <span className={`tp-level tp-level-${value} ${compact?'tp-level-compact':''}`} title={`${levels[value]}${value?` · level ${value} of 5`:''}. ${descriptions[value]}`}><b>{value===0?'—':value===5?'★':value}</b><span className={compact?'tp-sr-only':''}>{levels[value]}</span></span>}
@@ -19,11 +20,31 @@ export function Distribution({values,subject='Mastery distribution'}:{values:num
  </div>
 }
 
-export function AverageMastery({values,skill=false}:{values:number[];skill?:boolean}){
+const pad=(n:number)=>String(n).padStart(2,'0');
+// A small label with a tooltip on hover or focus; used for textbook numbering and mastery scores.
+function useTip(){const id=useId();const [anchor,setAnchor]=useState<DOMRect|null>(null);
+ useEffect(()=>{if(!anchor)return;const hide=()=>setAnchor(null);window.addEventListener('scroll',hide,true);window.addEventListener('resize',hide);return()=>{window.removeEventListener('scroll',hide,true);window.removeEventListener('resize',hide)}},[anchor]);
+ const show=(e:{currentTarget:HTMLElement})=>setAnchor(e.currentTarget.getBoundingClientRect());
+ return {id,anchor,props:{tabIndex:0,'aria-describedby':anchor?id:undefined,onMouseEnter:show,onFocus:show,onMouseLeave:()=>setAnchor(null),onBlur:()=>setAnchor(null),onKeyDown:(e:React.KeyboardEvent)=>{if(e.key==='Escape')setAnchor(null)}}};
+}
+// "Topic 4" or "4.02": the place in the textbook, with print page numbers in the tooltip.
+export function TopicChip({label,pages}:{label:string;pages?:PageRange}){
+ const tip=useTip();
+ return <><span className="tp-topic-chip" {...(pages?tip.props:{})}>{label}</span>{pages&&tip.anchor&&<AnchoredTooltip id={tip.id} className="tp-mastery-tooltip tp-page-tooltip" anchor={tip.anchor}><strong>{label}</strong><p>Pages {pages.start}–{pages.end} in the print textbook</p></AnchoredTooltip>}</>;
+}
+// Eyebrow above a topic name: its place in the class sequence (when one exists), then its textbook topic number.
+export function TopicEyebrow({seq,number,pages}:{seq?:number;number:number;pages?:PageRange}){
+ return <span className="tp-topic-eyebrow">{seq!==undefined&&<><span className="tp-seq" title="Position in your scope and sequence">Seq. {pad(seq)}</span><span aria-hidden="true">•</span></>}<TopicChip label={`Topic ${number}`} pages={pages}/></span>;
+}
+const scoreCopy=[['',''],['is exploring this','Not yet succeeding consistently, even on the easier questions.'],['is emerging in this','Succeeding mainly on the easier questions.'],['is familiar with this','Succeeding on the core questions.'],['is proficient in this','Strong understanding, not yet succeeding on the hardest questions.'],['has mastered this','Succeeding consistently, including on the hardest questions.']];
+export function AverageMastery({values,skill=false,noun}:{values:number[];skill?:boolean;noun?:string}){
+ const tip=useTip();
  const known=values.filter(v=>v>0);const mean=known.length?known.reduce((a,b)=>a+b,0)/known.length:0;
  // Illustrative ordinal mean; retain the lower tier until the next whole level is reached.
- const tier=Math.floor(mean);const explanation=known.length?`Illustrative average: ${mean.toFixed(1)} out of 5 across ${known.length} of ${values.length} students with evidence. Missing evidence is excluded. Chip shows the lower whole level; Mastered requires an average of 5. This is a mean of levels, not a percentage mastery score.`:'No evidence available to calculate an average.';
- return <div className="tp-average" tabIndex={0} title={explanation} aria-label={explanation}><img src={`/assets/textbook-mastery/${skill?'skill':'subtopic'}-${tier}.svg`} alt={levels[tier]}/><strong>{known.length?`${mean.toFixed(1)} / 5`:'—'}</strong><small>{known.length} of {values.length} with evidence</small></div>
+ const tier=Math.floor(mean),score=masteryScore(mean),what=noun??(skill?'skill':'subtopic');
+ return <div className="tp-average"><span className={skill?`tp-skill-chip tp-tier-${tier}`:`tp-subtopic-chip tp-tier-${tier}`} aria-label={known.length?`${levels[tier]}, mastery score ${score} out of 100`:'No evidence'} {...tip.props}>{skill?<img src={`/assets/textbook-mastery/skill-${tier}.svg`} alt=""/>:<i aria-hidden="true" style={{maskImage:`url(/assets/textbook-mastery/subtopic-icon-${tier}.svg)`}}/>}{levels[tier]}{known.length>0&&<b>{score}</b>}</span><small>{known.length} of {values.length} with evidence</small>
+  {tip.anchor&&<AnchoredTooltip id={tip.id} className="tp-mastery-tooltip tp-score-tooltip" anchor={tip.anchor}>{known.length?<><strong>The class {scoreCopy[tier][0]} {what}.</strong><p>{scoreCopy[tier][1]}</p><div className="tp-score-row"><span>Mastery score</span><b>{score} <i>/ 100</i></b></div><small>Illustrative average across {known.length} of {values.length} students with evidence. Missing evidence is excluded.</small></>:<><strong>No evidence yet</strong><p>There is not enough evidence to estimate mastery. This does not mean low ability.</p></>}</AnchoredTooltip>}
+ </div>
 }
 
 // The key for mastery levels; each chip takes the surface colour its level has in the distribution bars.

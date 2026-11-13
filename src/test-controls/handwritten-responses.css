@@ -76,3 +76,20 @@
 @media print{.hw2-caret,.hw2-mark-menu{display:none}.hw2-mark-button .sc-mark{padding-right:6px}}
 /* Let the open mark dropdown extend past the question card instead of being clipped. */
 .sc-question:has(.hw2-mark-menu){overflow:visible}
+
+/* Nov 2026 design update · typed leads in two columns, handwriting leads in one */
+.hw2-chip{display:inline-flex;align-items:center;gap:2px;height:24px;padding:0 6px 0 4px;border-radius:4px;background:#dfdfe5;color:#32323c;font-size:12px;font-weight:600;line-height:12px}
+.hw2-chip i{width:16px;height:16px;background:currentColor;mask-position:center;mask-size:contain;mask-repeat:no-repeat}
+.hw2-module-head small{color:#5a5a68;font-size:12px;line-height:16px}
+.hw2-modules{max-width:720px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.hw2-tile{border-radius:12px;background:#f9fafa}
+.hw2-crop-start::after{background:linear-gradient(transparent,#f9fafa)}.hw2-crop-end::after{background:linear-gradient(#f9fafa,transparent)}
+.hw2-expand{width:32px;height:32px;border:0;border-radius:50%;background:#dfdfe5;color:#32323c}
+.hw2-expand i{width:20px;height:20px;background:currentColor;mask-position:center;mask-size:contain;mask-repeat:no-repeat}
+.hw2-more{right:48px}.hw2-crop-end .hw2-more{right:8px}
+.hw2-marked{margin-top:32px}
+.hw2-marked-answer small{color:#32323c;font-size:16px}
+.hw2-rationale{margin-top:16px}.hw2-rationale .sc-rationale{margin-top:0}
+.hw2-mark-edit{position:relative}
+@media(max-width:900px){.hw2-module-written{order:-1}}
+@media print{.hw2-modules{grid-template-columns:repeat(2,minmax(0,1fr))}}

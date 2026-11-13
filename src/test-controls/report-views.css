@@ -153,3 +153,29 @@
 @media print{body:has(.sc-refined)>#root{display:none}.sc-refined .tr-sheet-backdrop{position:static;background:white}.sc-refined .tr-sheet{height:auto;max-height:none;animation:none}.sc-refined .tr-sheet-body{display:block}.sc-refined .tr-sheet-main{overflow:visible}.sc-refined .tr-sheet-list,.sc-refined .sv2-toolbar,.sc-refined .tr-sheet-header,.sc-refined .sc-export,.sc-refined .sc-question-footer button{display:none}}
 .sc-student-tooltip{position:fixed;z-index:10000;transform:translateY(-50%);padding:8px 12px;border-radius:6px;background:#32323c;color:white;font:14px/20px 'Proxima Nova',Arial,sans-serif;white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px #0003}
 .sc-student-tooltip:before{content:'';position:absolute;left:-5px;top:calc(50% - 5px);width:10px;height:10px;background:#32323c;transform:rotate(45deg)}
+
+/* Question accordion · Nov 2026 design update (closed marked answer, per-line marks, rationale, unanswered) */
+.sc-question-heading .sc-chevron:not(.is-open){background:#dfdfe5;color:#32323c}
+.sc-closed-answers{display:grid;gap:8px;padding:0 16px 16px 70px}
+.sc-closed-answers .sc-answer-row{position:relative}
+.sc-closed-answers .sc-answer{width:400px}
+.sc-closed-part{position:absolute;left:-49px;top:50%;margin-top:-14px;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#32323c;color:white;font-size:14px}
+.sc-working-lines .sc-answer-row{justify-content:flex-start}
+.sc-step-mark{display:flex;align-items:center;justify-content:center;width:32px;height:32px;flex:0 0 32px;border-radius:4px;background:#dfdfe5;color:#32323c}
+.sc-step-mark.partial{background:#fdebb8;color:#754800}
+.sc-step-mark .tr-outcome-icon{width:20px;height:20px;flex:0 0 20px;color:inherit}
+.sc-no-answer{min-height:32px}.sc-no-answer>span:first-child{font-family:KaTeX_Main,Georgia,serif;font-size:16px;line-height:18px}
+.sc-no-answer .sc-mark{margin-left:auto}.sc-no-answer .tr-outcome-icon{display:inline-block;background:currentColor;mask-position:center;mask-size:contain;mask-repeat:no-repeat}
+.sc-total.partial{background:#fdebb8;color:#754800}.sc-total.incorrect{background:#fbcfd3;color:#98001c}
+.sc-edited-chip{display:flex;align-items:center;gap:2px;padding:4px 6px;font-size:12px;font-weight:600;color:#00609c}
+.sc-edited{max-width:720px;border:1px solid #ececf0;background:white;box-shadow:0 2px 6px rgba(50,50,60,.18);margin-top:16px}
+.sc-edited-by time{margin-left:auto;color:#5a5a68;white-space:nowrap}.sc-edited-by time+button{margin-left:8px}
+.sc-rationale{max-width:720px;border-width:1px;margin-top:16px}.sc-rationale>summary{padding:12px}
+.sc-rationale-title{display:flex;flex-direction:column}.sc-rationale-title small{font-size:12px;line-height:16px;color:#32323c}
+.sc-rationale>div{padding:4px 16px 16px;font-size:16px;cursor:pointer}.sc-rationale>div p{margin:0}
+.sc-rationale .sc-ai-note{display:flex;align-items:center;gap:2px;margin-top:16px;color:#6e3ddd;font-size:14px;line-height:18px}.sc-ai-note .sc-icon{width:24px;height:24px;flex-basis:24px}
+/* Prototype variation · marked final answer input tinted by its mark */
+:root[data-marked-answer="tinted"] .sc-answer.is-marked.correct{background:#effcf9;border-color:#a3e6d7}
+:root[data-marked-answer="tinted"] .sc-answer.is-marked.partial{background:#fff8e2;border-color:#f1d78a}
+:root[data-marked-answer="tinted"] .sc-answer.is-marked.incorrect{background:#fdf1f2;border-color:#f3bbc2}
+@media(max-width:800px){.sc-closed-answers{padding-left:16px}.sc-closed-part{position:static;margin:0;flex:0 0 28px}}

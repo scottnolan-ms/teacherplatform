@@ -6,3 +6,11 @@
 .tc-app .rp-prototype-toolbar .prototype-design-sheet select{font:400 16px/24px 'Proxima Nova',Arial,sans-serif;border-radius:8px}
 .tc-app .rp-prototype-toolbar .prototype-design-sheet header button{font-size:28px;width:44px;height:44px;padding:0;background:transparent;color:#32323c}
 .tc-app .rp-prototype-toolbar .prototype-design-sheet footer button{font-size:16px;padding:10px 24px;background:#6e3ddd;color:white;border-radius:24px}
+
+button.prototype-fab.prototype-fab{position:fixed;right:20px;bottom:20px;z-index:195;display:grid!important;place-items:center;width:52px!important;height:52px!important;min-width:0;padding:0!important;border:0!important;border-radius:50%!important;background:#1f073f!important;color:white!important;box-shadow:0 6px 20px #241b3b55;cursor:pointer}
+button.prototype-fab.prototype-fab:hover{background:#42168a!important}button.prototype-fab.prototype-fab:focus-visible{outline:3px solid #ac8af2;outline-offset:3px}
+.prototype-design-sheet .prototype-design-body>label>select,.prototype-design-sheet .prototype-design-body label select{font:400 16px/24px 'Proxima Nova',Arial,sans-serif;height:auto;border-radius:8px}
+.prototype-design-sheet .prototype-design-body>:is(span,details,div,a){font-size:14px;letter-spacing:0;text-transform:none;color:#5a5a68;white-space:normal}
+.prototype-design-sheet .prototype-design-body>button{align-self:flex-start;padding:8px 16px;border:1px solid #6e3ddd;border-radius:24px;background:white;color:#6e3ddd;font:600 14px/20px 'Proxima Nova',Arial,sans-serif;cursor:pointer}
+.prototype-design-sheet .prototype-design-body>a.rp-prototype-back{width:auto;height:auto;font-size:14px;color:#6e3ddd;text-decoration:none;align-self:flex-start}.prototype-design-sheet .prototype-design-body>a.rp-prototype-back::after{content:' Back to prototypes'}
+.prototype-design-sheet header button{width:44px;height:44px;padding:0;border:0;background:transparent;color:#32323c;font-size:28px}.prototype-design-sheet footer button{padding:10px 24px;border:0;border-radius:24px;background:#6e3ddd;color:white;font:600 16px/24px 'Proxima Nova',Arial,sans-serif}

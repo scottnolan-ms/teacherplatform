@@ -1,20 +1,21 @@
 import {useState} from 'react';
 import type {DashboardClass} from '../dashboard/model';
 import {topics as bookTopics} from '../dashboard/model';
-import {Distribution,Level,MasteryKey} from './EvidenceUI';
-import {DEMO_DATE,paceStatus,plannedBy,shortDate,taskTopic} from './model';
+import {AverageMastery,Distribution,Level,MasteryKey,TopicEyebrow} from './EvidenceUI';
+import {DEMO_DATE,masteryScore,pageRanges,paceStatus,plannedBy,shortDate,taskTopic} from './model';
 import type {Learner,Plan,TopicPlan} from './model';
 
-type Props={item:DashboardClass;plan:Plan;roster:Learner[];individual:boolean;values:(t:TopicPlan,index:number,people?:Learner[])=>number[];onTopic:(name:string)=>void;order:'sequence'|'textbook';onOrder:(order:'sequence'|'textbook')=>void};
+type Props={item:DashboardClass;plan:Plan;roster:Learner[];individual:boolean;values:(t:TopicPlan,index:number,people?:Learner[])=>number[];onTopic:(name:string)=>void;order:'sequence'|'textbook';hasSequence:boolean};
 const DAY=86400000;
 const mean=(v:number[])=>{const known=v.filter(n=>n>0);return known.length?known.reduce((a,b)=>a+b,0)/known.length:0};
 const icon=(name:string)=><i className="rc-icon" aria-hidden="true" style={{maskImage:`url(/assets/${name}.svg)`}}/>;
 
 // Overview: where the class is in the textbook, how that compares with the plan, and how learning looks along the way.
-export function Overview({item,plan,roster,individual,values,onTopic,order,onOrder}:Props){
+export function Overview({item,plan,roster,individual,values,onTopic,order,hasSequence}:Props){
  const [open,setOpen]=useState(true);
  const book=item.textbook?.topics??bookTopics;
  const chapter=(t:TopicPlan)=>{const i=book.indexOf(t.name);return i<0?plan.topics.length:i+1};
+ const pages=pageRanges(plan.topics,book);
  const ordered=order==='sequence'?plan.topics:[...plan.topics].sort((a,b)=>chapter(a)-chapter(b));
  // Learning is read from introduced subtopics; a topic not yet started falls back to any evidence it has.
  const scope=(t:TopicPlan)=>t.subtopics.map((_,j)=>j).filter(j=>!t.introduced||j<t.introduced);
@@ -42,20 +43,21 @@ export function Overview({item,plan,roster,individual,values,onTopic,order,onOrd
      <div><span>Subtopics introduced</span><strong>{icon('report-header/questions')}{introduced} / {total}</strong><small>{dated.length?`${expected} planned by ${shortDate(DEMO_DATE)}`:'Add plan dates to compare'}</small></div>
      <div><span>Pacing</span><strong>{icon('recommendations/time')}{!dated.length?'—':delta<0?`${-delta} behind`:delta>0?`${delta} ahead`:'On track'}</strong><small>{dated.length?'Subtopics against your plan':'Add plan dates to see pacing'}</small></div>
      <div><span>Forecast finish</span><strong>{icon('recommendations/time')}{forecast?shortDate(forecast,true):'—'}</strong><small>{!forecast?'Needs plan dates and coverage':`Planned ${shortDate(plannedEnd,true)}${weeksLate>0?` · ${weeksLate} wk later`:weeksLate<0?` · ${-weeksLate} wk earlier`:''}`}</small></div>
-     <div><span>{individual?'Mastery':'Class mastery'}</span><strong>{icon('report-header/skills')}{mean(learning)?`${mean(learning).toFixed(1)} / 5`:'—'}</strong><small>Across introduced subtopics</small></div>
+     <div><span>{individual?'Mastery':'Class mastery'}</span><strong>{icon('report-header/skills')}{mean(learning)?`${masteryScore(mean(learning))} / 100`:'—'}</strong><small>Across introduced subtopics</small></div>
      {individual?<div><span>Proficient or mastered</span><strong>{icon('recommendations/results')}{learning.filter(v=>v>=4).length} / {learning.length}</strong><small>Introduced subtopics</small></div>:<div><span>May need support</span><strong>{icon('recommendations/students')}{support} / {roster.length}</strong><small>{focus?'Averaging below Familiar in the topic focus':'Students averaging below Familiar'}</small></div>}
     </div></div>
-    <div><h3>Journey through the textbook</h3><div className="tp-journey">{ordered.map(t=>{const n=t.subtopics.length,label=order==='sequence'?plan.topics.indexOf(t)+1:chapter(t);return <button key={t.name} className={t.name===plan.focus?'focus':''} style={{flex:n}} title={`${t.name} · ${t.introduced} of ${n} subtopics introduced`} aria-label={`${label}. ${t.name}: ${t.name===plan.focus?'topic focus, ':''}${t.introduced} of ${n} subtopics introduced`} onClick={()=>onTopic(t.name)}><span><i style={{width:`${n?t.introduced/n*100:0}%`}}/></span><small>{label}</small></button>})}</div><p className="tp-journey-key">Each segment is a topic, sized by its subtopics and filled as they are introduced. The ring marks the topic focus. Select a topic to open it.</p></div>
+    <div><h3>{order==='sequence'&&hasSequence?'Journey through your sequence':'Journey through the textbook'}</h3><div className="tp-journey">{ordered.map(t=>{const n=t.subtopics.length,label=order==='sequence'&&hasSequence?plan.topics.indexOf(t)+1:chapter(t);return <button key={t.name} className={t.name===plan.focus?'focus':''} style={{flex:n}} title={`${t.name} · ${t.introduced} of ${n} subtopics introduced`} aria-label={`${label}. ${t.name}: ${t.name===plan.focus?'topic focus, ':''}${t.introduced} of ${n} subtopics introduced`} onClick={()=>onTopic(t.name)}><span><i style={{width:`${n?t.introduced/n*100:0}%`}}/></span><small>{label}{order==='sequence'&&hasSequence&&<em>T{chapter(t)}</em>}</small></button>})}</div><p className="tp-journey-key">{order==='sequence'&&hasSequence?'Topics run in your teaching order; the smaller T number is the topic’s place in the textbook. ':''}Each segment is a topic, sized by its subtopics and filled as they are introduced. The ring marks the topic focus. Select a topic to open it.</p></div>
    </div>}
   </section>
-  <section className="tp-sequence"><div className="tp-section-title"><div><h3>{order==='sequence'?'Class topic sequence':'Textbook order'}</h3><p>{order==='sequence'?'Your order of teaching, with pacing against your plan and learning so far.':'Topics in the order they appear in the textbook.'}</p></div><div className="tp-toggle" role="group" aria-label="Topic order">{(['sequence','textbook'] as const).map(v=><button key={v} className={order===v?'active':''} aria-pressed={order===v} onClick={()=>onOrder(v)}>{v==='sequence'?'My sequence':'Textbook order'}</button>)}</div></div>
+  <section className="tp-sequence"><div className="tp-section-title"><div><h3>{order==='sequence'?'Class topic sequence':'Textbook order'}</h3><p>{order==='sequence'?'Your order of teaching, with pacing against your plan and learning so far.':'Topics in the order they appear in the textbook.'}</p></div></div>
    <MasteryKey/>
-   <div className="tp-table-wrap"><table className="tp-table tp-overview-table"><thead><tr><th>Topic</th><th>Teaching</th><th>Pacing</th><th>{individual?'Mastery':'Class mastery'}<small>{individual?'Average level':'Students by average level'} · introduced subtopics</small></th><th>Tasks</th></tr></thead><tbody>{ordered.map(t=>{
+   <div className="tp-table-wrap"><table className="tp-table tp-overview-table"><thead><tr><th>Topic</th><th>Teaching</th><th>Pacing</th>{!individual&&<th>Average mastery<small>Introduced subtopics</small></th>}<th>{individual?'Mastery':'Class mastery'}<small>{individual?'Average level':'Students by average level'} · introduced subtopics</small></th><th>Tasks</th></tr></thead><tbody>{ordered.map(t=>{
     const seq=plan.topics.indexOf(t)+1,ch=chapter(t),p=paceStatus(t),count=tasks(t),levels=roster.map(s=>studentLevel(t,s));
     return <tr key={t.name} className={t.name===plan.focus?'tp-current-row':''}>
-     <td><button className="tp-topic-link" onClick={()=>onTopic(t.name)}><span className="tp-number">{String(order==='sequence'?seq:ch).padStart(2,'0')}</span><span><strong>{t.name}</strong><small>{t.subtopics.length} subtopics{t.name===plan.focus?' · Current focus':''}{seq!==ch?order==='sequence'?` · Chapter ${ch}`:` · Taught ${seq} in your sequence`:''}</small></span></button></td>
+     <td><div className="tp-topic-cell">{hasSequence&&<span className="tp-number" title="Position in your scope and sequence">{String(seq).padStart(2,'0')}</span>}<div><TopicEyebrow number={ch} pages={pages.get(t.name)}/><button className="tp-topic-link" onClick={()=>onTopic(t.name)}><strong>{t.name}</strong></button><small>{t.subtopics.length} subtopics{t.name===plan.focus?' • Current focus':''}</small></div></div></td>
      <td><span className={`tp-tag ${t.name===plan.focus?'tp-focus-tag':t.state==='Taught'?'tp-taught':''}`}>{t.name===plan.focus?'Teaching · focus':t.state}</span><small>{t.introduced} / {t.subtopics.length} introduced</small></td>
      <td><span className={`tp-pace tp-pace-${p.status.toLowerCase().replace(' ','-')}`}>{paceLabel(t)}</span><small>{t.start&&t.end?`${shortDate(t.start)} – ${shortDate(t.end)}`:'No dates set'}</small></td>
+     {!individual&&<td>{levels.some(v=>v>0)?<AverageMastery noun="topic" values={roster.map(st=>mean(scope(t).map(j=>values(t,j,[st])[0])))}/>:<span className="tp-muted">—</span>}</td>}
      <td>{levels.some(v=>v>0)?individual?<Level value={levels[0]??0}/>:<Distribution subject={t.name} values={levels}/>:<span className="tp-muted">No evidence yet</span>}</td>
      <td>{count||'—'}</td>
     </tr>})}</tbody></table></div>
