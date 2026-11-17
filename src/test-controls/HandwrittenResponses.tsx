@@ -7,6 +7,7 @@ import './handwritten-responses.css';
 
 type Interpretation = 'final' | 'split' | 'working';
 const InterpretationContext = createContext<Interpretation>('split');
+const FormatChipsContext = createContext(true);
 type Format = 'Mixed responses' | 'All handwritten' | 'All typed';
 const HandwritingContext = createContext(false);
 const FormatContext = createContext<Format>('Mixed responses');
@@ -27,10 +28,10 @@ export const markTone=(earned:number,total:number)=>earned>=total?'correct':earn
 export function HandwritingScenario({children}:{children:ReactNode}) {
  return <HandwritingContext.Provider value={true}>{children}</HandwritingContext.Provider>;
 }
-export function ResponseFormatPreview({children}:{children:ReactNode}) {
+export function ResponseFormatPreview({children,fixedFormat,hideFormatChips=false}:{children:ReactNode;fixedFormat?:Format;hideFormatChips?:boolean}) {
  const [format,setFormat]=useState<Format>('Mixed responses');
  const [interpretation,setInterpretation]=useState<Interpretation>('split');
- return <FormatContext.Provider value={format}><InterpretationContext.Provider value={interpretation}><FormatControlContext.Provider value={{format,setFormat,interpretation,setInterpretation}}>{children}</FormatControlContext.Provider></InterpretationContext.Provider></FormatContext.Provider>;
+ return <FormatChipsContext.Provider value={!hideFormatChips}><FormatContext.Provider value={fixedFormat??format}><InterpretationContext.Provider value={interpretation}><FormatControlContext.Provider value={{format:fixedFormat??format,setFormat,interpretation,setInterpretation}}>{children}</FormatControlContext.Provider></InterpretationContext.Provider></FormatContext.Provider></FormatChipsContext.Provider>;
 }
 export function ResponseFormatControls(){
  const {format,setFormat,interpretation,setInterpretation}=useContext(FormatControlContext);
@@ -113,6 +114,7 @@ export function WorkingLines({lines,mark}:{lines:string[];mark:MarkControl}) {
  return <div className="sc-working-lines">{lines.map((line,i)=>{const partial=i===last-1&&mark.earned<mark.total;return <div className="sc-answer-row" key={i}><span className={`sc-answer ${i===last?`is-marked ${tone}`:''}`}>{line}</span>{i===last?<span className="sc-marks"><MarkEditor mark={mark}/></span>:<span className={`sc-step-mark ${partial?'partial':''}`} role="img" aria-label={partial?'Working step: partial credit':'Working step: credited'}>{partial?mark.icon('Partial'):<i aria-hidden="true" className="sc-icon" style={{maskImage:'url(/assets/scorecard-v2/8639f.svg)'}}/>}</span>}</div>})}</div>;
 }
 function SplitResponse({title,type,inkLines,final,needsReview:flagged,mark}:{title:string;type:'Handwritten'|'Mixed';inkLines:string[];final:string;needsReview:boolean;mark:MarkControl}) {
+ const showFormatChips=useContext(FormatChipsContext);
  const [open,setOpen]=useState(false),[reviewed,setReviewed]=useState(false);
  // Confidence example: a low-confidence reading stays flagged until the teacher confirms it or overrides the mark.
  const needsReview=flagged&&!mark.override&&!reviewed,checked=flagged&&!mark.override&&reviewed;
@@ -128,14 +130,14 @@ function SplitResponse({title,type,inkLines,final,needsReview:flagged,mark}:{tit
   <strong className="hw2-heading">Student response</strong>
   <div className="hw2-modules">
    {mixed&&<section className="hw2-module hw2-module-typed"><div className="hw2-module-head">{chip('Typed')}<small>Final answer</small></div><span className="sc-answer">{final}</span></section>}
-   <section className="hw2-module hw2-module-written"><div className="hw2-module-head">{chip('Written')}<small>{mixed?'Working · not marked':'Answer read from the highlighted line'}</small></div><InkTile lines={inkLines} anchor={mixed?'start':'end'} highlightLast={!mixed} label={title} onOpen={()=>setOpen(true)}/></section>
+   <section className="hw2-module hw2-module-written"><div className="hw2-module-head">{showFormatChips&&chip('Written')}<small>{mixed?'Working · not marked':'Answer read from the highlighted line'}</small></div><InkTile lines={inkLines} anchor={mixed?'start':'end'} highlightLast={!mixed} label={title} onOpen={()=>setOpen(true)}/></section>
   </div>
   {marked}{edited}{flag}{needsReview&&<button className="tc-text hw2-open" onClick={()=>setOpen(true)}>Open handwriting</button>}
   <div className="hw2-rationale">{rationaleNode}</div>
   {open&&<InkModal title={title} lines={inkLines} highlightLast={!mixed} onClose={close}>{marked}{edited}{flag}{rationaleNode}</InkModal>}
  </div>;
 }
-export function DigitalResponse({student,q,lines,part=0,mark}:{student:Attempt;q:Question;lines:string[];part?:number;mark:MarkControl}) {
+export function DigitalResponse({student,q,lines,part=0,mark,responseLabel}:{student:Attempt;q:Question;lines:string[];part?:number;mark:MarkControl;responseLabel?:string}) {
  const marks=<span className="sc-marks"><MarkEditor mark={mark}/></span>,rationale=mark.rationale(!!mark.override);
  const format=useContext(FormatContext);
  const interpretation=useContext(InterpretationContext);
@@ -149,7 +151,7 @@ export function DigitalResponse({student,q,lines,part=0,mark}:{student:Attempt;q
  const inkLines=type==='Mixed'?working.slice(0,-1):working;
  const final=lines.at(-1)??'';
  const interpretedLines=finalOnly?[final]:working;
- if(interpretation==='split'&&type!=='Typed')return <SplitResponse title={`${student.name} · Q${q.id}${q.id===1?part===0?'A':'B':''}`} type={type} inkLines={inkLines} final={final} needsReview={needsReview} mark={mark}/>;
+ if(interpretation==='split'&&type!=='Typed')return <SplitResponse title={responseLabel??`${student.name} · Q${q.id}${q.id===1?part===0?'A':'B':''}`} type={type} inkLines={inkLines} final={final} needsReview={needsReview} mark={mark}/>;
  return <div className="hw-response"><div className="hw-response-meta"><span className={`hw-type hw-${type.toLowerCase()}`}>{type==='Mixed'?'Handwritten + typed':type==='Typed'?'Math input':'Digital handwriting'}</span>{needsReview&&<span className={reviewed?'hw-reviewed':'hw-review'}>{reviewed?'✓ Interpretation checked':'Check interpretation'}</span>}</div>
  {type==='Typed'?<WorkingLines lines={lines} mark={mark}/>:<>
  <div className="hw-columns"><section className="hw-captured"><header><strong>Student response</strong><button className="tc-text" aria-expanded={enlarged} aria-label={enlarged?'Reduce handwriting':'Enlarge handwriting'} onClick={()=>setEnlarged(!enlarged)}>{enlarged?'− Reduce':'+ Enlarge'}</button></header><div className="hw-source"><span className="hw-step-label">{type==='Mixed'?'1 · Handwritten working':'Written on screen'}</span><Ink lines={inkLines}/></div>{type==='Mixed'&&<div className="hw-typed"><span className="hw-step-label">2 · Typed final answer</span><span className="sc-answer">{final}</span></div>}</section>
