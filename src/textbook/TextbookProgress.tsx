@@ -3,9 +3,13 @@ import {useSearchParams} from 'react-router-dom';
 import type {DashboardClass,DemoTask} from '../dashboard/model';
 import {loadDashboard,saveDashboard,topics as bookTopics} from '../dashboard/model';
 import {loadData} from '../data/storage';
-import {DEMO_DATE,pageRanges,paceStatus,readiness,refreshFeaturedJourney,seedPlan,snapshot,subtopicSkills,taskTopic} from './model';
+import {DEMO_DATE,averageLevel,averageLevelsByStudent,pageRanges,paceStatus,readiness,refreshFeaturedJourney,seedPlan,snapshot,subtopicSkills,taskTopic} from './model';
 import ClassTaskList from '../dashboard/ClassTaskList';
 import {SkillsMatrix} from '../test-controls/SkillsMatrix';
+import {MultiFilter} from '../test-controls/ReportFilters';
+import {OrganiseStudents} from '../test-controls/PrototypeNavigation';
+import {DisplayPanel,TableDisplayProvider} from '../test-controls/TableDisplay';
+import {SkillsAttentionDetails} from '../components/TaskDetail/ReadinessDetails';
 import type {Learner,Plan,TopicPlan} from './model';
 import './textbook.css';
 import {TopicRecommendations} from './TopicRecommendations';
@@ -24,7 +28,7 @@ import {TopicTaskReport} from './TopicTaskReport';
 import ScopeSequenceSheet from './ScopeSequence';
 import TopicSheet from './TopicSheet';
 import {TopicHeader} from './TopicHeader';
-import {ReadinessChip,ReadinessPanel} from './ReadinessPanel';
+import {ReadinessChip,ReadinessPanel,readinessStates,readinessFilterAppearance} from './ReadinessPanel';
 import {TaskBuilder,TextbookAssignments} from './TaskBuilder';
 import type {Assignment,Draft} from './TaskBuilder';
 
@@ -43,11 +47,13 @@ const topicTabIcons={
  Tasks:'dashboard/task-empty',
 } as const;
 
+const subtopicFilterIcon='/assets/textbook-mastery/subtopic-flag.svg';
+const topicStudentColumns=['topicProficiency','topicProficient','topicReadiness'];
 const skillsFor=(topic:TopicPlan)=>[...new Set(topic.subtopics.flatMap(subtopicSkills))];
 
 export default function TextbookProgress({item,learners,studentId}:{item:DashboardClass;learners:Learner[];studentId?:string}){
  const [preview,setPreview]=useState<ContextAction|null>(null);
- const [growthOn,setGrowthOn]=useState(false),[since,setSince]=useState('2026-10-09'),[sort,setSort]=useState('name');
+ const [growthOn,setGrowthOn]=useState(false),[since,setSince]=useState('2026-10-09'),[sort,setSort]=useState<{key:string;direction:'ascending'|'descending'}>({key:'name',direction:'ascending'});
  const [params,setParams]=useSearchParams();
  // Design states can be linked directly: ?header=bar, ?demo=sequence,nofocus and ?subtopic=<index>.
  const [header,setHeader]=useState<'card'|'bar'>(params.get('header')==='bar'?'bar':'card'),demo=(params.get('demo')??'').split(',');
@@ -59,6 +65,7 @@ export default function TextbookProgress({item,learners,studentId}:{item:Dashboa
  const [hideCounts,setHideCounts]=useState(()=>params.get('segmentCounts')==='hidden');
  const [subtleExpanded,setSubtleExpanded]=useState(()=>params.get('expandedMastery')==='neutral');
  const summaryRef=useRef<HTMLElement>(null);
+ const topicTabsRef=useRef<HTMLDivElement>(null);
  const storageKey=`textbook-plan-v1-${item.id}`;
  const [plan,setPlan]=useState<Plan>(()=>{
   const seed=seedPlan(item);
@@ -95,7 +102,11 @@ export default function TextbookProgress({item,learners,studentId}:{item:Dashboa
   requestAnimationFrame(()=>reportTrigger.current?.focus({preventScroll:true}));
  };
  const [expandedSubtopic,setExpandedSubtopic]=useState<string[]>(()=>{const i=params.get('subtopic'),t=plan.topics.find(t=>t.name===params.get('topic')),s=i&&t?t.subtopics[Number(i)]:undefined;return s?[s]:[]});
- const [view,setView]=useState('Subtopics'),[filter,setFilter]=useState('All students'),[query,setQuery]=useState('');
+ const [view,setView]=useState('Subtopics'),[query,setQuery]=useState('');
+ const [readinessFilter,setReadinessFilter]=useState<string[]>([]),[subtopicFilter,setSubtopicFilter]=useState<string[]>([]);
+ const [studentFollowup,setStudentFollowup]=useState<{label:string;ids:string[]}|null>(null);
+ const [showSkillGaps,setShowSkillGaps]=useState(false);
+ const clearStudentFilters=()=>{setReadinessFilter([]);setSubtopicFilter([]);setStudentFollowup(null)};
  const [editPlan,setEditPlan]=useState(false),[order,setOrder]=useState<'sequence'|'textbook'>('sequence');
  const draftKey=`textbook-drafts-${item.id}`,assignmentKey=`textbook-assignments-${item.id}`;
  const [draft,setDraft]=useState<Draft|null>(null),[savedDrafts,setSavedDrafts]=useState<Draft[]>(()=>readSaved(draftKey,[]));
@@ -113,50 +124,76 @@ export default function TextbookProgress({item,learners,studentId}:{item:Dashboa
  const prerequisites=(t:TopicPlan,s:Learner)=>prerequisiteValues(item,t,s,scenario);
  const struggling=(t:TopicPlan)=>roster.filter(s=>prerequisites(t,s).some(v=>v>0&&v<3));
  const unchecked=(t:TopicPlan)=>roster.filter(s=>readiness(prerequisites(t,s))==='Unchecked');
- const [filterKind,filterIndex]=filter.split(':');
- const scopedSubtopic=filterIndex===undefined?undefined:topic?.subtopics[Number(filterIndex)];
- const visibleStudents=topic?roster.filter(student=>{
-  if(!student.name.toLowerCase().includes(query.toLowerCase()))return false;
-  if(filter==='All students'||filterKind==='sub')return true;
-  if(filterKind==='support'||filterKind==='missing'){
-   const [result]=values(topic,Number(filterIndex),[student]);
-   return filterKind==='missing'?result===0:result>0&&result<3;
-  }
-  if(filter==='Prerequisite support')return prerequisites(topic,student).some(value=>value>0&&value<3);
-  return readiness(prerequisites(topic,student))===filter;
- }):roster;
- const average=(v:number[])=>{const known=v.filter(n=>n>0);return known.length?known.reduce((a,b)=>a+b,0)/known.length:0};
+ const visibleStudents=topic?roster.filter(student=>
+  student.name.toLowerCase().includes(query.toLowerCase())
+  && (!studentFollowup||studentFollowup.ids.includes(student.id))
+  && (!readinessFilter.length||readinessFilter.includes(readiness(prerequisites(topic,student))))
+ ):roster;
  const assignedFor=(name:string)=>assignments.filter(task=>task.topic===name&&(!selected||task.students.includes(selected.id)));
  const studentTaskIds=selected?new Set(loadData().taskResults.filter(r=>r.perStudent.some(s=>s.studentId===selected.id)).map(r=>r.taskId)):null;
  const reportTasks=item.tasks.filter(t=>!studentTaskIds||studentTaskIds.has(t.id));
  const tasksFor=(name:string)=>reportTasks.filter(t=>taskTopic(t.title,plan.topics)===name);
  const topicTasks=topic?tasksFor(topic.name):[];
  const topicAssignments=topic?assignedFor(topic.name):[];
+ const isCheckIn=(kind:string)=>/^(topic )?readiness check[- ]?in$/i.test(kind);
+ const checkInAssigned=(name:string)=>assignments.some(task=>task.topic===name&&isCheckIn(task.kind))
+  ||item.tasks.some(task=>isCheckIn(task.type)&&taskTopic(task.title,plan.topics)===name);
  const taskCount=(name:string)=>assignedFor(name).length+tasksFor(name).length;
- const goTopic=(name?:string)=>{const next=new URLSearchParams(params);if(name)next.set('topic',name);else next.delete('topic');next.delete('subtopic');setParams(next);if(name!==topicParam)setView('Subtopics');setFilter('All students');setQuery('');setExpandedSubtopic([])};
+ const goTopic=(name?:string)=>{const next=new URLSearchParams(params);if(name)next.set('topic',name);else next.delete('topic');next.delete('subtopic');setParams(next);if(name!==topicParam)setView('Subtopics');clearStudentFilters();setQuery('');setExpandedSubtopic([]);setShowSkillGaps(false)};
  const persistPlan=(next:Plan)=>{setPlan(next);try{localStorage.setItem(storageKey,JSON.stringify(next));const c=loadDashboard();saveDashboard(c.map(c=>c.id===item.id?{...c,focus:next.focus?{topic:next.focus,start:next.topics.find(t=>t.name===next.focus)?.start,end:next.topics.find(t=>t.name===next.focus)?.end??'',done:next.topics.find(t=>t.name===next.focus)?.introduced??0,total:next.topics.find(t=>t.name===next.focus)?.subtopics.length??0,pace:c.focus?.pace??'On track'}:null}:c))}catch{setNotice('Changes are available for this session. Browser storage is unavailable.')}};
  const setFocus=(t:TopicPlan)=>{persistPlan({...plan,focus:t.name,topics:plan.topics.map(p=>p.name===t.name?{...p,state:'Teaching'}:p)});setNotice(`${t.name} is now the class topic focus.`)};
- const investigate=(_t:TopicPlan,f:string)=>{setView('Students');setFilter(f)};
+ const showTopicTab=(tab:'Students'|'Tasks')=>{
+  setView(tab);
+  requestAnimationFrame(()=>{
+   const selectedTab=topicTabsRef.current?.querySelector<HTMLButtonElement>('[aria-selected=true]');
+   selectedTab?.focus({preventScroll:true});
+   topicTabsRef.current?.scrollIntoView({block:'nearest'});
+  });
+ };
+ const investigate=(t:TopicPlan,kind:'support'|'missing',index:number)=>{
+  const subtopic=t.subtopics[index];
+  const ids=roster.filter(student=>{
+   const [score]=values(t,index,[student]);
+   return kind==='missing'?score===0:score>0&&score<3;
+  }).map(student=>student.id);
+  clearStudentFilters();
+  setQuery('');
+  setSubtopicFilter([subtopic]);
+  setStudentFollowup({label:kind==='missing'?'Missing evidence':'Needs practice',ids});
+  showTopicTab('Students');
+ };
  const build=(t?:TopicPlan,kind='Topic practice',people=roster,content=t?skillsFor(t):[])=>{
   setDraft({id:crypto.randomUUID(),topic:t?.name??'',kind,students:people.map(s=>s.id),content:[...new Set(content)]});
  };
  const prepare=(t:TopicPlan,kind:string,people:Learner[])=>build(t,kind,people,kind==='Readiness check-in'?[...t.prerequisites]:t.prerequisites.filter((_,i)=>people.some(s=>prerequisites(t,s)[i]>0&&prerequisites(t,s)[i]<3)));
  const topicSkills=topic?topicSkillRows(item,topic,roster,scenario):[];
- const gridColumns=topicSkills.filter(skill=>skill.kind==='Current grade'&&(!scopedSubtopic||skill.subtopic===scopedSubtopic));
+ const gridColumns=topicSkills.filter(skill=>skill.kind==='Current grade'&&(!subtopicFilter.length||subtopicFilter.includes(skill.subtopic)));
  const gridSkills=gridColumns.map(({code,name})=>({id:code,code,name}));
+ const sortSkill=gridSkills.findIndex(skill=>skill.id===sort.key);
+ const activeSort=sortSkill>=0||['name','last','average','growth'].includes(sort.key)?sort:{key:'name',direction:'ascending'} as const;
+ const headingSort=(key:string)=>({
+  direction:activeSort.key===key||key==='name'&&activeSort.key==='last'?activeSort.direction:undefined,
+  onClick:()=>setSort({
+   key,
+   direction:activeSort.key===key?(activeSort.direction==='ascending'?'descending':'ascending'):key==='name'?'ascending':'descending',
+  }),
+ });
  const gridRows=visibleStudents.map(student=>{
   const index=roster.indexOf(student);
   const latest=gridColumns.map(skill=>skill.values[index]);
   const baseline=latest.map((value,j)=>growthOn&&since?snapshot(value,`${student.id}:${gridColumns[j].code}`,since)||value:value);
   return {id:student.id,name:student.name,values:latest,baseline};
  }).sort((a,b)=>{
-  if(sort==='high')return average(b.values)-average(a.values);
-  if(sort==='low')return average(a.values)-average(b.values);
-  if(sort==='growth'){
+  const alphabetic=a.name.localeCompare(b.name);
+  const direction=activeSort.direction==='ascending'?1:-1;
+  if(activeSort.key==='name')return direction*alphabetic;
+  if(activeSort.key==='last')return direction*(a.name.trim().split(/\s+/).at(-1)!.localeCompare(b.name.trim().split(/\s+/).at(-1)!)||alphabetic);
+  if(activeSort.key==='growth'){
    const gained=(row:typeof a)=>row.values.reduce((sum,value,i)=>sum+Math.max(0,value-row.baseline[i]),0);
-   return gained(b)-gained(a);
+   return direction*(gained(a)-gained(b))||alphabetic;
   }
-  return a.name.localeCompare(b.name);
+  const difference=sortSkill>=0?a.values[sortSkill]-b.values[sortSkill]:averageLevel(a.values)-averageLevel(b.values);
+  return direction*difference||alphabetic;
  });
  const contextAction=(action:ContextAction)=>{if(!topic)return;if(action.kind.startsWith('Prepare')){setPreview(action);return}const relevant=topicSkills.filter(s=>action.skills.includes(s.name));const people=action.supportOnly?roster.filter((_,i)=>relevant.some(s=>s.values[i]>0&&s.values[i]<3)):roster;build(topic,action.supportOnly?'Targeted practice':'Topic practice',people,action.skills)};
  const modal=useRef<HTMLDialogElement>(null);
@@ -184,7 +221,7 @@ export default function TextbookProgress({item,learners,studentId}:{item:Dashboa
   try{localStorage.setItem(assignmentKey,JSON.stringify(next))}catch{persisted=false}
   saveDrafts(savedDrafts.filter(d=>!sameDraft(d,draft)));
   setNotice(persisted?`“${title}” assigned to ${task.students.length} ${task.students.length===1?'student':'students'} in this prototype.`:`“${title}” assigned for this session.`);
-  if(topic?.name===task.topic)setView('Tasks');
+  if(topic?.name===task.topic&&!studentSheet)showTopicTab('Tasks');
   closeModal();
  };
  const visibleDrafts=savedDrafts.filter(d=>!selected||d.students.length===1&&d.students[0]===selected.id);
@@ -203,29 +240,16 @@ export default function TextbookProgress({item,learners,studentId}:{item:Dashboa
   const priority=[...candidates].sort((a,b)=>b.people.length-a.people.length)[0];
   const missing=[...candidates].sort((a,b)=>b.missing.length-a.missing.length)[0];
   const items=[];
-  if(priority?.people.length)items.push({...practiceRecommendation(priority),investigate:selected?undefined:()=>investigate(t,`support:${priority.index}`)});
+  if(priority?.people.length)items.push({...practiceRecommendation(priority),investigate:selected?undefined:()=>investigate(t,'support',priority.index)});
   if(missing?.missing.length)items.push({
    id:'missing',title:`Check understanding of ${missing.name.toLowerCase()}`,
    description:selected?'There are no results for this introduced subtopic.':`${missing.missing.length} of ${roster.length} students have no results for this introduced subtopic.`,
    action:'Review',icon:'results',tone:'purple',reviewLabel:'Build check-in',
    review:()=>build(t,'Practice check-in',missing.missing,subtopicSkills(missing.name)),
-   investigate:selected?undefined:()=>investigate(t,`missing:${missing.index}`),
+   investigate:selected?undefined:()=>investigate(t,'missing',missing.index),
   });
-  if(!t.introduced){
-   const support=struggling(t),unknown=unchecked(t);
-   if(unknown.length)items.push({
-    id:'unchecked',title:'Check prerequisite readiness',
-    description:selected?'There is no prerequisite evidence yet.':`${unknown.length} of ${roster.length} students have unchecked readiness.`,
-    action:'Review',icon:'results',tone:'purple',reviewLabel:'Build readiness check-in',
-    review:()=>prepare(t,'Readiness check-in',unknown),investigate:selected?undefined:()=>investigate(t,'Unchecked'),
-   });
-   if(support.length)items.push({
-    id:'prerequisites',title:'Practise prerequisite skills',
-    description:selected?'Some prerequisite skills are at Exploring or Emerging.':`${support.length} of ${roster.length} students are Exploring or Emerging in at least one prerequisite.`,
-    action:'Review',icon:'progress',tone:'purple',reviewLabel:'Build prerequisite practice',
-    review:()=>prepare(t,'Targeted practice',support),investigate:selected?undefined:()=>investigate(t,'Prerequisite support'),
-   });
-  }
+  // Prerequisite actions live in readiness, where the evidence and check-in status are visible.
+  if(!t.introduced&&(unchecked(t).length||struggling(t).length))return null;
   if(!items.length&&roster.length){
    const next=t.subtopics[t.introduced];
    if(next)items.push({
@@ -277,42 +301,104 @@ export default function TextbookProgress({item,learners,studentId}:{item:Dashboa
  const bookName=item.textbook?.name??`Australian Curriculum Year ${item.year}`,bookParts=bookName.match(/^(.*?)\s*((?:Year|Grade) \d+)\s*(.*)$/);
  const book=bookParts?{curriculum:bookParts[1]||'Textbook',grade:bookParts[2],edition:bookParts[3]||(item.textbook?'':'v9 2nd Edition')}:{curriculum:'Textbook',grade:bookName,edition:''};
  // The sheet's topic list mirrors the Overview: same order, with pacing and learning so a teacher can jump by need.
- const entries=inSheet?(shownOrder==='sequence'?plan.topics:[...plan.topics].sort((a,b)=>chapter(a)-chapter(b))).map(t=>{const p=paceStatus(t);return {name:t.name,label:hasSequence?String(plan.topics.indexOf(t)+1).padStart(2,'0'):'',number:chapter(t),pages:pages.get(t.name),introduced:t.introduced,total:t.subtopics.length,pace:p.status==='Behind'?`Behind by ${-p.delta}`:p.status==='Ahead'?`Ahead by ${p.delta}`:p.status,paceClass:`tp-pace-${p.status.toLowerCase().replace(' ','-')}`,average:average(t.subtopics.flatMap((_,j)=>!t.introduced||j<t.introduced?values(t,j):[])),focus:t.name===plan.focus}}):[];
+ const entries=inSheet?(shownOrder==='sequence'?plan.topics:[...plan.topics].sort((a,b)=>chapter(a)-chapter(b))).map(t=>{const p=paceStatus(t);return {name:t.name,label:hasSequence?String(plan.topics.indexOf(t)+1).padStart(2,'0'):'',number:chapter(t),pages:pages.get(t.name),introduced:t.introduced,total:t.subtopics.length,pace:p.status==='Behind'?`Behind by ${-p.delta}`:p.status==='Ahead'?`Ahead by ${p.delta}`:p.status,paceClass:`tp-pace-${p.status.toLowerCase().replace(' ','-')}`,average:averageLevel(averageLevelsByStudent(t.subtopics.map((_,j)=>values(t,j)),roster.length)),focus:t.name===plan.focus}}):[];
  const topicHeader=topic&&<TopicHeader key={topicParam} topic={topic} sheet={inSheet} seq={hasSequence?plan.topics.indexOf(topic)+1:undefined} number={chapter(topic)} pages={pages.get(topic.name)} focused={topic.name===plan.focus} summaryRef={summaryRef} actions={<>
   {!studentId&&<button onClick={()=>setEditPlan(true)}>Edit plan</button>}
   {inSheet&&topic.name===plan.focus&&<button className="tp-outline" onClick={()=>goTopic('focus')}>Go to Topic focus →</button>}
   {!studentId&&topic.name!==plan.focus&&<button className="tp-outline" onClick={()=>setFocus(topic)}>Set as topic focus</button>}
  </>}/>;
- const summary=detail&&<TopicSummary summaryRef={summaryRef} studentIds={roster.map(s=>s.id)} topic={detail} rows={detail.subtopics.map((_,i)=>values(detail,i))} skills={topicSkills} onAction={contextAction} recommendations={recommendations(detail)} individual={!!selected}/>;
+ const prerequisiteGaps=topicSkills.filter(skill=>skill.kind==='Prerequisite').map(skill=>({
+  skillId:skill.code,skillCode:skill.code,skillName:skill.name,classAverageMastery:averageLevel(skill.values),
+  practice:roster.filter((_,index)=>skill.values[index]>0&&skill.values[index]<4).map(student=>student.id),
+  limited:roster.filter((_,index)=>skill.values[index]===0).map(student=>student.id),
+ })).filter(skill=>skill.practice.length||skill.limited.length);
  const readinessPanel=topic&&(()=>{
   const support=struggling(topic),unknown=unchecked(topic);
-  return <ReadinessPanel introduced={topic.introduced>0} statuses={roster.map(student=>readiness(prerequisites(topic,student)))} individual={selected?readiness(prerequisites(topic,selected)):undefined} onFilter={state=>investigate(topic,state)}>
-   {(support.length>0||unknown.length>0)&&<div className="tp-readiness-actions">
-    {support.length>0&&<button className="tp-outline" onClick={()=>prepare(topic,'Targeted practice',support)}>Build prerequisite practice</button>}
-    {unknown.length>0&&<button className="tp-outline" onClick={()=>prepare(topic,'Readiness check-in',unknown)}>Build readiness check-in</button>}
-   </div>}
-  </ReadinessPanel>;
+  const assigned=checkInAssigned(topic.name);
+  const hasVisibleCheckIn=topicTasks.some(task=>isCheckIn(task.type))||topicAssignments.some(task=>isCheckIn(task.kind));
+  const offerCheckIn=!assigned&&unknown.length>0&&(!topic.introduced||unknown.length===roster.length);
+  const practice=selected&&support.length>0&&<TopicRecommendations topic={topic.name} visibleCount={1} items={[{
+   id:'prerequisite-practice',title:'Practise prerequisite skills',
+   description:'Some prerequisite skills are at Exploring or Emerging.',
+   action:'Review',icon:'progress',tone:'purple',reviewLabel:'Build prerequisite practice',
+   review:()=>prepare(topic,'Targeted practice',support),
+  }]}/>;
+  return <ReadinessPanel statuses={roster.map(student=>readiness(prerequisites(topic,student)))}
+   individual={selected?topicSkills.filter(skill=>skill.kind==='Prerequisite'):undefined} selectedStatuses={readinessFilter} onFilter={state=>{
+    setReadinessFilter(current=>current.includes(state)?current.filter(status=>status!==state):[...current,state]);
+    showTopicTab('Students');
+   }} gapReview={selected?undefined:{count:prerequisiteGaps.length,open:()=>setShowSkillGaps(true)}}
+   recommendation={practice} checkIn={{
+    remaining:unknown.length,assigned,onAssign:offerCheckIn?()=>prepare(topic,'Readiness check-in',unknown):undefined,
+    onView:hasVisibleCheckIn?()=>showTopicTab('Tasks'):undefined,
+   }}/>;
  })();
+ const summary=detail&&<TopicSummary summaryRef={summaryRef} studentIds={roster.map(s=>s.id)} topic={detail}
+  rows={detail.subtopics.map((_,i)=>values(detail,i))} skills={topicSkills}
+  recommendations={recommendations(detail)} individual={!!selected} readinessPanel={readinessPanel}/>;
  const tabs: (keyof typeof topicTabIcons)[]=selected?['Subtopics','Skills','Tasks']:['Subtopics','Students','Skills','Tasks'];
  const legend=<ProgressKey scope={view==='Subtopics'?'both':'skill'}/>;
  const body=topic&&<>
-   <div className="tc-report-tabs tp-detail-nav" role="tablist" aria-label="Topic progress">{tabs.map((v,i)=><button role="tab" className={view===v?'active':undefined} tabIndex={view===v?0:-1} onKeyDown={e=>{
+   <div className="tp-overview-toolbar tp-topic-toolbar">
+   <div ref={topicTabsRef} className="tc-report-tabs tp-detail-nav" role="tablist" aria-label="Topic progress">{tabs.map((v,i)=><button role="tab" className={view===v?'active':undefined} tabIndex={view===v?0:-1} onKeyDown={e=>{
     const n=e.key==='ArrowRight'?(i+1)%tabs.length:e.key==='ArrowLeft'?(i+tabs.length-1)%tabs.length:e.key==='Home'?0:e.key==='End'?tabs.length-1:-1;
-    if(n>=0){e.preventDefault();setView(tabs[n]);setFilter('All students');e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role=tab]')[n]?.focus()}
-   }} aria-selected={view===v} key={v} onClick={()=>{setView(v);setFilter('All students')}}><i className="tc-report-tab-icon" aria-hidden="true" style={{maskImage:`url(/assets/${topicTabIcons[v]}.svg)`}}/>{v}{v==='Students'?` (${roster.length})`:v==='Tasks'?` (${topicTasks.length+topicAssignments.length})`:''}</button>)}</div>
-   {(view==='Skills'||view==='Students')&&<div className="tp-key-toolbar">{legend}</div>}
-   {view==='Subtopics'&&<TopicTable topic={topic} pages={pages.get(topic.name)} values={i=>values(topic,i)} skills={topicSkills} expanded={expandedSubtopic} onExpand={setExpandedSubtopic} onAction={contextAction} legend={legend} individual={!!selected}/>}
-   {view==='Skills'&&<SkillsTable skills={topicSkills} onAction={contextAction} individual={!!selected}/>}
+    if(n>=0){e.preventDefault();setView(tabs[n]);e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role=tab]')[n]?.focus()}
+   }} aria-selected={view===v} key={v} onClick={()=>setView(v)}><i className="tc-report-tab-icon" aria-hidden="true" style={{maskImage:`url(/assets/${topicTabIcons[v]}.svg)`}}/>{v}{v==='Students'?` (${roster.length})`:v==='Tasks'?` (${topicTasks.length+topicAssignments.length})`:''}</button>)}</div>
+    <div className="tp-overview-tools">{view==='Students'&&!selected&&<DisplayPanel columns={topicStudentColumns} textbook/>}{legend}<button className="tp-primary tp-assign-button" onClick={()=>build(topic)}><span aria-hidden="true">+</span> Assign</button></div>
+   </div>
+   {view==='Subtopics'&&<TopicTable topic={topic} pages={pages.get(topic.name)} values={i=>values(topic,i)} skills={topicSkills} expanded={expandedSubtopic} onExpand={setExpandedSubtopic} onAction={contextAction} individual={!!selected}/>}
+   {view==='Skills'&&<SkillsTable skills={topicSkills} introduced={topic.subtopics.slice(0,topic.introduced)} onAction={contextAction} individual={!!selected}/>}
    {view==='Tasks'&&<div className="tp-topic-tasks">
     <TextbookAssignments assignments={topicAssignments} learners={learners}/>
-    {topicTasks.length?<ClassTaskList key={topic.name} showClassChrome={false} fullPage item={{...item,tasks:topicTasks}} onReport={openReport} onAssign={()=>build(topic)}/>:<div className="tp-empty">{!topicAssignments.length&&<h3>No tasks assigned for this topic yet</h3>}<button className="tp-outline" onClick={()=>build(topic)}>Build a task</button></div>}
+    {topicTasks.length?<ClassTaskList key={topic.name} showClassChrome={false} fullPage item={{...item,tasks:topicTasks}} onReport={openReport} onAssign={()=>build(topic)}/>:!topicAssignments.length&&<div className="tp-topic-tasks-empty"><h3>No tasks assigned for this topic yet</h3><button className="tp-outline tp-assign-button" onClick={()=>build(topic)}><span aria-hidden="true">+</span> Assign</button></div>}
    </div>}
-   {!selected&&view==='Students'&&<div className="tp-students-grid"><div className="tp-filters"><div className="tp-toggle" role="group" aria-label="Growth indication">{[false,true].map(v=><button key={String(v)} className={growthOn===v?'active':''} aria-pressed={growthOn===v} onClick={()=>{setGrowthOn(v);if(!v&&sort==='growth')setSort('name')}}>{v?'Growth':'Latest'}</button>)}</div>{growthOn&&<label>Since<input type="date" min="2026-09-01" max={DEMO_DATE} value={since} onChange={e=>setSince(e.target.value)}/></label>}<label>Show<select value={filter} onChange={e=>setFilter(e.target.value)}>{['All students','Prerequisite support','Ready','Partially ready','Not ready','Unchecked',...topic.subtopics.map((_,i)=>`support:${i}`),...topic.subtopics.map((_,i)=>`missing:${i}`),...topic.subtopics.map((_,i)=>`sub:${i}`)].map(f=><option key={f} value={f}>{f.startsWith('support:')?`Needs practice: ${topic.subtopics[Number(f.slice(8))]}`:f.startsWith('missing:')?`No results: ${topic.subtopics[Number(f.slice(8))]}`:f.startsWith('sub:')?topic.subtopics[Number(f.slice(4))]:f}</option>)}</select></label><select aria-label="Sort students" value={sort} onChange={e=>setSort(e.target.value)}><option value="name">Student: A–Z</option><option value="high">Proficiency: high–low</option><option value="low">Proficiency: low–high</option>{growthOn&&<option value="growth">Growth: most first</option>}</select><input aria-label="Search students" placeholder="Search students" value={query} onChange={e=>setQuery(e.target.value)}/></div>{growthOn&&<p className="tp-footnote">Green cells show levels gained since {new Intl.DateTimeFormat('en-AU',{day:'numeric',month:'short',timeZone:'UTC'}).format(new Date(`${since||DEMO_DATE}T12:00:00Z`))}. A dash means no measured growth or no comparable earlier evidence. History is illustrative.</p>}<SkillsMatrix rows={gridRows} skills={gridSkills} total={roster.length} current={growthOn} countLabel="Proficient" readinessLabel="Readiness" averageLabel="Avg. proficiency" codeHeadings hideKey excludeMissing onOpen={id=>openStudent(id,gridRows,topic.name)} renderReadiness={id=>{const s=roster.find(p=>p.id===id);const r=s?readiness(prerequisites(topic,s)):'Unchecked';return <ReadinessChip status={r}/>}}/></div>}
+   {!selected&&view==='Students'&&<div className="tp-students-grid">
+     <div className="tp-filters tp-topic-filters">
+      <div className="tp-toggle" role="group" aria-label="Growth indication">
+       {[false,true].map(v=><button key={String(v)} className={growthOn===v?'active':''} aria-pressed={growthOn===v} onClick={()=>{
+        setGrowthOn(v);
+        if(!v&&sort.key==='growth')setSort({key:'name',direction:'ascending'});
+       }}>{v?'Growth':'Latest'}</button>)}
+      </div>
+      {growthOn&&<div className="tp-growth-controls">
+       <label>Since<input type="date" min="2026-09-01" max={DEMO_DATE} value={since} onChange={e=>setSince(e.target.value)}/></label>
+       <label className="tp-growth-sort"><input type="checkbox" checked={sort.key==='growth'} onChange={e=>setSort(e.target.checked?{key:'growth',direction:'descending'}:{key:'name',direction:'ascending'})}/> Sort by growth</label>
+      </div>}
+      <MultiFilter label="Readiness" options={readinessStates} value={readinessFilter} onChange={setReadinessFilter}
+       leadingIcon={readinessFilterAppearance(readinessFilter.length===0?'Ready':readinessFilter.length===1?readinessFilter[0]:'Unchecked').src}
+       getOptionAppearance={readinessFilterAppearance}/>
+      <MultiFilter label="Subtopic" options={topic.subtopics} value={subtopicFilter} onChange={setSubtopicFilter}
+       leadingIcon={subtopicFilterIcon} getOptionAppearance={()=>({tone:'list',src:subtopicFilterIcon})}/>
+      {studentFollowup&&<button className="tp-outline tp-clear-followup" onClick={()=>setStudentFollowup(null)} aria-label={`Clear ${studentFollowup.label.toLowerCase()} filter`}>{studentFollowup.label} <span aria-hidden="true">×</span></button>}
+      <input type="search" className="tc-search" aria-label="Search students" placeholder="Search students" value={query} onChange={e=>setQuery(e.target.value)}/>
+     </div>
+     <SkillsMatrix rows={gridRows} skills={gridSkills} total={roster.length} current={growthOn} countLabel="Proficient" readinessLabel="Readiness" averageLabel="Avg. proficiency" codeHeadings hideKey excludeMissing headingSort={headingSort} displayColumns={topicStudentColumns}
+      studentHeading={<OrganiseStudents value={['name','last'].includes(activeSort.key)?`${activeSort.key==='last'?'last':'first'}-${activeSort.direction==='ascending'?'asc':'desc'}`:''} onChange={value=>{
+       const [part,direction]=value.split('-');
+       setSort({key:part==='last'?'last':'name',direction:direction==='asc'?'ascending':'descending'});
+      }}/>} onOpen={id=>openStudent(id,gridRows,topic.name)} renderReadiness={id=>{
+       const student=roster.find(person=>person.id===id);
+       return <ReadinessChip status={student?readiness(prerequisites(topic,student)):'Unchecked'}/>;
+      }}/>
+    </div>}
+   {showSkillGaps&&<SkillsAttentionDetails rows={prerequisiteGaps} students={roster.map(student=>({studentId:student.id,studentName:student.name}))}
+    evidenceLabel="Latest topic evidence" topicEvidence onAssign={(codes,ids)=>{
+     setShowSkillGaps(false);
+     build(topic,'Prerequisite follow-up',roster.filter(student=>ids.includes(student.id)),prerequisiteGaps.filter(skill=>codes.includes(skill.skillId)).map(skill=>skill.skillName));
+    }} onClose={()=>setShowSkillGaps(false)} onFollowup={(_,ids)=>{
+     clearStudentFilters();
+     setQuery('');
+     setStudentFollowup({label:'Prerequisite follow-up',ids});
+     setShowSkillGaps(false);
+     showTopicTab('Students');
+    }}/>}
   </>;
- const topicContent=topic&&<Fragment key={topic.name}>{summary}{readinessPanel}{body}</Fragment>;
+ const topicContent=topic&&<Fragment key={topic.name}>{summary}
+  <TableDisplayProvider taskType="textbook-topic" names={roster.map(student=>student.name)} defaultOrder={topicStudentColumns}>{body}</TableDisplayProvider>
+ </Fragment>;
  const orderInTitle=!page&&hasSequence&&orderUI!=='toggle';
  return <EvidenceOptions.Provider value={{layout,compact:false,scenario,mastery:masteryColours,hideCounts,subtleExpanded}}><section className="tp-page" data-mastery-palette={masteryColours} aria-label="Textbook progress">
-  <PrototypeControls><DesignOptions><label>Page header<select aria-label="Page header layout" value={header} onChange={e=>setHeader(e.target.value as 'card'|'bar')}><option value="card">01 · Textbook card</option><option value="bar">02 · Compact bar</option></select></label><label>Sequence switch<select aria-label="Sequence switch placement" value={orderUI} onChange={e=>setOrderUI(e.target.value as 'toggle'|'title'|'menu')}><option value="menu">01 · Dropdown in the page title</option><option value="toggle">02 · Toggle beside the view toggle</option><option value="title">03 · Toggle in the page title</option></select></label><label>Overview pacing dates<select aria-label="Overview pacing dates" value={pacingLayout} onChange={e=>setPacingLayout(e.target.value==='stacked'?'stacked':'inline')}><option value="inline">Side by side</option><option value="stacked">Stacked</option></select></label><label>Mastery distribution<select aria-label="Mastery distribution layout" value={layout} onChange={e=>setLayout(e.target.value as DistributionLayout)}><option value="stacked">01 · Labelled stacked bar</option><option value="counts">02 · Counts by mastery level</option><option value="dots">03 · Student dots (small classes only)</option><option value="symbols">04 · Stacked bar with mastery symbols</option></select></label><label>Mastery palette<select aria-label="Mastery palette" value={masteryColours} onChange={e=>setMasteryColours(masteryPalette(e.target.value))}>{Object.entries(masteryPalettes).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label>Expanded subtopic mastery<select value={subtleExpanded?'neutral':'colour'} onChange={e=>setSubtleExpanded(e.target.value==='neutral')}><option value="colour">Use mastery palette</option><option value="neutral">Use neutral colours on expanded rows</option></select></label><label>Counts in graph segments<select value={hideCounts?'hidden':'visible'} onChange={e=>setHideCounts(e.target.value==='hidden')}><option value="visible">Show counts</option><option value="hidden">Hide counts</option></select></label><p>All layouts show the same students and evidence. Dots are a small-class exploration; above 60 students they switch to a scalable bar. No evidence stays separate from the five mastery levels.</p></DesignOptions><label>Scenario<select aria-label="Mastery evidence scenario" value={scenario} onChange={e=>{setScenario(e.target.value as EvidenceScenario);setFilter('All students')}}><option value="current">Current illustrative class</option><option value="split">Wide spread</option><option value="limited">Limited evidence</option><option value="none">No evidence yet</option></select></label></PrototypeControls>
+  <PrototypeControls><DesignOptions><label>Page header<select aria-label="Page header layout" value={header} onChange={e=>setHeader(e.target.value as 'card'|'bar')}><option value="card">01 · Textbook card</option><option value="bar">02 · Compact bar</option></select></label><label>Sequence switch<select aria-label="Sequence switch placement" value={orderUI} onChange={e=>setOrderUI(e.target.value as 'toggle'|'title'|'menu')}><option value="menu">01 · Dropdown in the page title</option><option value="toggle">02 · Toggle beside the view toggle</option><option value="title">03 · Toggle in the page title</option></select></label><label>Overview pacing dates<select aria-label="Overview pacing dates" value={pacingLayout} onChange={e=>setPacingLayout(e.target.value==='stacked'?'stacked':'inline')}><option value="inline">Side by side</option><option value="stacked">Stacked</option></select></label><label>Mastery distribution<select aria-label="Mastery distribution layout" value={layout} onChange={e=>setLayout(e.target.value as DistributionLayout)}><option value="stacked">01 · Labelled stacked bar</option><option value="counts">02 · Counts by mastery level</option><option value="dots">03 · Student dots (small classes only)</option><option value="symbols">04 · Stacked bar with mastery symbols</option></select></label><label>Mastery palette<select aria-label="Mastery palette" value={masteryColours} onChange={e=>setMasteryColours(masteryPalette(e.target.value))}>{Object.entries(masteryPalettes).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label>Expanded subtopic mastery<select value={subtleExpanded?'neutral':'colour'} onChange={e=>setSubtleExpanded(e.target.value==='neutral')}><option value="colour">Use mastery palette</option><option value="neutral">Use neutral colours on expanded rows</option></select></label><label>Counts in graph segments<select value={hideCounts?'hidden':'visible'} onChange={e=>setHideCounts(e.target.value==='hidden')}><option value="visible">Show counts</option><option value="hidden">Hide counts</option></select></label><p>All layouts show the same students and evidence. Dots are a small-class exploration; above 60 students they switch to a scalable bar. No evidence stays separate from the five mastery levels.</p></DesignOptions><label>Scenario<select aria-label="Mastery evidence scenario" value={scenario} onChange={e=>{setScenario(e.target.value as EvidenceScenario);clearStudentFilters()}}><option value="current">Current illustrative class</option><option value="split">Wide spread</option><option value="limited">Limited evidence</option><option value="none">No evidence yet</option></select></label></PrototypeControls>
   {notice&&!inSheet&&<div role="status" className="tp-notice">{notice}<button onClick={()=>setNotice('')} aria-label="Dismiss notification">×</button></div>}
   {topicParam&&!topic&&<div className="tp-notice">{topicParam==='focus'?'Choose a topic focus from your sequence.':'This topic is not in this class sequence.'}<button onClick={()=>goTopic()}>Show sequence</button></div>}
   <div className="tp-view-bar"><div className="tp-view-toggle" role="group" aria-label="Textbook progress view"><button aria-pressed={!page} onClick={()=>goTopic()}>Overview</button><button aria-pressed={!!page} disabled={!!selected&&!focus} onClick={()=>focus?goTopic('focus'):setEditPlan(true)}>◎ Topic focus</button></div>{!page&&hasSequence&&orderUI==='toggle'&&<div className="tp-view-toggle" role="group" aria-label="Topic order">{(['sequence','textbook'] as const).map(v=><button key={v} aria-pressed={order===v} onClick={()=>setOrder(v)}>{v==='sequence'?'My sequence':'Textbook order'}</button>)}</div>}<div className="tp-view-actions"><button className="tp-about" onClick={()=>setShowAbout(true)}>About this view ⓘ</button>{!page&&!studentId&&<button className="tp-outline" onClick={()=>setEditPlan(true)}>{hasSequence?'Edit scope & sequence':'Add scope & sequence'}</button>}</div></div>
@@ -325,12 +411,12 @@ export default function TextbookProgress({item,learners,studentId}:{item:Dashboa
   {!selected&&!focus&&!topic&&<div className="tp-empty"><h3>Choose a topic focus</h3><p>Open a topic below to connect your teaching plan with student learning.</p></div>}
   {draftList}
   {!page&&<Overview item={item} plan={plan} roster={roster} individual={!!selected} values={values} onTopic={goTopic} onStudent={(id,name)=>openStudent(id,roster,name)} order={shownOrder} hasSequence={hasSequence} pacingLayout={pacingLayout} onBuild={build} recommendations={overviewRecommendations()} taskCount={taskCount}/>}
-  {inSheet&&topic&&<TopicSheet suspended={!!reportTask||!!studentSheet} title={`${topic.name} · ${item.name}`} bar={`Textbook progress · ${item.name}`} order={shownOrder} onOrder={setOrder} hasSequence={hasSequence} entries={entries} current={topic.name} onTopic={goTopic} onClose={()=>goTopic()} header={topicHeader}>{notice&&<div role="status" className="tp-notice">{notice}<button onClick={()=>setNotice('')} aria-label="Dismiss notification">×</button></div>}{topicContent}</TopicSheet>}
+  {inSheet&&topic&&<TopicSheet suspended={!!reportTask||!!studentSheet} title={`${topic.name} · ${selected?.name??item.name}`} item={item} order={shownOrder} onOrder={setOrder} hasSequence={hasSequence} entries={entries} current={topic.name} onTopic={goTopic} onClose={()=>goTopic()} header={topicHeader}>{notice&&<div role="status" className="tp-notice">{notice}<button onClick={()=>setNotice('')} aria-label="Dismiss notification">×</button></div>}{topicContent}</TopicSheet>}
   {reportTask&&<TopicTaskReport key={reportTask.id} item={item} task={reportTask} onClose={closeReport}/>}
   {preview&&<TeachingPreview action={preview} onClose={()=>setPreview(null)} onDraft={()=>{contextAction({...preview,kind:"Build a task"});setPreview(null)}}/>}
   {editPlan&&<ScopeSequenceSheet item={item} plan={plan} initialTopic={topic?.name} onSave={savePlan} onClose={()=>setEditPlan(false)}/>}
   {studentSheet&&<StudentProgressSheet item={item} learners={studentSheet.learners} studentId={studentSheet.id}
-   plan={plan} initialTopic={studentSheet.topic} order={shownOrder} nested={inSheet}
+   plan={plan} initialTopic={studentSheet.topic} order={shownOrder} nested={inSheet} checkInAssigned={checkInAssigned}
    onStudent={id=>setStudentSheet({...studentSheet,id})} onClose={closeStudent}
    onPractice={(name,kind,content)=>build(plan.topics.find(t=>t.name===name),kind,learners.filter(student=>student.id===studentSheet.id),content)}/>}
   <dialog ref={modal} className="tp-dialog" onCancel={closeModal} onClick={e=>{if(e.target===e.currentTarget)closeModal()}} aria-label={draft?'Build a task':'About textbook progress'}><div className="tp-dialog-body"><button className="tp-dialog-close" onClick={closeModal} aria-label="Close dialog">×</button>

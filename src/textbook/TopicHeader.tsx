@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import type {ReactNode,RefObject} from 'react';
-import {TopicEyebrow} from './EvidenceUI';
+import {SubtopicFlag,TopicEyebrow} from './EvidenceUI';
 import {paceStatus,shortDate} from './model';
 import type {PageRange,TopicPlan} from './model';
 
@@ -48,10 +48,13 @@ export function TopicHeader({topic,number,seq,pages,focused,sheet,summaryRef,act
    {sheet?<h2>{topic.name}</h2>:<h3>{topic.name}</h3>}
   </div>
   {summaryAbove&&<div className="tp-topic-stats" aria-label="Topic at a glance">
-   <span className={`tp-pace tp-pace-${pace.status.toLowerCase().replace(' ','-')}`}>{label}</span>
-   <span><b>{topic.introduced} / {topic.subtopics.length}</b> introduced</span>
-   {topic.end&&<span>Target {shortDate(topic.end)}</span>}
+   <span className="tp-subtopic-count"><SubtopicFlag/><b>{topic.introduced} of {topic.subtopics.length}</b><span className="tp-sr"> subtopics introduced</span></span>
   </div>}
-  <div className="tp-topic-heading-actions">{actions}</div>
+  <div className="tp-topic-heading-actions">
+   <div className="tp-topic-pacing"><span className={`tp-pace tp-pace-${pace.status.toLowerCase().replace(' ','-')}`}>{label}</span>
+    {topic.end&&<span className="tp-muted">Target {shortDate(topic.end)}</span>}
+   </div>
+   {actions}
+  </div>
  </header>;
 }

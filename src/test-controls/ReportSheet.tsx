@@ -28,7 +28,7 @@ export function ReportSheet({title,view,onViewChange,onClose,workbook=false,chil
   sheet?.focus({preventScroll:true});
   const key=(e:KeyboardEvent)=>{
    const sheet=ref.current;
-   if(!sheet||sheet.inert||e.defaultPrevented||document.querySelector('dialog[open],.rc-backdrop,.ar-overlay'))return;
+   if(!sheet||sheet.inert||e.defaultPrevented||document.querySelector('dialog[open],.rc-backdrop,.ar-overlay,:popover-open'))return;
    const sheets=[...document.querySelectorAll<HTMLElement>('.tr-sheet[role="dialog"]:not([inert])')];
    if(sheets.at(-1)!==sheet)return;
    if(e.key==='Escape'){

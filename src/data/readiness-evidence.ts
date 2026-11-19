@@ -35,4 +35,4 @@ export function evidenceExplanation(s:StudentTaskDetail,current=false){
  return {label,level,priorTitle,prior,result,topic,tooltip,limited,practice,proficient,total};
 }
 export function attentionRows(data:SkillsTabData){return data.skills.filter(s=>s.skillType!=='topic-standard').map(skill=>({...skill,practice:data.students.filter(r=>{const n=r.skillMasteries[skill.skillId]??0;return n>0&&n<4}).map(s=>s.studentId),limited:data.students.filter(r=>(r.skillMasteries[skill.skillId]??0)===0).map(s=>s.studentId)})).filter(s=>s.practice.length||s.limited.length);}
-export function followupStudents(rows:ReturnType<typeof attentionRows>,ids:string[]){return [...new Set(rows.filter(r=>ids.includes(r.skillId)).flatMap(r=>[...r.practice,...r.limited]))];}
+export function followupStudents(rows:Pick<ReturnType<typeof attentionRows>[number],'skillId'|'practice'|'limited'>[],ids:string[]){return [...new Set(rows.filter(r=>ids.includes(r.skillId)).flatMap(r=>[...r.practice,...r.limited]))];}

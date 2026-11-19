@@ -47,14 +47,25 @@ export function TopicEyebrow({seq,number,pages,focus=false}:{seq?:number;number:
  return <span className="tp-topic-eyebrow">{seq!==undefined&&<><span className="tp-seq" title="Position in your scope and sequence">Seq. {pad(seq)}</span><span aria-hidden="true">•</span></>}<TopicChip label={`Topic ${number}`} pages={pages}/>{focus&&<span className="tp-in-focus">In focus</span>}</span>;
 }
 const scoreCopy=[['',''],['is exploring this','Not yet succeeding consistently, even on the easier questions.'],['is emerging in this','Succeeding mainly on the easier questions.'],['is familiar with this','Succeeding on the core questions.'],['is proficient in this','Strong understanding, not yet succeeding on the hardest questions.'],['has mastered this','Succeeding consistently, including on the hardest questions.']];
-export function AverageMastery({values,skill=false,noun,individual=false,small=false}:{values:number[];skill?:boolean;noun?:string;individual?:boolean;small?:boolean}){
+export function AverageMastery({values,skill=false,noun,individual=false,small=false,compact=false}:{values:number[];skill?:boolean;noun?:string;individual?:boolean;small?:boolean;compact?:boolean}){
  const tip=useTip();
  const known=values.filter(v=>v>0);const mean=known.length?known.reduce((a,b)=>a+b,0)/known.length:0;
  // Illustrative ordinal mean; retain the lower tier until the next whole level is reached.
  const tier=Math.floor(mean),score=masteryScore(mean),what=noun??(skill?'skill':'subtopic'),measure=skill?'Proficiency':'Mastery';
- return <div className="tp-average"><span className={`tp-${skill?'skill':'subtopic'}-chip tp-tier-${tier}${small?' tp-mastery-chip-small':''}`} aria-label={known.length?`${levels[tier]}, ${measure.toLowerCase()} score ${score} out of 100`:'No evidence'} {...tip.props}><ProgressIcon value={tier} skill={skill}/>{levels[tier]}{known.length>0&&<b>{score}</b>}</span>
+ return <div className="tp-average"><span className={`tp-${skill?'skill':'subtopic'}-chip tp-tier-${tier}${skill?` tp-segment-${tier}`:''}${small||compact?' tp-mastery-chip-small':''}`} aria-label={known.length?`${levels[tier]}, ${measure.toLowerCase()} score ${score} out of 100`:'No evidence'} {...tip.props}><ProgressIcon value={tier} skill={skill}/>{(!compact||!known.length)&&levels[tier]}{known.length>0&&<b>{score}</b>}</span>
   {tip.anchor&&<AnchoredTooltip id={tip.id} className="tp-mastery-tooltip tp-score-tooltip" anchor={tip.anchor}>{known.length?<><strong>{individual?'This student':'The class'} {scoreCopy[tier][0]} {what}.</strong><p>{scoreCopy[tier][1]}</p><div className="tp-score-row"><span>{measure} score</span><b>{score} <i>/ 100</i></b></div>{!individual&&<small>Average across students with available results.</small>}</>:<><strong>No evidence yet</strong><p>{measure} will appear when results are available.</p></>}</AnchoredTooltip>}
  </div>
+}
+
+export function AttentionChip({kind,label,description}:{kind:'practice'|'missing';label:string;description:string}){
+ const tip=useTip();
+ return <><span className={`tp-attention-${kind}`} {...tip.props}>{label}</span>
+  {tip.anchor&&<AnchoredTooltip id={tip.id} className="tp-mastery-tooltip" anchor={tip.anchor}>{description}</AnchoredTooltip>}
+ </>;
+}
+
+export function SubtopicFlag(){
+ return <img className="tp-subtopic-flag" src="/assets/textbook-mastery/subtopic-flag.svg" alt="" width={24} height={24}/>;
 }
 
 export function ProgressKey({scope='both'}:{scope?:'both'|'mastery'|'skill'}){

@@ -72,17 +72,42 @@ export function averageLevelsByStudent(subtopics:number[][],students:number){
  return Array.from({length:students},(_,i)=>averageLevel(subtopics.map(row=>row[i])));
 }
 
+// 7A: secure number foundations, a mixed equations unit, and decimals in progress.
+const featuredMastery:Record<string,number[][]>={
+ 'Integers':[[0,2,3,3,3,4,4,4,5,5]],
+ 'Whole numbers':[[0,3,3,3,4,4,4,5,5,5]],
+ 'Linear equations':[[0,1,2,2,3,3,3,4,4,5]],
+ 'Decimals and percentages':[
+  [0,2,2,3,3,4,4,4,5,5],
+  [0,1,2,3,3,3,4,4,5,5],
+  [0,1,2,2,2,3,3,4,4,5],
+ ],
+};
+const featuredPrerequisites=new Set([...Object.keys(featuredMastery),'Fractions']);
+
 function hash(value:string){let h=[...value].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,17);h=Math.imul(h^(h>>>16),0x45d9f3b);return (h^(h>>>16))>>>0}
 // Illustrative evidence only. Zero is absence of evidence, never a low mastery level.
 export function mastery(classId:string,studentId:string,topic:TopicPlan,index:number,hasHistory=true):number{
  if(!hasHistory)return 0;
+ if(classId==='dash-7a'){
+  const profiles=featuredMastery[topic.name];
+  const profile=profiles?.length===1?profiles[0]:profiles?.[index];
+  return profile?.[hash(`${studentId}/${topic.name}/${index}/mastery`)%profile.length]??0;
+ }
  const n=hash(`${classId}/${studentId}/${topic.name}/${index}`);
  const stage=['Whole numbers','Integers'].includes(topic.name)?1:['Fractions','Decimals and percentages','Linear equations','Algebraic expressions'].includes(topic.name)?2:0;
  if(stage===0)return n%9===0?4:0;
  if(n%11===0)return 0;
  return stage===1?3+n%3:1+n%5;
 }
-export function prerequisiteLevels(classId:string,studentId:string,topic:TopicPlan,hasHistory=true){return topic.prerequisites.map((_,i)=>hasHistory&&hash(`${classId}/${studentId}/${topic.name}/coverage`)%7!==0?hash(`${classId}/${studentId}/prereq/${topic.name}/${i}/evidence`)%6:0)}
+export function prerequisiteLevels(classId:string,studentId:string,topic:TopicPlan,hasHistory=true){
+ const hasEvidence=hasHistory&&(classId!=='dash-7a'||featuredPrerequisites.has(topic.name));
+ return topic.prerequisites.map((_,i)=>{
+  if(!hasEvidence||hash(`${classId}/${studentId}/${topic.name}/coverage`)%7===0)return 0;
+  const level=hash(`${classId}/${studentId}/prereq/${topic.name}/${i}/evidence`);
+  return classId==='dash-7a'&&['Whole numbers','Integers'].includes(topic.name)?[3,4,4,4,5,5][level%6]:level%6;
+ });
+}
 export function readiness(values:number[]):Readiness{
  if(!values.length||values.every(v=>v===0))return 'Unchecked';
  if(values.every(v=>v>=4))return 'Ready';

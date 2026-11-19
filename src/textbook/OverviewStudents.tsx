@@ -2,7 +2,7 @@ import {useState} from 'react';
 import {DisplayAvatar,DisplayName} from '../test-controls/TableDisplay';
 import type {DashboardClass} from '../dashboard/model';
 import {useEvidenceOptions} from './distribution-options';
-import {AverageMastery,ProgressKey} from './EvidenceUI';
+import {AverageMastery} from './EvidenceUI';
 import {textbookLearning} from './learning-data';
 import type {Learner,TopicPlan} from './model';
 import {Help} from './TopicTools';
@@ -39,7 +39,6 @@ export function OverviewStudents({item,topics,roster,number,onTopic,onStudent}:{
   completed:rows.reduce((sum,row)=>sum+row.progress[index].completed,0)/rows.length,
  }));
  return <>
-  <div className="tp-key-toolbar"><ProgressKey scope="mastery"/></div>
   <div className="tp-table-wrap">
    <table className="tp-table tp-overview-students">
     <thead><tr>

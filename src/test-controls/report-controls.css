@@ -43,8 +43,8 @@
 .tc-app .tc-live-counts button.active {background:#42168a;color:white}
 .tc-app .tc-live-counts button strong {color:inherit;font-size:13px;margin:0}
 .tc-app .tc-live-counts button:hover:not(:disabled),.tc-app .tc-strip-status button:hover:not(:disabled) {background:#ddcfff;color:#42168a}
-.tc-app .tc-filterbar :is(select,.tc-select-all,.tc-search) {height:32px;border:1px solid #92929f;border-radius:1000px;color:#32323c;font:500 12px/18px 'Proxima Nova',Arial,sans-serif!important;padding:5px 12px}
-.tc-app.tc-layout-04 .tc-filterbar select,.tc-app .tc-filterbar select {appearance:none;padding-right:32px;background:white url('/assets/report-controls/arrow-down.svg') right 8px center/20px no-repeat}
+:is(.tc-app .tc-filterbar,.tp-page .tp-filters) :is(select,.tc-select-all,.tc-search) {height:32px;border:1px solid #92929f;border-radius:1000px;color:#32323c;font:500 12px/18px 'Proxima Nova',Arial,sans-serif!important;padding:5px 12px}
+.tc-app.tc-layout-04 .tc-filterbar select,:is(.tc-app .tc-filterbar,.tp-page .tp-filters) select {appearance:none;padding-right:32px;background:white url('/assets/report-controls/arrow-down.svg') right 8px center/20px no-repeat}
 .tc-app .tc-select-all.selected {background:#ddcfff;border-color:#6e3ddd;color:#42168a}
 .tc-app .tc-layout-switch {border-radius:1000px;background:#f4f5f5;border:1px solid #dfdfe5;gap:4px;padding:3px 8px}
 .tc-app .tc-layout-switch button {min-height:28px;border:0;border-radius:1000px;padding:4px 10px;font-size:11px;font-weight:500;color:#42168a;background:transparent;box-shadow:none}
@@ -162,9 +162,9 @@
 .tc-app.tc-app .tr-report-content {display:block}
 .tc-app.tc-app .tc-main>.tc-group-tabs+.tc-report {border:0;border-radius:0}
 .tc-app.tc-app .tc-main>:is(.tc-header,.tc-dashboard,.tc-overview,.tc-insights,.rp-prototype-toolbar) {margin-right:24px}
-.tc-app.tc-app .rp-name-sort {flex-direction:row;align-items:center;gap:8px;white-space:nowrap}
-.tc-app.tc-app .rp-name-sort select {color:#5a5a68;font-weight:400;padding:4px 22px 4px 6px;border:0;border-radius:4px;background:transparent url('/assets/report-controls/arrow-down.svg') right 2px center/16px no-repeat;appearance:none;max-width:none}
-.tc-app.tc-app .rp-name-sort select:hover {background-color:#f4f5f5}
+:is(.tc-app.tc-app,.tp-page .tp-students-grid) .rp-name-sort {flex-direction:row;align-items:center;gap:8px;white-space:nowrap}
+:is(.tc-app.tc-app,.tp-page .tp-students-grid) .rp-name-sort select {color:#5a5a68;font-weight:400;padding:4px 22px 4px 6px;border:0;border-radius:4px;background:transparent url('/assets/report-controls/arrow-down.svg') right 2px center/16px no-repeat;appearance:none;max-width:none}
+:is(.tc-app.tc-app,.tp-page .tp-students-grid) .rp-name-sort select:hover {background-color:#f4f5f5}
 .rp-sort-icon {display:block;width:16px;height:16px;flex:0 0 16px;background:currentColor;mask-position:center;mask-size:contain;mask-repeat:no-repeat}
 .tc-app .rp-prototype-toolbar {display:flex;align-items:center;gap:12px;padding:6px 10px;margin:0 0 12px;border:1px solid #dfdfe5;border-radius:8px;background:#f4f5f5;white-space:nowrap;overflow-x:auto;font-size:12px;color:#5a5a68}
 .rp-prototype-toolbar>span {font-size:10px;letter-spacing:1px}

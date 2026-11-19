@@ -1,28 +1,29 @@
 import {useEffect,useRef,useState} from 'react';
 import {Link} from 'react-router-dom';
+import {TextbookSheetHeader} from './TextbookSheetHeader';
 import type {DashboardClass} from '../dashboard/model';
 import {topics as bookTopics} from '../dashboard/model';
 import {ReportSheet} from '../test-controls/ReportSheet';
 import {DisplayAvatar} from '../test-controls/TableDisplay';
+import {StudentAvatar} from '../test-controls/StudentAvatar';
 import {AverageMastery,ProgressKey,TopicEyebrow} from './EvidenceUI';
-import {ReadinessPictogram} from './ReadinessPanel';
+import {StudentLearningTiles} from './StudentLearningTiles';
 import {TopicRecommendations} from './TopicRecommendations';
 import {TopicTable} from './TopicTools';
 import {StudentJourney} from './OverviewStudents';
 import {classStudentPath} from './learner-roster';
 import {subtopicValues,textbookLearning,topicSkillRows} from './learning-data';
-import {pageRanges,readiness,subtopicSkills} from './model';
+import {pageRanges,subtopicSkills} from './model';
 import type {Learner,Plan} from './model';
 import {useEvidenceOptions} from './distribution-options';
 
 type Props={
  item:DashboardClass;learners:Learner[];studentId:string;plan:Plan;initialTopic?:string;
- order:'sequence'|'textbook';nested:boolean;
+ order:'sequence'|'textbook';nested:boolean;checkInAssigned:(topic:string)=>boolean;
  onStudent:(id:string)=>void;onClose:()=>void;onPractice:(topic:string,kind:string,content:string[])=>void;
 };
-const readinessTones={Ready:'ready','Partially ready':'partial','Not ready':'not-ready',Unchecked:'unchecked'} as const;
 
-export default function StudentProgressSheet({item,learners,studentId,plan,initialTopic,order,nested,onStudent,onClose,onPractice}:Props){
+export default function StudentProgressSheet({item,learners,studentId,plan,initialTopic,order,nested,checkInAssigned,onStudent,onClose,onPractice}:Props){
  const {scenario,mastery}=useEvidenceOptions();
  const [topicName,setTopicName]=useState(initialTopic??'');
  const [expanded,setExpanded]=useState<string[]>([]);
@@ -36,17 +37,15 @@ export default function StudentProgressSheet({item,learners,studentId,plan,initi
  const number=(name:string,position:number)=>order==='sequence'?position+1:chapter(name);
  const topic=topics.find(topic=>topic.name===topicName);
  const selectTopic=(name:string)=>{setTopicName(name);setExpanded([])};
- useEffect(()=>{content.current?.scrollTo({top:0})},[topicName,studentId]);
+ useEffect(()=>{content.current?.closest('.tr-sheet')?.scrollTo({top:0})},[topicName,studentId]);
  if(!student)return null;
  const [learning]=textbookLearning(item,topic?[topic]:topics,[student],scenario);
  const skills=topic?topicSkillRows(item,topic,[student],scenario):[];
  const prerequisites=skills.filter(skill=>skill.kind==='Prerequisite');
- const readinessStatus=readiness(prerequisites.map(skill=>skill.values[0]));
  const gaps=prerequisites.filter(skill=>skill.values[0]>0&&skill.values[0]<3);
  const missing=prerequisites.filter(skill=>skill.values[0]===0);
  const topicLevels=learning.progress[0]?.levels??[];
  const learningGap=topicLevels.findIndex(value=>value>0&&value<3);
- const total=learning.progress.reduce((sum,entry)=>sum+entry.total,0);
  const skillCount=learning.progress.reduce((sum,entry)=>sum+entry.skillCount,0);
  const recommendation=topic&&(learningGap>=0?{
   title:`Practise ${topic.subtopics[learningGap].toLowerCase()}`,
@@ -55,18 +54,14 @@ export default function StudentProgressSheet({item,learners,studentId,plan,initi
  }:gaps.length?{
   title:'Strengthen prerequisite skills',description:`${gaps.length} prerequisite ${gaps.length===1?'skill needs':'skills need'} more practice.`,
   kind:'Targeted practice',skills:gaps.map(skill=>skill.name),
- }:missing.length?{
+ }:missing.length&&!checkInAssigned(topic.name)?{
   title:'Check prerequisite readiness',description:`${missing.length} prerequisite ${missing.length===1?'skill has':'skills have'} no evidence yet.`,
   kind:'Readiness check-in',skills:missing.map(skill=>skill.name),
  }:undefined);
- return <ReportSheet title={student.name} view="Student progress" onViewChange={()=>{}} onClose={onClose}
+ return <ReportSheet title="Student textbook progress" view="Student progress" onViewChange={()=>{}} onClose={onClose}
   className={`tp-student-progress-portal ${nested?'tp-student-progress-nested':''}`}
-  dialogLabel={`${student.name} textbook progress`}
-  renderHeader={close=><header className="tr-sheet-header tp-student-progress-header">
-   <DisplayAvatar name={student.name}/>
-   <div><small>Student progress · {item.name}</small><h2>{student.name}</h2></div>
-   <button className="tc-icon-button" aria-label="Close student progress" onClick={close}>×</button>
-  </header>}>
+  dialogLabel="Student textbook progress"
+  renderHeader={close=><TextbookSheetHeader item={item} title="Student textbook progress" closeLabel="Close student progress" onClose={close}/>}>
   <div className="tp-page tp-student-workspace" data-mastery-palette={mastery}>
    <nav className="tp-student-nav" aria-label="Topics">
     <h3>Topics</h3>
@@ -91,23 +86,18 @@ export default function StudentProgressSheet({item,learners,studentId,plan,initi
     </button>)}</div>
    </nav>
    <main className="tp-student-progress-content" ref={content}>
+    <div className="sc-student-heading tp-student-identity">
+     <StudentAvatar name={student.name} large/><h2><b>{student.name}</b></h2>
+    </div>
     <header className="tp-student-progress-title">
+     <h3>{topic?.name??'Textbook overview'}</h3>
      {topic&&<TopicEyebrow number={chapter(topic.name)} pages={pages.get(topic.name)} focus={topic.name===plan.focus}/>}
-     <h2>{topic?.name??'Textbook overview'}</h2>
     </header>
     <section className="tp-dashboard tp-student-summary" aria-label="Student summary">
      <div className="tp-dashboard-body">
-      <div><h3>Summary</h3><div className="tp-insight-values">
-       {topic&&<div className="tp-student-readiness-tile" data-readiness={readinessTones[readinessStatus]}>
-        <span>Prerequisite readiness</span>
-        <strong>{readinessStatus}</strong>
-        <small>{prerequisites.filter(skill=>skill.values[0]>=4).length} of {prerequisites.length} proficient or mastered</small>
-        <ReadinessPictogram status={readinessStatus}/>
-       </div>}
-       <div><span>Avg. subtopic mastery</span><AverageMastery values={learning.progress.flatMap(entry=>entry.levels)} individual small/></div>
-       <div><span>Subtopics completed</span><strong>{learning.completed} of {total}</strong><small>Familiar or above</small></div>
-       <div><span>Skills collected</span><strong>{learning.collected} of {skillCount}</strong><small>Proficient or Mastered</small></div>
-      </div></div>
+      <div><h3>Summary</h3><StudentLearningTiles levels={learning.progress.flatMap(entry=>entry.levels)}
+       collected={learning.collected} skillCount={skillCount} prerequisites={topic?prerequisites.map(skill=>skill.values[0]):undefined}/>
+      </div>
       {topic&&recommendation&&<TopicRecommendations key={`${studentId}:${topic.name}`} topic={topic.name} items={[{
        id:'student-follow-up',title:recommendation.title,description:recommendation.description,
        action:'Review',icon:'progress',tone:'purple',
@@ -119,11 +109,8 @@ export default function StudentProgressSheet({item,learners,studentId,plan,initi
     {topic?<>
      <h3>Subtopics</h3>
      <TopicTable topic={topic} pages={pages.get(topic.name)} values={i=>subtopicValues(item,topic,i,[student],scenario)}
-      skills={skills} expanded={expanded} onExpand={setExpanded} legend={<ProgressKey/>} individual taskOnly
+      skills={skills} expanded={expanded} onExpand={setExpanded} legend={<ProgressKey/>} individual taskOnly showPrerequisites
       onAction={action=>onPractice(topic.name,'Topic practice',action.skills)}/>
-     {prerequisites.length>0&&<section className="tp-student-prerequisites"><h3>Prerequisite skills</h3>
-      <ul>{prerequisites.map(skill=><li key={skill.code}><span>{skill.name}</span><AverageMastery values={skill.values} individual skill small/></li>)}</ul>
-     </section>}
     </>:<>
      <h3>{order==='sequence'?'Journey through your sequence':'Journey through the textbook'}</h3>
      <StudentJourney topics={learning.progress} number={number} onTopic={selectTopic}/>

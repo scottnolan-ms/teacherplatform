@@ -105,3 +105,26 @@ test('completion requires a strict majority of the full class at Familiar or abo
  assert.equal(subtopicComplete([]),false);
  assert.deepEqual(averageLevelsByStudent([[3,0,0],[5,3,0]],3),[4,3,0]);
 });
+
+test('7A evidence follows the illustrated teaching sequence and remains independent of plan edits',()=>{
+ const focus={topic:'Decimals and percentages',done:3,total:5,end:''};
+ const featured=seedPlan({id:'dash-7a',focus});
+ const students=Array.from({length:28},(_,index)=>`dash-7a-${index}`);
+ const byTopic=name=>featured.topics.find(entry=>entry.name===name);
+ const results=(entry,index)=>students.map(student=>mastery('dash-7a',student,entry,index));
+ const topicMean=entry=>{
+  const means=averageLevelsByStudent(entry.subtopics.map((_,index)=>results(entry,index)),students.length).filter(Boolean);
+  return means.reduce((sum,level)=>sum+level,0)/means.length;
+ };
+ assert.ok(topicMean(byTopic('Whole numbers'))>=4);
+ assert.ok(topicMean(byTopic('Integers'))>=3);
+ assert.ok(topicMean(byTopic('Linear equations'))<topicMean(byTopic('Integers')));
+ const decimals=byTopic(focus.topic);
+ assert.ok(subtopicComplete(results(decimals,0)));
+ assert.ok(results(decimals,2).some(level=>level>0&&level<3));
+ assert.ok(results(decimals,3).every(level=>level===0));
+ const fractions=byTopic('Fractions');
+ assert.ok(fractions.subtopics.every((_,index)=>results(fractions,index).every(level=>level===0)));
+ assert.ok(students.some(student=>prerequisiteLevels('dash-7a',student,fractions).some(Boolean)));
+ assert.deepEqual(results({...fractions,introduced:5,state:'Taught'},0),results(fractions,0));
+});
