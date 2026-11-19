@@ -8,16 +8,17 @@ import type { Student, Class, PersistentGroup, MathspaceGroup } from '../types';
 interface StudentDetailContentProps {
   studentId: string;
   isCompact?: boolean;
+  startInTextbook?: boolean;
 }
 
-export default function StudentDetailContent({ studentId, isCompact = false }: StudentDetailContentProps) {
+export default function StudentDetailContent({ studentId, isCompact = false, startInTextbook = false }: StudentDetailContentProps) {
   const [student, setStudent] = useState<Student | null>(null);
   const [classData, setClassData] = useState<Class | null>(null);
   const [studentGroups, setStudentGroups] = useState<PersistentGroup[]>([]);
   const [allGroups, setAllGroups] = useState<PersistentGroup[]>([]);
   const [showAddToGroup, setShowAddToGroup] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [section,setSection]=useState('profile');
+  const [section,setSection]=useState(startInTextbook?'textbook':'profile');
 
   const loadStudentData = () => {
     const data = loadData();

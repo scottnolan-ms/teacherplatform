@@ -61,14 +61,14 @@
 
 /* A quick, eased sheet entrance; retain the portal during the exit. */
 .tr-detail-portal{overflow:hidden}
-.tr-detail-portal .tr-sheet-backdrop{animation:tr-backdrop-enter 260ms ease-in reverse both;overflow:clip}
-.tr-detail-portal .tr-sheet{animation:tr-sheet-enter 260ms cubic-bezier(.4,0,.7,.2) reverse both}
-.tr-detail-portal.tr-sheet-closing .tr-sheet-backdrop{animation:tr-backdrop-exit 260ms ease-in both}
-.tr-detail-portal.tr-sheet-closing .tr-sheet{animation:tr-sheet-exit 260ms cubic-bezier(.4,0,.7,.2) both;pointer-events:none}
-@keyframes tr-sheet-enter{from{transform:translateY(0)}to{transform:translateY(calc(100% + 24px))}}
-@keyframes tr-sheet-exit{from{transform:translateY(0)}to{transform:translateY(calc(100% + 24px))}}
-@keyframes tr-backdrop-enter{from{background-color:rgba(0,0,0,.4)}to{background-color:transparent}}
-@keyframes tr-backdrop-exit{from{background-color:rgba(0,0,0,.4)}to{background-color:transparent}}
+.tr-detail-portal .tr-sheet-backdrop{animation:tr-backdrop-in 320ms ease-out both;overflow:clip}
+.tr-detail-portal .tr-sheet{animation:tr-sheet-enter 340ms cubic-bezier(.18,.76,.25,1) both}
+.tr-detail-portal.tr-sheet-closing .tr-sheet-backdrop{animation:tr-backdrop-out 220ms ease-in both}
+.tr-detail-portal.tr-sheet-closing .tr-sheet{animation:tr-sheet-exit 220ms cubic-bezier(.45,0,.82,.4) both;pointer-events:none}
+@keyframes tr-sheet-enter{from{transform:translateY(44px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes tr-sheet-exit{from{transform:translateY(0);opacity:1}to{transform:translateY(36px);opacity:0}}
+@keyframes tr-backdrop-in{from{background-color:transparent}to{background-color:#19191f66}}
+@keyframes tr-backdrop-out{from{background-color:#19191f66}to{background-color:transparent}}
 @media(prefers-reduced-motion:reduce){.tr-detail-portal .tr-sheet,.tr-detail-portal .tr-sheet-backdrop{animation-duration:1ms!important}.tr-detail-portal .tr-sheet{transform:none!important}}
 
 .tc-custom-live{padding:10px 14px}.tc-custom-live h3{margin:0;font-size:13px}.tc-custom-live p{font-size:11px;color:#62616e;margin:5px 0 8px}.tc-custom-live button{margin-right:8px;font-size:11px}

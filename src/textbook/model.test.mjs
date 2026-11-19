@@ -4,7 +4,7 @@ import ts from 'typescript';
 import {test} from 'node:test';
 const cache=new Map();
 function moduleUrl(file){const url=new URL(file,import.meta.url);if(cache.has(url.href))return cache.get(url.href);let code=ts.transpileModule(fs.readFileSync(url,'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;code=code.replace(/from ['"]([^'"]+)['"]/g,(_,path)=>`from '${moduleUrl(new URL(path+'.ts',url).href)}'`);const result=`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;cache.set(url.href,result);return result;}
-const {taskTopic,seedPlan,mastery,prerequisiteLevels,readiness,distribution,skillMastery,scenarioValue,snapshot}=await import(moduleUrl('./model.ts'));
+const {taskTopic,seedPlan,refreshFeaturedJourney,subtopicComplete,averageLevelsByStudent,mastery,prerequisiteLevels,readiness,distribution,skillMastery,scenarioValue,snapshot}=await import(moduleUrl('./model.ts'));
 const plan=seedPlan({focus:{topic:'Decimals and percentages',done:3,total:5,end:''}});
 const topic=plan.topics.find(t=>t.name===plan.focus);
 test('teaching edits do not change learning evidence',()=>{
@@ -72,4 +72,36 @@ test('tasks are matched to one topic from their title',()=>{
  assert.equal(taskTopic('Linear equations practice',topics),'Linear equations');
  assert.equal(taskTopic('Algebra readiness',topics),'Algebraic expressions');
  assert.equal(taskTopic('End of term quiz',topics),null);
+});
+
+test('the featured journey has contiguous coverage in teaching order and gaps in textbook order',()=>{
+ const focus={topic:'Decimals and percentages',done:3,total:5,end:''};
+ const demo=seedPlan({id:'dash-7a',focus});
+ const textbook=seedPlan({focus}).topics.map(({name})=>demo.topics.find(t=>t.name===name));
+ const coverage=topics=>topics.slice(0,5).map(t=>t.introduced/t.subtopics.length);
+ assert.deepEqual(coverage(demo.topics),[1,1,1,0.6,0]);
+ assert.deepEqual(coverage(textbook),[1,1,0,0.6,1]);
+});
+
+test('legacy 7A journey data is refreshed while custom sequences stay intact',()=>{
+ const focus={topic:'Decimals and percentages',done:3,total:5,end:''};
+ const seed=seedPlan({id:'dash-7a',focus});
+ const index=[0,1,4,2,3];
+ const legacy={...seed,topics:[...index.map((from,to)=>({
+  ...seed.topics[from],
+  ...Object.fromEntries(['state','introduced','start','end'].map(key=>[key,seed.topics[to][key]])),
+ })),...seed.topics.slice(5)]};
+ // The older demo had a planned topic before the partially introduced focus.
+ Object.assign(legacy.topics[3],{state:'Planned',introduced:0});
+ Object.assign(legacy.topics[4],{state:'Teaching',introduced:3});
+ assert.deepEqual(refreshFeaturedJourney(legacy,seed),seed);
+ const custom={...legacy,topics:legacy.topics.map((t,i)=>i===3?{...t,state:'Teaching',introduced:1}:t)};
+ assert.equal(refreshFeaturedJourney(custom,seed),custom);
+});
+
+test('completion requires a strict majority of the full class at Familiar or above',()=>{
+ assert.equal(subtopicComplete([3,4,1,0]),false);
+ assert.equal(subtopicComplete([3,4,5,0]),true);
+ assert.equal(subtopicComplete([]),false);
+ assert.deepEqual(averageLevelsByStudent([[3,0,0],[5,3,0]],3),[4,3,0]);
 });

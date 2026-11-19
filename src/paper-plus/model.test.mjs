@@ -44,7 +44,7 @@ assert.equal(concurrent[2].progress, 8, 'The new upload has independent progress
 concurrent = advanceBatches(concurrent, true);
 assert.equal(concurrent[1].stage, 'Results ready');
 assert.equal(concurrent[2].stage, 'Uploading', 'Finishing marking must not finish the new batch');
-assert.deepEqual(markedStudents(concurrent), ['Emma Johnson', 'Liam Martinez', 'Sophia Okonkwo', 'Noah Okafor'], 'Marking counts deduplicate students across batches');
+assert.deepEqual(markedStudents(concurrent), [], 'Earlier results remain pending while new work for those students is processing');
 const reviewing = advanceBatches([{...newUpload, stage: 'Matching', progress: 100}], false);
 assert.equal(reviewing[0].stage, 'Review matches', 'Uncertain matches still block automatic marking');
 const automatic = advanceBatches([{...processing, stage: 'Matching', progress: 100}], false);
@@ -88,3 +88,78 @@ for(const origin of ['file upload','webcam','phone']){
  assert.equal(applyStudentCapture([classBatch],{kind:'replace',student:'Emma Johnson',pageId:201},{...captured,sheets:[...captured.sheets,{...captured.sheets[0],id:302}]}).length,1,'Multiple captures cannot accidentally replace one page');
 }
 console.log('Shared files, webcam and phone capture intentions stay scoped and distinguish add from replace.');
+
+const {moveStudentPage,studentWorkState}=await load('./model.ts');
+const sourceRecheck={...newUpload,id:401,label:'Emma recheck',sheets:[]};
+const destinationRecheck={...newUpload,id:402,label:'Sophia recheck',sheets:[]};
+const moved=moveStudentPage([classBatch,extraBatch],201,'Emma Johnson','Sophia Okonkwo',sourceRecheck,destinationRecheck);
+assert.deepEqual(studentPages(moved,'Emma Johnson').map(page=>page.id),[203],'Moving removes just the selected page from the original owner');
+assert.deepEqual(studentPages(moved,'Sophia Okonkwo').map(page=>page.id),[201]);
+assert.equal(studentPages(moved,'Sophia Okonkwo')[0].sourceStudent,'Emma Johnson','The uploaded page content keeps its original source identity');
+assert.equal(moved.flatMap(batch=>batch.sheets).filter(page=>page.id===201).length,1,'Moving does not duplicate a page');
+assert.ok(markedStudents(moved).includes('Liam Martinez'),'Unrelated classmates keep their completed results');
+assert.equal(studentWorkState(moved,'Emma Johnson').ready,false,'The source student is recalculated when pages remain');
+assert.equal(studentWorkState(moved,'Sophia Okonkwo').ready,false,'The recipient is recalculated');
+let rechecked=moved;for(let i=0;i<100;i++)rechecked=advanceBatches(rechecked,false);
+assert.ok(studentWorkState(rechecked,'Emma Johnson').ready&&studentWorkState(rechecked,'Sophia Okonkwo').ready,'Both affected results become available after processing finishes');
+const movedOnlyPage=moveStudentPage([classBatch],201,'Emma Johnson','Ava Nguyen',sourceRecheck,destinationRecheck);
+assert.equal(studentWorkState(movedOnlyPage,'Emma Johnson').pages.length,0);
+assert.ok(!markedStudents(movedOnlyPage).includes('Emma Johnson'),'Moving the last page clears the previous result');
+assert.ok(markedStudents(movedOnlyPage).includes('Liam Martinez'));
+assert.equal(moveStudentPage([classBatch],201,'Emma Johnson','Emma Johnson',sourceRecheck,destinationRecheck)[0],classBatch);
+assert.equal(moveStudentPage([{...classBatch,stage:'Uploading'}],201,'Emma Johnson','Ava Nguyen',sourceRecheck,destinationRecheck).length,1,'An unfinished upload cannot be moved');
+console.log('Page transfers preserve originals, isolate recalculation, clear empty students and publish only completed results.');
+
+const {undoStudentPageMove}=await load('./model.ts');
+const originalPage=studentPages([classBatch,extraBatch],'Emma Johnson')[0];
+for(const state of [moved,rechecked]){
+ const undone=undoStudentPageMove(state,originalPage,'Sophia Okonkwo',{...sourceRecheck,id:501},{...destinationRecheck,id:502});
+ assert.deepEqual(studentPages(undone,'Emma Johnson').map(page=>page.id).sort(),[201,203]);
+ assert.equal(studentPages(undone,'Sophia Okonkwo').length,0);
+ assert.deepEqual(JSON.parse(JSON.stringify(studentPages(undone,'Emma Johnson').find(page=>page.id===201))),originalPage,'Undo restores original matching metadata');
+ assert.ok(!studentWorkState(undone,'Emma Johnson').ready,'Restored work is recalculated');
+ assert.ok(markedStudents(undone).includes('Liam Martinez'));
+ let finished=undone;for(let i=0;i<100;i++)finished=advanceBatches(finished,false);
+ assert.ok(studentWorkState(finished,'Emma Johnson').ready);
+}
+const addedSinceMove={...replacement,id:601,sheets:[{...replacement.sheets[0],id:602,student:'Sophia Okonkwo'}]};
+const undoneWithNewWork=undoStudentPageMove([...moved,addedSinceMove],originalPage,'Sophia Okonkwo',sourceRecheck,destinationRecheck);
+assert.deepEqual(studentPages(undoneWithNewWork,'Sophia Okonkwo').map(page=>page.id),[602],'Undo preserves later uploads for the recipient');
+assert.equal(studentWorkState(undoneWithNewWork,'Sophia Okonkwo').stage,'Uploading','Later uploads still finish before results publish');
+assert.equal(studentWorkState(undoneWithNewWork,'Emma Johnson').ready,false);
+const stale=undoStudentPageMove([classBatch],originalPage,'Sophia Okonkwo',sourceRecheck,destinationRecheck);
+assert.equal(stale[0],classBatch,'Stale undo does not move a page belonging elsewhere');
+const restoredOnlyPage=undoStudentPageMove(movedOnlyPage,originalPage,'Ava Nguyen',sourceRecheck,destinationRecheck);
+assert.equal(studentPages(restoredOnlyPage,'Emma Johnson').length,1);
+assert.equal(studentPages(restoredOnlyPage,'Ava Nguyen').length,0);
+console.log('Undo restores attribution during or after processing, recalculates both students and preserves subsequent work.');
+
+const {moveStudentPages,undoStudentPagesMove}=await load('./model.ts');
+const bulkOriginal=[classBatch,extraBatch];
+const originalPages=studentPages(bulkOriginal,'Emma Johnson');
+const bulkMoved=moveStudentPages(bulkOriginal,[203,201,201],'Emma Johnson','Liam Martinez',sourceRecheck,destinationRecheck);
+assert.equal(studentPages(bulkMoved,'Emma Johnson').length,0,'Moving all selected pages clears the source result');
+assert.deepEqual(studentPages(bulkMoved,'Liam Martinez').map(page=>page.id),[202,201,203],'Move multiple pages across batches once, in page order, without duplicates');
+assert.equal(studentWorkState(bulkMoved,'Liam Martinez').ready,false);
+assert.equal(bulkMoved.filter(batch=>batch.sheets.some(page=>!page.excluded&&page.student==='Liam Martinez')).length,1,'A bulk operation schedules one recalculation per student');
+const newerSource={...replacement,id:701,sheets:[{...replacement.sheets[0],id:702}]};
+const newerRecipient={...replacement,id:703,sheets:[{...replacement.sheets[0],id:704,student:'Liam Martinez'}]};
+for(const afterCompletion of [false,true]){
+ let current=bulkMoved;
+ if(afterCompletion)for(let i=0;i<100;i++)current=advanceBatches(current,false);
+ const undone=undoStudentPagesMove([...current,newerSource,newerRecipient],originalPages,'Liam Martinez',sourceRecheck,destinationRecheck);
+ assert.deepEqual(studentPages(undone,'Emma Johnson').map(page=>page.id),[702,201,203],'One undo restores every moved page and preserves subsequent source uploads');
+ assert.deepEqual(studentPages(undone,'Liam Martinez').map(page=>page.id),[202,704],'Recipient keeps existing and subsequent work');
+ assert.equal(studentWorkState(undone,'Emma Johnson').ready,false);
+ assert.equal(studentWorkState(undone,'Liam Martinez').ready,false);
+ for(const original of originalPages){const restored=studentPages(undone,'Emma Johnson').find(page=>page.id===original.id);assert.equal(restored.method,original.method);assert.equal(restored.sourceStudent,original.sourceStudent);}
+ let finished=undone;for(let i=0;i<200;i++)finished=advanceBatches(finished,false);
+ assert.ok(studentWorkState(finished,'Emma Johnson').ready&&studentWorkState(finished,'Liam Martinez').ready,'Both students publish recalculated results');
+}
+assert.equal(moveStudentPages(bulkOriginal,[201,999],'Emma Johnson','Liam Martinez',sourceRecheck,destinationRecheck),bulkOriginal,'A stale selection cannot partially move');
+assert.equal(moveStudentPages(bulkOriginal,[],'Emma Johnson','Liam Martinez',sourceRecheck,destinationRecheck),bulkOriginal);
+const pendingSelected=[classBatch,{...extraBatch,stage:'Uploading'}];
+assert.equal(moveStudentPages(pendingSelected,[201,203],'Emma Johnson','Liam Martinez',sourceRecheck,destinationRecheck),pendingSelected,'Any unfinished selected upload blocks the whole move');
+const staleBulk=replaceStudentPage(bulkMoved,'Liam Martinez',201,{...replacement,sheets:[{...replacement.sheets[0],student:'Liam Martinez'}]});
+assert.equal(undoStudentPagesMove(staleBulk,originalPages,'Liam Martinez',sourceRecheck,destinationRecheck),staleBulk,'A stale bulk undo cannot restore only part of the operation');
+console.log('Bulk move and Undo are atomic across batches, preserve later uploads, and recalculate both students.');

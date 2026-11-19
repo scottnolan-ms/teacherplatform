@@ -1,25 +1,143 @@
 import {useEffect,useRef,useState} from 'react';
+import {Link} from 'react-router-dom';
 import type {DashboardClass} from '../dashboard/model';
+import {topics as bookTopics} from '../dashboard/model';
+import {ReportSheet} from '../test-controls/ReportSheet';
+import {DisplayAvatar} from '../test-controls/TableDisplay';
+import {AverageMastery,ProgressKey,TopicEyebrow} from './EvidenceUI';
+import {ReadinessPictogram} from './ReadinessPanel';
+import {TopicRecommendations} from './TopicRecommendations';
+import {TopicTable} from './TopicTools';
+import {StudentJourney} from './OverviewStudents';
+import {classStudentPath} from './learner-roster';
+import {subtopicValues,textbookLearning,topicSkillRows} from './learning-data';
+import {pageRanges,readiness,subtopicSkills} from './model';
 import type {Learner,Plan} from './model';
-import {mastery,prerequisiteLevels,readiness,skillMastery,subtopicSkills} from './model';
-import {Level} from './EvidenceUI';
-import {scenarioValue,useEvidenceOptions} from './distribution-options';
+import {useEvidenceOptions} from './distribution-options';
 
-type Props={item:DashboardClass;learners:Learner[];studentId:string;plan:Plan;initialTopic?:string;onStudent:(id:string)=>void;onClose:()=>void;onPractice:(topic:string,kind:string,content:string[])=>void};
-export default function StudentProgressSheet({item,learners,studentId,plan,initialTopic,onStudent,onClose,onPractice}:Props){
- const {scenario}=useEvidenceOptions();
- const dialog=useRef<HTMLDialogElement>(null);
- const [topicName,setTopicName]=useState(initialTopic??plan.focus),[view,setView]=useState(initialTopic?'Topic progress':'Textbook overview');
- const index=learners.findIndex(s=>s.id===studentId),student=learners[index];
- const topic=plan.topics.find(t=>t.name===topicName);
- useEffect(()=>{const previous=document.activeElement as HTMLElement;const el=dialog.current;el?.showModal();return()=>{el?.close();if(previous?.isConnected)previous.focus()}},[]);
+type Props={
+ item:DashboardClass;learners:Learner[];studentId:string;plan:Plan;initialTopic?:string;
+ order:'sequence'|'textbook';nested:boolean;
+ onStudent:(id:string)=>void;onClose:()=>void;onPractice:(topic:string,kind:string,content:string[])=>void;
+};
+const readinessTones={Ready:'ready','Partially ready':'partial','Not ready':'not-ready',Unchecked:'unchecked'} as const;
+
+export default function StudentProgressSheet({item,learners,studentId,plan,initialTopic,order,nested,onStudent,onClose,onPractice}:Props){
+ const {scenario,mastery}=useEvidenceOptions();
+ const [topicName,setTopicName]=useState(initialTopic??'');
+ const [expanded,setExpanded]=useState<string[]>([]);
+ const content=useRef<HTMLElement>(null);
+ const index=learners.findIndex(student=>student.id===studentId);
+ const student=learners[index];
+ const book=item.textbook?.topics??bookTopics;
+ const pages=pageRanges(plan.topics,book);
+ const chapter=(name:string)=>pages.get(name)?.number??plan.topics.findIndex(topic=>topic.name===name)+1;
+ const topics=order==='sequence'?plan.topics:[...plan.topics].sort((a,b)=>chapter(a.name)-chapter(b.name));
+ const number=(name:string,position:number)=>order==='sequence'?position+1:chapter(name);
+ const topic=topics.find(topic=>topic.name===topicName);
+ const selectTopic=(name:string)=>{setTopicName(name);setExpanded([])};
+ useEffect(()=>{content.current?.scrollTo({top:0})},[topicName,studentId]);
  if(!student)return null;
- const prerequisite=topic?prerequisiteLevels(item.id,student.id,topic,item.history).map((v,i)=>scenarioValue(v,`${student.id}:prereq:${i}`,scenario)):[];
- const gaps=topic?.prerequisites.filter((_,i)=>prerequisite[i]>0&&prerequisite[i]<3)??[];
- const learningGap=topic?.subtopics.findIndex((_,i)=>{const v=scenarioValue(mastery(item.id,student.id,topic,i,item.history),`${student.id}:${i}`,scenario);return v>0&&v<3})??-1;
- return <dialog className="tp-student-sheet" ref={dialog} aria-label={`${student.name} textbook progress`} onCancel={onClose} onClick={e=>{if(e.target===e.currentTarget)onClose()}}><header className="tp-sheet-header"><span className="tp-avatar">{student.name.split(' ').map(n=>n[0]).slice(0,2).join('')}</span><div><span className="tp-eyebrow">Student progress · {item.name}</span><h2>{student.name}</h2></div><div className="tp-sheet-step"><button disabled={index===0} aria-label="Previous student" onClick={()=>onStudent(learners[index-1].id)}>‹</button><span>{index+1} / {learners.length}</span><button disabled={index===learners.length-1} aria-label="Next student" onClick={()=>onStudent(learners[index+1].id)}>›</button></div><button aria-label="Close student sheet" onClick={onClose}>×</button></header><div className="tp-sheet-body"><div className="tp-view-toggle" role="group" aria-label="Student progress view">{['Topic progress','Textbook overview'].map(v=><button key={v} aria-pressed={view===v} disabled={v==='Topic progress'&&!topic} onClick={()=>setView(v)}>{v}</button>)}</div>
- {view==='Topic progress'&&topic?<><div className="tp-sheet-topic"><span className="tp-eyebrow">{topic.name===plan.focus?'Class topic focus':'Topic'}</span><h3>{topic.name}</h3><p>Latest illustrative learning evidence</p></div><section className="tp-sheet-readiness"><div><h4>Prerequisite readiness</h4><p>Knowledge needed to begin this topic</p></div><strong>{readiness(prerequisite)}</strong></section>
- <section className="tp-sheet-next"><span className="tp-eyebrow">Recommendation</span>{learningGap>=0?<><h4>Practise {topic.subtopics[learningGap].toLowerCase()}</h4><p>{student.name.split(' ')[0]} is at Exploring or Emerging in this subtopic. Review the underlying skills below.</p><button className="tp-primary" onClick={()=>onPractice(topic.name,'Topic practice',subtopicSkills(topic.subtopics[learningGap]))}>Review practice</button></>:gaps.length?<><h4>Strengthen prerequisite skills</h4><p>Evidence suggests further practice with {gaps.join(' and ').toLowerCase()}.</p><button className="tp-primary" onClick={()=>onPractice(topic.name,'Targeted practice',gaps)}>Review practice</button></>:prerequisite.some(v=>v===0)?<><h4>Gather more prerequisite evidence</h4><p>A check-in can help distinguish missing evidence from a learning gap.</p><button className="tp-primary" onClick={()=>onPractice(topic.name,'Readiness check-in',topic.prerequisites)}>Review check-in</button></>:<><h4>Continue building topic understanding</h4><p>The prerequisite evidence supports moving into this topic. Use the subtopics below to review current understanding.</p></>}</section>
- <h3 className="tp-sheet-section">Subtopic progress</h3><div className="tp-student-subtopics">{topic.subtopics.map((sub,i)=><details key={sub}><summary><span>{sub}<small>{subtopicSkills(sub).length} skills</small></span><Level value={scenarioValue(mastery(item.id,student.id,topic,i,item.history),`${student.id}:${i}`,scenario)}/></summary><div className="tp-sheet-skills">{subtopicSkills(sub).map((skill,j)=><div key={skill}><span>{skill}</span><Level value={scenarioValue(skillMastery(item.id,student.id,topic,i,j,item.history),`${student.id}:${i}:${j}`,scenario)}/></div>)}</div></details>)}</div><h3 className="tp-sheet-section">Prerequisite skills</h3><p className="tp-sheet-caption">These support topic readiness; they are separate from topic progress.</p><div className="tp-sheet-skills">{topic.prerequisites.map((skill,i)=><div key={skill}><span>{skill}</span><Level value={prerequisite[i]}/></div>)}</div></>:<><div className="tp-sheet-topic"><h3>Across the textbook</h3><p>{item.textbook?.name??`Australian Curriculum Year ${item.year}`}</p></div><div className="tp-student-topic-list">{plan.topics.map(t=>{const mastered=t.subtopics.filter((_,i)=>scenarioValue(mastery(item.id,student.id,t,i,item.history),`${student.id}:${i}`,scenario)>=4).length;return <button key={t.name} onClick={()=>{setTopicName(t.name);setView('Topic progress')}}><span><strong>{t.name}</strong><small>{t.name===plan.focus?'Current class focus':t.state}</small></span><span>{mastered} / {t.subtopics.length}<small>proficient or mastered</small></span><span>→</span></button>})}</div></>}
- <p className="tp-footnote">No evidence is not a judgement of ability. Closing this sheet returns to the same class view and filters.</p></div></dialog>
+ const [learning]=textbookLearning(item,topic?[topic]:topics,[student],scenario);
+ const skills=topic?topicSkillRows(item,topic,[student],scenario):[];
+ const prerequisites=skills.filter(skill=>skill.kind==='Prerequisite');
+ const readinessStatus=readiness(prerequisites.map(skill=>skill.values[0]));
+ const gaps=prerequisites.filter(skill=>skill.values[0]>0&&skill.values[0]<3);
+ const missing=prerequisites.filter(skill=>skill.values[0]===0);
+ const topicLevels=learning.progress[0]?.levels??[];
+ const learningGap=topicLevels.findIndex(value=>value>0&&value<3);
+ const total=learning.progress.reduce((sum,entry)=>sum+entry.total,0);
+ const skillCount=learning.progress.reduce((sum,entry)=>sum+entry.skillCount,0);
+ const recommendation=topic&&(learningGap>=0?{
+  title:`Practise ${topic.subtopics[learningGap].toLowerCase()}`,
+  description:`${student.name} is Exploring or Emerging in this subtopic.`,
+  kind:'Targeted practice',skills:subtopicSkills(topic.subtopics[learningGap]),
+ }:gaps.length?{
+  title:'Strengthen prerequisite skills',description:`${gaps.length} prerequisite ${gaps.length===1?'skill needs':'skills need'} more practice.`,
+  kind:'Targeted practice',skills:gaps.map(skill=>skill.name),
+ }:missing.length?{
+  title:'Check prerequisite readiness',description:`${missing.length} prerequisite ${missing.length===1?'skill has':'skills have'} no evidence yet.`,
+  kind:'Readiness check-in',skills:missing.map(skill=>skill.name),
+ }:undefined);
+ return <ReportSheet title={student.name} view="Student progress" onViewChange={()=>{}} onClose={onClose}
+  className={`tp-student-progress-portal ${nested?'tp-student-progress-nested':''}`}
+  dialogLabel={`${student.name} textbook progress`}
+  renderHeader={close=><header className="tr-sheet-header tp-student-progress-header">
+   <DisplayAvatar name={student.name}/>
+   <div><small>Student progress · {item.name}</small><h2>{student.name}</h2></div>
+   <button className="tc-icon-button" aria-label="Close student progress" onClick={close}>×</button>
+  </header>}>
+  <div className="tp-page tp-student-workspace" data-mastery-palette={mastery}>
+   <nav className="tp-student-nav" aria-label="Topics">
+    <h3>Topics</h3>
+    <select aria-label="Topic" value={topicName} onChange={event=>selectTopic(event.target.value)}>
+     <option value="">Textbook overview</option>
+     {topics.map((entry,position)=><option key={entry.name} value={entry.name}>{number(entry.name,position)}. {entry.name}</option>)}
+    </select>
+    <div className="tp-student-nav-list">
+     <button aria-current={!topic?'page':undefined} onClick={()=>selectTopic('')}>Textbook overview</button>
+     {topics.map((entry,position)=><button key={entry.name} aria-current={entry.name===topicName?'page':undefined} onClick={()=>selectTopic(entry.name)}>
+      <small>{number(entry.name,position)}</small><span>{entry.name}</span>
+     </button>)}
+    </div>
+   </nav>
+   <nav className="tp-student-nav" aria-label="Students">
+    <h3>Students <small>{index+1} of {learners.length}</small></h3>
+    <select aria-label="Student" value={studentId} onChange={event=>onStudent(event.target.value)}>
+     {learners.map(person=><option key={person.id} value={person.id}>{person.name}</option>)}
+    </select>
+    <div className="tp-student-nav-list">{learners.map(person=><button key={person.id} aria-current={person.id===studentId?'true':undefined} onClick={()=>onStudent(person.id)}>
+     <DisplayAvatar name={person.name}/><span>{person.name}</span>
+    </button>)}</div>
+   </nav>
+   <main className="tp-student-progress-content" ref={content}>
+    <header className="tp-student-progress-title">
+     {topic&&<TopicEyebrow number={chapter(topic.name)} pages={pages.get(topic.name)} focus={topic.name===plan.focus}/>}
+     <h2>{topic?.name??'Textbook overview'}</h2>
+    </header>
+    <section className="tp-dashboard tp-student-summary" aria-label="Student summary">
+     <div className="tp-dashboard-body">
+      <div><h3>Summary</h3><div className="tp-insight-values">
+       {topic&&<div className="tp-student-readiness-tile" data-readiness={readinessTones[readinessStatus]}>
+        <span>Prerequisite readiness</span>
+        <strong>{readinessStatus}</strong>
+        <small>{prerequisites.filter(skill=>skill.values[0]>=4).length} of {prerequisites.length} proficient or mastered</small>
+        <ReadinessPictogram status={readinessStatus}/>
+       </div>}
+       <div><span>Avg. subtopic mastery</span><AverageMastery values={learning.progress.flatMap(entry=>entry.levels)} individual small/></div>
+       <div><span>Subtopics completed</span><strong>{learning.completed} of {total}</strong><small>Familiar or above</small></div>
+       <div><span>Skills collected</span><strong>{learning.collected} of {skillCount}</strong><small>Proficient or Mastered</small></div>
+      </div></div>
+      {topic&&recommendation&&<TopicRecommendations key={`${studentId}:${topic.name}`} topic={topic.name} items={[{
+       id:'student-follow-up',title:recommendation.title,description:recommendation.description,
+       action:'Review',icon:'progress',tone:'purple',
+       review:()=>onPractice(topic.name,recommendation.kind,recommendation.skills),
+       reviewLabel:recommendation.kind==='Readiness check-in'?'Build check-in':'Build practice task',
+      }]}/>}
+     </div>
+    </section>
+    {topic?<>
+     <h3>Subtopics</h3>
+     <TopicTable topic={topic} pages={pages.get(topic.name)} values={i=>subtopicValues(item,topic,i,[student],scenario)}
+      skills={skills} expanded={expanded} onExpand={setExpanded} legend={<ProgressKey/>} individual taskOnly
+      onAction={action=>onPractice(topic.name,'Topic practice',action.skills)}/>
+     {prerequisites.length>0&&<section className="tp-student-prerequisites"><h3>Prerequisite skills</h3>
+      <ul>{prerequisites.map(skill=><li key={skill.code}><span>{skill.name}</span><AverageMastery values={skill.values} individual skill small/></li>)}</ul>
+     </section>}
+    </>:<>
+     <h3>{order==='sequence'?'Journey through your sequence':'Journey through the textbook'}</h3>
+     <StudentJourney topics={learning.progress} number={number} onTopic={selectTopic}/>
+     <div className="tp-table-wrap tp-student-overview-topics"><table className="tp-table">
+      <thead><tr><th>Topic</th><th>Avg. subtopic mastery</th><th>Subtopics completed</th><th>Skills collected</th></tr></thead>
+      <tbody>{learning.progress.map(entry=><tr key={entry.name}>
+       <th scope="row"><button onClick={()=>selectTopic(entry.name)}>{entry.name}</button></th>
+       <td><AverageMastery values={entry.levels} individual small/></td>
+       <td>{entry.completed} of {entry.total}</td><td>{entry.collected} of {entry.skillCount}</td>
+      </tr>)}</tbody>
+     </table></div>
+    </>}
+    <p className="tp-student-profile-link"><Link to={`${classStudentPath(item.id,student.id)}?tab=textbook${topic?'&topic='+encodeURIComponent(topic.name):''}`}>Open student textbook progress →</Link></p>
+   </main>
+  </div>
+ </ReportSheet>;
 }

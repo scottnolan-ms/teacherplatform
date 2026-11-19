@@ -12,7 +12,7 @@
 .cw-workspace .cw-class-action.cw-action-filled{background:#ddcfff;border-color:#ddcfff;color:#42168a}
 .cw-class-action .cw-icon{width:20px;height:20px;flex:0 0 20px}
 
-.cw-activity-table{table-layout:fixed;width:100%}.cw-activity-table td{overflow:hidden;text-overflow:ellipsis}.cw-activity-table td button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cw-textbook{padding:24px}.cw-textbook .textbook-progress-tab{width:100%}
+.cw-activity-table{table-layout:fixed;width:100%}.cw-activity-table td{overflow:hidden;text-overflow:ellipsis}.cw-activity-table td button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cw-textbook{min-width:0}.cw-textbook .textbook-progress-tab{width:100%}
 
 .cw-more-classes{margin:12px;border:0;background:transparent;color:#6e3ddd;cursor:pointer;text-align:left;font-size:12px}.insights-panel .readiness-recommendations{align-self:center}
 /* One header appearance for class pages and dashboard sheets. */

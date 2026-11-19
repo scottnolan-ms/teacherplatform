@@ -32,11 +32,46 @@ function seedDates(topics:TopicPlan[],focusIndex:number,focus:DashboardClass['fo
  let cursor=Date.parse(DEMO_DATE)-Math.round(through*days(f))*DAY-topics.slice(0,focusIndex).reduce((n,t)=>n+days(t),0)*DAY;
  return topics.map((t,i)=>{const start=cursor;cursor+=days(t)*DAY;return {...t,start:i===focusIndex&&focus?.start||iso(start),end:i===focusIndex&&focus?.end||iso(cursor-DAY)}});
 }
-export function seedPlan(item:Pick<DashboardClass,'textbook'|'focus'>):Plan{
+export function seedPlan(item:Pick<DashboardClass,'textbook'|'focus'>&{id?:string}):Plan{
  const names=[...new Set([...(item.textbook?.topics??defaultTopics),...(item.focus?[item.focus.topic]:[])])];
+ // The featured class teaches these chapters in a different order from the book.
+ if(item.id==='dash-7a'&&!item.textbook&&item.focus?.topic==='Decimals and percentages'){
+  names.splice(0,6,names[1],names[0],names[4],names[3],names[2],names[5]);
+ }
  const focus=item.focus?.topic??'';const focusIndex=names.indexOf(focus);
  return {focus,topics:seedDates(names.map((name,i)=>{const [subtopics,prerequisites]=content[name]??[[`Representing ${name.toLowerCase()}`,`Working with ${name.toLowerCase()}`,`Applying ${name.toLowerCase()}`],['Use number operations','Interpret mathematical statements']];return {name,subtopics,prerequisites,state:i===focusIndex?'Teaching':i<focusIndex?'Taught':'Planned',start:'',end:'',introduced:i<focusIndex?subtopics.length:i===focusIndex?Math.min(item.focus?.done??0,subtopics.length):0}}),focusIndex,item.focus??null)};
 }
+// Recognise the older 7A example without replacing independently edited plans.
+export function refreshFeaturedJourney(saved:Plan,seed:Plan):Plan{
+ const oldNames=['Integers','Whole numbers','Fractions','Linear equations','Decimals and percentages'];
+ const oldCoverage=[4,5,5,0,3];
+ if(saved.focus!==seed.focus||saved.topics.length!==seed.topics.length) return saved;
+ const matches=saved.topics.every((topic,i)=>i<oldNames.length
+  ?topic.name===oldNames[i]&&topic.introduced===oldCoverage[i]
+  :topic.name===seed.topics[i].name&&topic.introduced===seed.topics[i].introduced);
+ if(!matches)return saved;
+ if(saved.topics[2].state!=='Taught'||saved.topics[3].state!=='Planned')return saved;
+ const savedByName=new Map(saved.topics.map(topic=>[topic.name,topic]));
+ return {...saved,topics:seed.topics.map((topic,index)=>{
+  if(index<2||index>4)return savedByName.get(topic.name)??topic;
+  const {start,end}=saved.topics[index];
+  return {...topic,...savedByName.get(topic.name),state:topic.state,introduced:topic.introduced,start,end};
+ })};
+}
+
+export function subtopicComplete(values:number[]){
+ return values.filter(value=>value>=3).length>values.length/2;
+}
+
+export function averageLevel(values:number[]){
+ const known=values.filter(value=>value>0);
+ return known.length?known.reduce((sum,value)=>sum+value,0)/known.length:0;
+}
+
+export function averageLevelsByStudent(subtopics:number[][],students:number){
+ return Array.from({length:students},(_,i)=>averageLevel(subtopics.map(row=>row[i])));
+}
+
 function hash(value:string){let h=[...value].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,17);h=Math.imul(h^(h>>>16),0x45d9f3b);return (h^(h>>>16))>>>0}
 // Illustrative evidence only. Zero is absence of evidence, never a low mastery level.
 export function mastery(classId:string,studentId:string,topic:TopicPlan,index:number,hasHistory=true):number{
