@@ -12,12 +12,13 @@ export function Help({label,children}:{label:string;children:ReactNode}){
  return <><button className="tp-info" aria-label={label} aria-describedby={anchor?id:undefined} onFocus={e=>setAnchor(e.currentTarget.getBoundingClientRect())} onMouseEnter={e=>setAnchor(e.currentTarget.getBoundingClientRect())} onBlur={()=>setAnchor(null)} onMouseLeave={()=>setAnchor(null)} onClick={e=>setAnchor(e.currentTarget.getBoundingClientRect())} onKeyDown={e=>{if(e.key==='Escape')setAnchor(null)}}>ⓘ</button>{anchor&&<AnchoredTooltip id={id} className="tp-mastery-tooltip" anchor={anchor}>{children}</AnchoredTooltip>}</>
 }
 export type ContextAction={kind:string;label:string;skills:string[];supportOnly?:boolean};
-export function Actions({label,skills,onAction,taskOnly=false}:{taskOnly?:boolean;label:string;skills:string[];onAction:(a:ContextAction)=>void}){
+export function ActionMenu({label,children}:{label:string;children:(dismiss:()=>void)=>ReactNode}){
  const id=useId(),trigger=useRef<HTMLButtonElement>(null),menu=useRef<HTMLDivElement>(null);
  const [open,setOpen]=useState(false);
- const groups:[string,string[]][]=taskOnly
-  ?[['Practice',['Build a task']]]
-  :[['Practice',['Build a task','Support students needing practice']],['Teaching',['Prepare a lesson','Prepare board questions']]];
+ const dismiss=()=>{
+  menu.current?.hidePopover();
+  trigger.current?.focus({preventScroll:true});
+ };
  useEffect(()=>{
   if(!open)return;
   const dismiss=(event:Event)=>{
@@ -47,14 +48,20 @@ export function Actions({label,skills,onAction,taskOnly=false}:{taskOnly?:boolea
    popup.style.left=`${Math.max(8,Math.min(anchor.right-width,window.innerWidth-width-8))}px`;
   }}>
    <header><strong>{label}</strong></header>
-   {groups.map(([group,kinds])=><div key={group}><h4>{group}</h4>{kinds.map(kind=><button key={kind} onClick={()=>{
-    menu.current?.hidePopover();
-    trigger.current?.focus({preventScroll:true});
-    onAction({kind,label,skills,supportOnly:kind.startsWith('Support')});
-   }}>{kind}</button>)}</div>)}
+   {children(dismiss)}
   </div>
  </div>;
 }
+export function Actions({label,skills,onAction,taskOnly=false}:{taskOnly?:boolean;label:string;skills:string[];onAction:(a:ContextAction)=>void}){
+ const groups:[string,string[]][]=taskOnly
+  ?[['Practice',['Build a task']]]
+  :[['Practice',['Build a task','Support students needing practice']],['Teaching',['Prepare a lesson','Prepare board questions']]];
+ return <ActionMenu label={label}>{dismiss=>groups.map(([group,kinds])=><div key={group}><h4>{group}</h4>{kinds.map(kind=><button key={kind} onClick={()=>{
+  dismiss();
+  onAction({kind,label,skills,supportOnly:kind.startsWith('Support')});
+ }}>{kind}</button>)}</div>)}</ActionMenu>;
+}
+
 export type SkillRow={code:string;name:string;kind:'Current grade'|'Prerequisite';subtopic:string;values:number[]};
 export function TopicTable({topic,pages,values,skills,expanded,onExpand,onAction,legend,individual=false,taskOnly=false,showPrerequisites=false}:{showPrerequisites?:boolean;taskOnly?:boolean;topic:TopicPlan;pages?:TopicPages;values:(i:number)=>number[];skills:SkillRow[];expanded:string[];onExpand:(next:string[])=>void;legend?:ReactNode;onAction:(a:ContextAction)=>void;individual?:boolean}){
  const {subtleExpanded}=useEvidenceOptions();

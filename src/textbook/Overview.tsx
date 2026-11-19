@@ -1,5 +1,6 @@
 import {useState} from 'react';
 import {OverviewStudents} from './OverviewStudents';
+import {ActionMenu} from './TopicTools';
 import type {ReactNode} from 'react';
 import type {DashboardClass} from '../dashboard/model';
 import {topics as bookTopics} from '../dashboard/model';
@@ -7,12 +8,11 @@ import {AverageMastery,Distribution,ProgressKey,SubtopicFlag,TopicEyebrow} from 
 import {averageLevel,averageLevelsByStudent,DEMO_DATE,pageRanges,paceStatus,shortDate,subtopicComplete} from './model';
 import type {Learner,Plan,TopicPlan} from './model';
 
-type Props={item:DashboardClass;plan:Plan;roster:Learner[];individual:boolean;values:(t:TopicPlan,index:number,people?:Learner[])=>number[];onTopic:(name:string)=>void;onStudent:(id:string,topic?:string)=>void;order:'sequence'|'textbook';hasSequence:boolean;pacingLayout:'inline'|'stacked';onBuild:(topic?:TopicPlan)=>void;recommendations:ReactNode;taskCount:(name:string)=>number};
+type Props={item:DashboardClass;plan:Plan;roster:Learner[];individual:boolean;values:(t:TopicPlan,index:number,people?:Learner[])=>number[];onTopic:(name:string)=>void;onStudent:(id:string,topic?:string)=>void;order:'sequence'|'textbook';hasSequence:boolean;pacingLayout:'inline'|'stacked';onBuild:(topic?:TopicPlan)=>void;onFocus?:(topic:TopicPlan)=>void;onOpenTextbook:(topic:TopicPlan)=>void;recommendations:ReactNode;taskCount:(name:string)=>number};
 const icon=(name:string)=><i className="rc-icon" aria-hidden="true" style={{maskImage:`url(/assets/${name}.svg)`}}/>;
 
 // Overview: where the class is in the textbook, how that compares with the plan, and how learning looks along the way.
-export function Overview({item,plan,roster,individual,values,onTopic,onStudent,order,hasSequence,pacingLayout,onBuild,recommendations,taskCount}:Props){
- const [open,setOpen]=useState(true);
+export function Overview({item,plan,roster,individual,values,onTopic,onStudent,order,hasSequence,pacingLayout,onBuild,onFocus,onOpenTextbook,recommendations,taskCount}:Props){
  const [tab,setTab]=useState<'Topics'|'Students'>('Topics');
  const showStudents=!individual&&tab==='Students';
  const book=item.textbook?.topics??bookTopics;
@@ -34,15 +34,17 @@ export function Overview({item,plan,roster,individual,values,onTopic,onStudent,o
  const paceLabel=(t:TopicPlan)=>{const p=paceStatus(t);return p.status==='Behind'?`Behind by ${-p.delta}`:p.status==='Ahead'?`Ahead by ${p.delta}`:p.status};
  return <>
   <section className="tp-dashboard tp-dashboard-wide" aria-label="Textbook dashboard">
-   <div className={open?'tp-dashboard-heading':'tp-dashboard-heading closed'}><button className="tp-dashboard-toggle" aria-expanded={open} onClick={()=>setOpen(!open)}><span className="tp-disclosure-icon" aria-hidden="true"/>Textbook summary</button><div>{!open&&<span className="tp-muted">{completed} of {total} subtopics completed</span>}<span className="tp-muted">Teaching plan · {shortDate(DEMO_DATE)}</span></div></div>
-   {open&&<div className="tp-dashboard-body">
-    <div className="tp-overview-summary"><div><h3>Summary</h3><div className="tp-insight-values">
+   <div className="tp-dashboard-heading">
+    <h3>Textbook summary</h3><span className="tp-muted">Teaching plan · {shortDate(DEMO_DATE)}</span>
+   </div>
+   <div className="tp-dashboard-body">
+    <div className="tp-overview-summary"><div><div className="tp-insight-values">
      <div><span>{individual?'Mastery':'Class mastery'}</span><AverageMastery values={learning} individual={individual} noun="textbook" small/><small>Across the textbook</small></div>
      <div><span>Topics at Familiar or above</span><strong>{icon('recommendations/progress')}{familiar} of {plan.topics.length}</strong></div>
      <div><span>Subtopics completed</span><strong><SubtopicFlag/>{completed} of {total}</strong><small>{individual?'Familiar or above':'A majority of students are Familiar or above'}</small></div>
      {!individual&&<div><span>May need support</span><strong>{icon('recommendations/students')}{support} of {roster.length}</strong><small>{focus?`Below Familiar in ${focus.name}`:'Below Familiar across the textbook'}</small></div>}
     </div></div>{recommendations}</div>
-   </div>}
+   </div>
   </section>
   <section className="tp-sequence">
    <div className="tp-overview-toolbar">
@@ -71,7 +73,11 @@ export function Overview({item,plan,roster,individual,values,onTopic,onStudent,o
      {!individual&&<td><AverageMastery noun="topic" values={averages} small/></td>}
      <td className={individual?undefined:'tp-class-mastery-cell'}>{individual?<AverageMastery noun="topic" values={averages} individual small/>:<>{averages.some(Boolean)?<Distribution subject={t.name} values={averages.map(Math.floor)}/>:<span className="tp-muted" aria-label="No class distribution">—</span>}</>}</td>
      <td>{count||'—'}</td>
-     <td><button type="button" className="tp-overview-assign" aria-label={`Assign a task for ${t.name}`} onClick={()=>onBuild(t)}><i aria-hidden="true"/>Assign</button></td>
+     <td><ActionMenu label={t.name}>{dismiss=><div>
+      <button onClick={()=>{dismiss();onBuild(t)}}>Assign</button>
+      {onFocus&&<button disabled={t.name===plan.focus} onClick={()=>{dismiss();onFocus(t)}}>Make topic focus</button>}
+      <button onClick={()=>{dismiss();onOpenTextbook(t)}}>Open textbook</button>
+     </div>}</ActionMenu></td>
     </tr>})}</tbody></table></div>
    </>}
    </div>

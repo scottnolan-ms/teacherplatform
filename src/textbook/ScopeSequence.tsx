@@ -1,5 +1,5 @@
 import {SubtopicFlag} from './EvidenceUI';
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useId,useRef,useState} from 'react';
 import type {DashboardClass} from '../dashboard/model';
 import {topics as bookTopics} from '../dashboard/model';
 import {guideWeeks,paceStatus,schoolWeeks,shiftDate,shortDate} from './model';
@@ -11,7 +11,7 @@ const names=(list:string[])=>list.length<=2?list.join(' and '):`${list[0]} and $
 
 // The class plan as one list: order, dates and coverage for each topic, with the effect of a change stated before saving.
 export default function ScopeSequenceSheet({item,plan,initialTopic,onSave,onClose}:Props){
- const dialog=useRef<HTMLDialogElement>(null);
+ const dialog=useRef<HTMLDialogElement>(null),editorId=useId();
  const [draft,setDraft]=useState(plan),[open,setOpen]=useState(initialTopic??plan.focus),[moveLater,setMoveLater]=useState(true);
  const [drag,setDrag]=useState<string|null>(null),[over,setOver]=useState<string|null>(null),[uploadNote,setUploadNote]=useState(false);
  useEffect(()=>{const previous=document.activeElement as HTMLElement;const el=dialog.current;el?.showModal();return()=>{el?.close();if(previous?.isConnected)previous.focus()}},[]);
@@ -54,15 +54,29 @@ export default function ScopeSequenceSheet({item,plan,initialTopic,onSave,onClos
    <div className="tp-ss-heading"><div><h3>Your teaching order</h3><p>Drag a topic or use the arrows to reorder. Select a topic to set its dates and coverage.</p></div><button disabled={!draft.topics.some((t,i)=>chapter(t.name)!==null&&chapter(t.name)!==i+1)} onClick={()=>reorder([...draft.topics].sort((a,b)=>(chapter(a.name)??99)-(chapter(b.name)??99)))}>Reset to textbook order</button></div>
    <ol className="tp-ss-list">{draft.topics.map((t,i)=>{
     const isOpen=open===t.name,pace=paceStatus(t),ch=chapter(t.name),weeks=t.start&&t.end&&t.start<=t.end?schoolWeeks(t.start,t.end):null,guide=guideWeeks(t.subtopics.length),later=draft.topics.slice(i+1).filter(p=>p.start&&p.end).map(p=>p.name);
-    return <li key={t.name} className={`${isOpen?'open':''} ${drag===t.name?'dragging':''} ${over===t.name&&drag!==t.name?'drop':''}`} draggable onDragStart={e=>{if((e.target as HTMLElement).closest('input,select,.tp-ss-editor')){e.preventDefault();return}e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',t.name);setDrag(t.name)}} onDragEnd={()=>{setDrag(null);setOver(null)}} onDragOver={e=>{if(drag){e.preventDefault();setOver(t.name)}}} onDrop={e=>{e.preventDefault();if(drag)move(drag,i);setDrag(null);setOver(null)}}>
-     <div className="tp-ss-row">
-      <span className="tp-ss-handle" aria-hidden="true">⠿</span>
-      <button className="tp-ss-topic" aria-expanded={isOpen} onClick={()=>setOpen(isOpen?'':t.name)}><span className="tp-number">{String(i+1).padStart(2,'0')}</span><span><strong>{t.name}</strong><small className="tp-subtopic-count"><SubtopicFlag/>{t.introduced} of {t.subtopics.length} introduced{ch&&ch!==i+1?` · Topic ${ch}`:''}{t.name===draft.focus?' · Topic focus':''}</small></span></button>
+    const toggle=()=>setOpen(isOpen?'':t.name);
+    const editor=`${editorId}-${i}`;
+    return <li key={t.name} className={`${isOpen?'open':''} ${drag===t.name?'dragging':''} ${over===t.name&&drag!==t.name?'drop':''}`} onDragOver={e=>{if(drag){e.preventDefault();setOver(t.name)}}} onDrop={e=>{e.preventDefault();if(drag)move(drag,i);setDrag(null);setOver(null)}}>
+     <div className="tp-ss-row" onClick={e=>{if(!(e.target as Element).closest('button,[draggable="true"]'))toggle()}}>
+      <button className="tp-ss-topic" type="button" aria-expanded={isOpen} aria-controls={isOpen?editor:undefined} onClick={toggle}>
+       <span className="tp-accordion tp-ss-disclosure" aria-hidden="true"><i/></span>
+       <span className="tp-number">{String(i+1).padStart(2,'0')}</span>
+       <span><strong>{t.name}</strong><small className="tp-subtopic-count"><SubtopicFlag/>{t.introduced} of {t.subtopics.length} introduced{ch&&ch!==i+1?` · Topic ${ch}`:''}{t.name===draft.focus?' · Topic focus':''}</small></span>
+      </button>
       <span className="tp-ss-dates">{t.start&&t.end?<>{shortDate(t.start)} – {shortDate(t.end)}<small>{weeks===null?'Check dates':weeksLabel(weeks)}</small></>:<small>No dates set</small>}</span>
       <span className={`tp-pace tp-pace-${pace.status.toLowerCase().replace(' ','-')}`}>{pace.status==='Behind'?`Behind by ${-pace.delta}`:pace.status==='Ahead'?`Ahead by ${pace.delta}`:pace.status}</span>
-      <span className="tp-reorder"><button aria-label={`Move ${t.name} up`} disabled={i===0} onClick={()=>move(t.name,i-1)}>↑</button><button aria-label={`Move ${t.name} down`} disabled={i===draft.topics.length-1} onClick={()=>move(t.name,i+1)}>↓</button></span>
+      <span className="tp-reorder">
+       <button type="button" aria-label={`Move ${t.name} up`} disabled={i===0} onClick={()=>move(t.name,i-1)}><i aria-hidden="true"/></button>
+       <button type="button" aria-label={`Move ${t.name} down`} disabled={i===draft.topics.length-1} onClick={()=>move(t.name,i+1)}><i aria-hidden="true"/></button>
+      </span>
+      <span className="tp-ss-handle" aria-hidden="true" draggable onDragStart={e=>{
+       e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',t.name);
+       const row=e.currentTarget.closest('.tp-ss-row');
+       if(row)e.dataTransfer.setDragImage(row,24,24);
+       setDrag(t.name);
+      }} onDragEnd={()=>{setDrag(null);setOver(null)}}>⠿</span>
      </div>
-     {isOpen&&<div className="tp-ss-editor">
+     {isOpen&&<div className="tp-ss-editor" id={editor}>
       <div className="tp-ss-fields">
        <label>Topic start date<input type="date" max={t.end||undefined} value={t.start} onChange={e=>update(t.name,{start:e.target.value})}/></label>
        <label>Topic end date<input type="date" min={t.start||undefined} value={t.end} onChange={e=>setEnd(t,e.target.value)}/></label>

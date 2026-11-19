@@ -18,7 +18,7 @@ import {DesignOptions,PrototypeControls} from '../test-controls/DesignOptions';
 import {EvidenceOptions,masteryPalette,masteryPalettes} from './distribution-options';
 import type {DistributionLayout,EvidenceScenario} from './distribution-options';
 
-import {TopicTable,SkillsTable,TopicSummary} from './TopicTools';
+import {ActionMenu,TopicTable,SkillsTable,TopicSummary} from './TopicTools';
 import type {ContextAction} from './TopicTools';
 import {prerequisiteValues,subtopicValues,topicSkillRows} from './learning-data';
 import {TeachingPreview} from './FollowUp';
@@ -107,6 +107,7 @@ export default function TextbookProgress({item,learners,studentId}:{item:Dashboa
  const [studentFollowup,setStudentFollowup]=useState<{label:string;ids:string[]}|null>(null);
  const [showSkillGaps,setShowSkillGaps]=useState(false);
  const clearStudentFilters=()=>{setReadinessFilter([]);setSubtopicFilter([]);setStudentFollowup(null)};
+ const [focusChoice,setFocusChoice]=useState<string|null>(null),[textbookChapter,setTextbookChapter]=useState<TopicPlan|null>(null);
  const [editPlan,setEditPlan]=useState(false),[order,setOrder]=useState<'sequence'|'textbook'>('sequence');
  const draftKey=`textbook-drafts-${item.id}`,assignmentKey=`textbook-assignments-${item.id}`;
  const [draft,setDraft]=useState<Draft|null>(null),[savedDrafts,setSavedDrafts]=useState<Draft[]>(()=>readSaved(draftKey,[]));
@@ -141,7 +142,7 @@ export default function TextbookProgress({item,learners,studentId}:{item:Dashboa
  const taskCount=(name:string)=>assignedFor(name).length+tasksFor(name).length;
  const goTopic=(name?:string)=>{const next=new URLSearchParams(params);if(name)next.set('topic',name);else next.delete('topic');next.delete('subtopic');setParams(next);if(name!==topicParam)setView('Subtopics');clearStudentFilters();setQuery('');setExpandedSubtopic([]);setShowSkillGaps(false)};
  const persistPlan=(next:Plan)=>{setPlan(next);try{localStorage.setItem(storageKey,JSON.stringify(next));const c=loadDashboard();saveDashboard(c.map(c=>c.id===item.id?{...c,focus:next.focus?{topic:next.focus,start:next.topics.find(t=>t.name===next.focus)?.start,end:next.topics.find(t=>t.name===next.focus)?.end??'',done:next.topics.find(t=>t.name===next.focus)?.introduced??0,total:next.topics.find(t=>t.name===next.focus)?.subtopics.length??0,pace:c.focus?.pace??'On track'}:null}:c))}catch{setNotice('Changes are available for this session. Browser storage is unavailable.')}};
- const setFocus=(t:TopicPlan)=>{persistPlan({...plan,focus:t.name,topics:plan.topics.map(p=>p.name===t.name?{...p,state:'Teaching'}:p)});setNotice(`${t.name} is now the class topic focus.`)};
+ const setFocus=(t:TopicPlan)=>{persistPlan({...plan,focus:t.name,topics:plan.topics.map(p=>p.name===t.name&&p.state==='Planned'?{...p,state:'Teaching'}:p)});setNotice(`${t.name} is now the class topic focus.`)};
  const showTopicTab=(tab:'Students'|'Tasks')=>{
   setView(tab);
   requestAnimationFrame(()=>{
@@ -198,9 +199,9 @@ export default function TextbookProgress({item,learners,studentId}:{item:Dashboa
  const contextAction=(action:ContextAction)=>{if(!topic)return;if(action.kind.startsWith('Prepare')){setPreview(action);return}const relevant=topicSkills.filter(s=>action.skills.includes(s.name));const people=action.supportOnly?roster.filter((_,i)=>relevant.some(s=>s.values[i]>0&&s.values[i]<3)):roster;build(topic,action.supportOnly?'Targeted practice':'Topic practice',people,action.skills)};
  const modal=useRef<HTMLDialogElement>(null);
  const savePlan=(next:Plan)=>{persistPlan(next);setEditPlan(false);setNotice('Class teaching plan saved.')};
- const modalOpen=!!draft||showAbout;
+ const modalOpen=!!draft||showAbout||focusChoice!==null||!!textbookChapter;
  useEffect(()=>{if(modalOpen){const prior=document.activeElement as HTMLElement;const dialog=modal.current;dialog?.showModal();return()=>{dialog?.close();if(prior?.isConnected)prior.focus()}}},[modalOpen]);
- const closeModal=()=>{setDraft(null);setShowAbout(false)};
+ const closeModal=()=>{setDraft(null);setShowAbout(false);setFocusChoice(null);setTextbookChapter(null)};
  const sameDraft=(a:Draft,b:Draft)=>(a.id??a.topic)===(b.id??b.topic);
  const saveDrafts=(next:Draft[])=>{
   setSavedDrafts(next);
@@ -400,17 +401,22 @@ export default function TextbookProgress({item,learners,studentId}:{item:Dashboa
  return <EvidenceOptions.Provider value={{layout,compact:false,scenario,mastery:masteryColours,hideCounts,subtleExpanded}}><section className="tp-page" data-mastery-palette={masteryColours} aria-label="Textbook progress">
   <PrototypeControls><DesignOptions><label>Page header<select aria-label="Page header layout" value={header} onChange={e=>setHeader(e.target.value as 'card'|'bar')}><option value="card">01 · Textbook card</option><option value="bar">02 · Compact bar</option></select></label><label>Sequence switch<select aria-label="Sequence switch placement" value={orderUI} onChange={e=>setOrderUI(e.target.value as 'toggle'|'title'|'menu')}><option value="menu">01 · Dropdown in the page title</option><option value="toggle">02 · Toggle beside the view toggle</option><option value="title">03 · Toggle in the page title</option></select></label><label>Overview pacing dates<select aria-label="Overview pacing dates" value={pacingLayout} onChange={e=>setPacingLayout(e.target.value==='stacked'?'stacked':'inline')}><option value="inline">Side by side</option><option value="stacked">Stacked</option></select></label><label>Mastery distribution<select aria-label="Mastery distribution layout" value={layout} onChange={e=>setLayout(e.target.value as DistributionLayout)}><option value="stacked">01 · Labelled stacked bar</option><option value="counts">02 · Counts by mastery level</option><option value="dots">03 · Student dots (small classes only)</option><option value="symbols">04 · Stacked bar with mastery symbols</option></select></label><label>Mastery palette<select aria-label="Mastery palette" value={masteryColours} onChange={e=>setMasteryColours(masteryPalette(e.target.value))}>{Object.entries(masteryPalettes).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label>Expanded subtopic mastery<select value={subtleExpanded?'neutral':'colour'} onChange={e=>setSubtleExpanded(e.target.value==='neutral')}><option value="colour">Use mastery palette</option><option value="neutral">Use neutral colours on expanded rows</option></select></label><label>Counts in graph segments<select value={hideCounts?'hidden':'visible'} onChange={e=>setHideCounts(e.target.value==='hidden')}><option value="visible">Show counts</option><option value="hidden">Hide counts</option></select></label><p>All layouts show the same students and evidence. Dots are a small-class exploration; above 60 students they switch to a scalable bar. No evidence stays separate from the five mastery levels.</p></DesignOptions><label>Scenario<select aria-label="Mastery evidence scenario" value={scenario} onChange={e=>{setScenario(e.target.value as EvidenceScenario);clearStudentFilters()}}><option value="current">Current illustrative class</option><option value="split">Wide spread</option><option value="limited">Limited evidence</option><option value="none">No evidence yet</option></select></label></PrototypeControls>
   {notice&&!inSheet&&<div role="status" className="tp-notice">{notice}<button onClick={()=>setNotice('')} aria-label="Dismiss notification">×</button></div>}
-  {topicParam&&!topic&&<div className="tp-notice">{topicParam==='focus'?'Choose a topic focus from your sequence.':'This topic is not in this class sequence.'}<button onClick={()=>goTopic()}>Show sequence</button></div>}
-  <div className="tp-view-bar"><div className="tp-view-toggle" role="group" aria-label="Textbook progress view"><button aria-pressed={!page} onClick={()=>goTopic()}>Overview</button><button aria-pressed={!!page} disabled={!!selected&&!focus} onClick={()=>focus?goTopic('focus'):setEditPlan(true)}>◎ Topic focus</button></div>{!page&&hasSequence&&orderUI==='toggle'&&<div className="tp-view-toggle" role="group" aria-label="Topic order">{(['sequence','textbook'] as const).map(v=><button key={v} aria-pressed={order===v} onClick={()=>setOrder(v)}>{v==='sequence'?'My sequence':'Textbook order'}</button>)}</div>}<div className="tp-view-actions"><button className="tp-about" onClick={()=>setShowAbout(true)}>About this view ⓘ</button>{!page&&!studentId&&<button className="tp-outline" onClick={()=>setEditPlan(true)}>{hasSequence?'Edit scope & sequence':'Add scope & sequence'}</button>}</div></div>
-  <header className={`tp-top tp-top-${header}`}>
+  {topicParam&&topicParam!=='focus'&&!topic&&<div className="tp-notice">This topic is not in this class sequence.<button onClick={()=>goTopic()}>Show sequence</button></div>}
+  <div className="tp-view-bar"><div className="tp-view-toggle" role="group" aria-label="Textbook progress view"><button aria-pressed={!page} onClick={()=>goTopic()}>Overview</button><button aria-pressed={!!page} disabled={!!selected&&!focus} onClick={()=>focus?goTopic('focus'):setFocusChoice('')}>◎ Topic focus</button></div>{!page&&hasSequence&&orderUI==='toggle'&&<div className="tp-view-toggle" role="group" aria-label="Topic order">{(['sequence','textbook'] as const).map(v=><button key={v} aria-pressed={order===v} onClick={()=>setOrder(v)}>{v==='sequence'?'My sequence':'Textbook order'}</button>)}</div>}<div className="tp-view-actions"><button className="tp-about" onClick={()=>setShowAbout(true)}>About this view ⓘ</button>{!page&&!studentId&&<button className="tp-outline" onClick={()=>setEditPlan(true)}>{hasSequence?'Edit scope & sequence':'Add scope & sequence'}</button>}</div></div>
+  {!page&&<header className={`tp-top tp-top-${header}`}>
    <div className="tp-top-title"><h2>{orderInTitle?<>{orderUI==='title'?<span className="tp-view-toggle tp-title-switch" role="group" aria-label="Topic order">{(['sequence','textbook'] as const).map(v=><button key={v} aria-pressed={order===v} onClick={()=>setOrder(v)}>{v==='sequence'?'My sequence':'Textbook'}</button>)}</span>:<select className="tp-title-select" aria-label="Topic order" value={order} onChange={e=>setOrder(e.target.value as 'sequence'|'textbook')}><option value="sequence">My sequence</option><option value="textbook">Textbook</option></select>} progress</>:'Textbook progress'}</h2>{header==='bar'?<p className="tp-top-chips"><span className="tp-top-chip"><img src="/assets/textbook/cover-ac-year-7.jpg" alt=""/>{book.curriculum} {book.grade}{book.edition?` · ${book.edition}`:''}</span>{selected&&<span className="tp-top-chip">{selected.name}</span>}</p>:<p>{selected?`${selected.name} · learning across the textbook`:'Your teaching plan, informed by how students are learning.'}</p>}</div>
    {header==='card'&&<div className="tp-textbook-card" aria-label="Focus textbook"><img src="/assets/textbook/cover-ac-year-7.jpg" alt=""/><div><span>{book.curriculum}</span><strong>{book.grade}</strong><span>{book.edition}</span></div></div>}
 
-  </header>
+  </header>}
   {page&&<>{topicHeader}{topicContent}</>}
-  {!selected&&!focus&&!topic&&<div className="tp-empty"><h3>Choose a topic focus</h3><p>Open a topic below to connect your teaching plan with student learning.</p></div>}
+  {!selected&&!focus&&!topic&&<section className="tp-focus-banner">
+   <img src="/assets/dashboard/focus.png" alt="" width={40} height={40}/>
+   <div className="tp-focus-banner-copy"><h3>Choose a topic focus</h3><p>See your class’s progress in the topic you’re teaching.</p></div>
+   <button type="button" className="tp-primary" onClick={()=>setFocusChoice('')}><i aria-hidden="true"/>Set focus</button>
+   <ActionMenu label="topic focus">{dismiss=><div><button onClick={()=>{dismiss();setEditPlan(true)}}>Edit scope &amp; sequence</button></div>}</ActionMenu>
+  </section>}
   {draftList}
-  {!page&&<Overview item={item} plan={plan} roster={roster} individual={!!selected} values={values} onTopic={goTopic} onStudent={(id,name)=>openStudent(id,roster,name)} order={shownOrder} hasSequence={hasSequence} pacingLayout={pacingLayout} onBuild={build} recommendations={overviewRecommendations()} taskCount={taskCount}/>}
+  {!page&&<Overview item={item} plan={plan} roster={roster} individual={!!selected} values={values} onTopic={goTopic} onStudent={(id,name)=>openStudent(id,roster,name)} order={shownOrder} hasSequence={hasSequence} pacingLayout={pacingLayout} onBuild={build} onFocus={studentId?undefined:setFocus} onOpenTextbook={setTextbookChapter} recommendations={overviewRecommendations()} taskCount={taskCount}/>}
   {inSheet&&topic&&<TopicSheet suspended={!!reportTask||!!studentSheet} title={`${topic.name} · ${selected?.name??item.name}`} item={item} order={shownOrder} onOrder={setOrder} hasSequence={hasSequence} entries={entries} current={topic.name} onTopic={goTopic} onClose={()=>goTopic()} header={topicHeader}>{notice&&<div role="status" className="tp-notice">{notice}<button onClick={()=>setNotice('')} aria-label="Dismiss notification">×</button></div>}{topicContent}</TopicSheet>}
   {reportTask&&<TopicTaskReport key={reportTask.id} item={item} task={reportTask} onClose={closeReport}/>}
   {preview&&<TeachingPreview action={preview} onClose={()=>setPreview(null)} onDraft={()=>{contextAction({...preview,kind:"Build a task"});setPreview(null)}}/>}
@@ -419,8 +425,32 @@ export default function TextbookProgress({item,learners,studentId}:{item:Dashboa
    plan={plan} initialTopic={studentSheet.topic} order={shownOrder} nested={inSheet} checkInAssigned={checkInAssigned}
    onStudent={id=>setStudentSheet({...studentSheet,id})} onClose={closeStudent}
    onPractice={(name,kind,content)=>build(plan.topics.find(t=>t.name===name),kind,learners.filter(student=>student.id===studentSheet.id),content)}/>}
-  <dialog ref={modal} className="tp-dialog" onCancel={closeModal} onClick={e=>{if(e.target===e.currentTarget)closeModal()}} aria-label={draft?'Build a task':'About textbook progress'}><div className="tp-dialog-body"><button className="tp-dialog-close" onClick={closeModal} aria-label="Close dialog">×</button>
+  <dialog ref={modal} className="tp-dialog" onCancel={closeModal} onClick={e=>{if(e.target===e.currentTarget)closeModal()}} aria-label={draft?'Build a task':focusChoice!==null?'Choose a topic focus':textbookChapter?`Textbook · ${textbookChapter.name}`:'About textbook progress'}><div className="tp-dialog-body"><button className="tp-dialog-close" onClick={closeModal} aria-label="Close dialog">×</button>
    {showAbout&&<><span className="tp-eyebrow">Understanding the evidence</span><h2>Plan teaching. Understand learning.</h2><h3>Readiness is about prerequisites</h3><p>It describes the knowledge needed to begin a topic, using check-ins and other relevant work. It is separate from a check-in result or topic mastery.</p><h3>Progress is about learning within a topic</h3><p>The five mastery levels describe understanding. No evidence is a separate state. Class distributions retain every student, including those without evidence.</p><h3>Pacing belongs to the class</h3><p>Dates, order and introduced subtopics reflect the teaching plan, not automatic judgements about learning speed.</p><h3>This prototype</h3><p>Learning evidence, prerequisite mappings and initial teaching coverage are illustrative. Readiness here uses a demonstration rule, not Mathspace’s production calculation. Plans, drafts and prototype assignments are saved in this browser.</p></>}
+   {focusChoice!==null&&<form className="tp-focus-form" onSubmit={event=>{
+    event.preventDefault();
+    const picked=plan.topics.find(entry=>entry.name===focusChoice);
+    if(picked){setFocus(picked);closeModal();goTopic('focus')}
+   }}>
+    <h2>Choose a topic focus</h2>
+    <label>Topic<select value={focusChoice} onChange={event=>setFocusChoice(event.target.value)} required>
+     <option value="" disabled>Select a topic</option>
+     {plan.topics.map(entry=><option key={entry.name}>{entry.name}</option>)}
+    </select></label>
+    <button className="tp-primary" type="submit" disabled={!focusChoice}>Set focus</button>
+   </form>}
+   {textbookChapter&&(()=>{
+    const chapterPages=pages.get(textbookChapter.name);
+    return <section className="tp-chapter-preview">
+     <span className="tp-eyebrow">{book.curriculum} {book.grade}</span>
+     <h2>{textbookChapter.name}</h2>
+     {chapterPages&&<p>Print textbook pages {chapterPages.start}–{chapterPages.end}</p>}
+     <ol>{textbookChapter.subtopics.map((name,index)=>{
+      const page=chapterPages?.subs[index];
+      return <li key={name}><span>{name}</span>{page&&<small>Pages {page.start}–{page.end}</small>}</li>;
+     })}</ol>
+    </section>;
+   })()}
    {draft&&<TaskBuilder draft={draft} topics={plan.topics} learners={roster} className={item.name} onChange={setDraft} onTopic={t=>setDraft({...draft,topic:t.name,kind:'Topic practice',title:undefined,content:skillsFor(t)})} onSave={saveDraft} onAssign={assignTask} onCancel={closeModal}/>}
   </div></dialog>
  </section></EvidenceOptions.Provider>
