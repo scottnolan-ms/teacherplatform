@@ -63,6 +63,30 @@ export function subtopicComplete(values:number[]){
  return values.filter(value=>value>=3).length>values.length/2;
 }
 
+export type SupportFlag={topic:string;subtopic:string;mastery:number};
+
+export function priorSubtopicSupport(plan:Plan,evidence:(topic:TopicPlan)=>number[][],today=DEMO_DATE){
+ const focusIndex=plan.topics.findIndex(topic=>topic.name===plan.focus);
+ const prior=focusIndex>=0?plan.topics.slice(0,focusIndex):plan.topics.filter(topic=>
+  topic.state==='Taught'||(topic.end!==''&&topic.end<today));
+ const flags=new Map<number,SupportFlag[]>();
+ for(const topic of prior){
+  const introduced=evidence(topic).slice(0,topic.introduced);
+  introduced.forEach((row,index)=>{
+   const classCompleted=subtopicComplete(row);
+   row.forEach((mastery,student)=>{
+    // Missing evidence can delay follow-up when most of the class has completed the subtopic.
+    if(mastery>=3||(mastery===0&&!classCompleted))return;
+    const flag={topic:topic.name,subtopic:topic.subtopics[index],mastery};
+    const existing=flags.get(student);
+    if(existing)existing.push(flag);
+    else flags.set(student,[flag]);
+   });
+  });
+ }
+ return flags;
+}
+
 export function averageLevel(values:number[]){
  const known=values.filter(value=>value>0);
  return known.length?known.reduce((sum,value)=>sum+value,0)/known.length:0;

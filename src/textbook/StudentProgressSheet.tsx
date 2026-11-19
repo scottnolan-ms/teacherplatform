@@ -18,15 +18,15 @@ import type {Learner,Plan} from './model';
 import {useEvidenceOptions} from './distribution-options';
 
 type Props={
- item:DashboardClass;learners:Learner[];studentId:string;plan:Plan;initialTopic?:string;
+ item:DashboardClass;learners:Learner[];studentId:string;plan:Plan;initialTopic?:string;initialSubtopic?:string;
  order:'sequence'|'textbook';nested:boolean;checkInAssigned:(topic:string)=>boolean;
  onStudent:(id:string)=>void;onClose:()=>void;onPractice:(topic:string,kind:string,content:string[])=>void;
 };
 
-export default function StudentProgressSheet({item,learners,studentId,plan,initialTopic,order,nested,checkInAssigned,onStudent,onClose,onPractice}:Props){
+export default function StudentProgressSheet({item,learners,studentId,plan,initialTopic,initialSubtopic,order,nested,checkInAssigned,onStudent,onClose,onPractice}:Props){
  const {scenario,mastery}=useEvidenceOptions();
  const [topicName,setTopicName]=useState(initialTopic??'');
- const [expanded,setExpanded]=useState<string[]>([]);
+ const [expanded,setExpanded]=useState<string[]>(initialSubtopic?[initialSubtopic]:[]);
  const content=useRef<HTMLElement>(null);
  const index=learners.findIndex(student=>student.id===studentId);
  const student=learners[index];

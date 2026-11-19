@@ -1,19 +1,22 @@
-import {useState} from 'react';
+import {useRef,useState} from 'react';
 import {OverviewStudents} from './OverviewStudents';
 import {ActionMenu} from './TopicTools';
+import {MasteryAverageTile,SummaryTile} from './StudentLearningTiles';
+import {NeedsAttentionTile} from './ReadinessPanel';
 import type {ReactNode} from 'react';
 import type {DashboardClass} from '../dashboard/model';
 import {topics as bookTopics} from '../dashboard/model';
 import {AverageMastery,Distribution,ProgressKey,SubtopicFlag,TopicEyebrow} from './EvidenceUI';
-import {averageLevel,averageLevelsByStudent,DEMO_DATE,pageRanges,paceStatus,shortDate,subtopicComplete} from './model';
+import {averageLevelsByStudent,pageRanges,paceStatus,priorSubtopicSupport,shortDate,subtopicComplete} from './model';
 import type {Learner,Plan,TopicPlan} from './model';
 
-type Props={item:DashboardClass;plan:Plan;roster:Learner[];individual:boolean;values:(t:TopicPlan,index:number,people?:Learner[])=>number[];onTopic:(name:string)=>void;onStudent:(id:string,topic?:string)=>void;order:'sequence'|'textbook';hasSequence:boolean;pacingLayout:'inline'|'stacked';onBuild:(topic?:TopicPlan)=>void;onFocus?:(topic:TopicPlan)=>void;onOpenTextbook:(topic:TopicPlan)=>void;recommendations:ReactNode;taskCount:(name:string)=>number};
-const icon=(name:string)=><i className="rc-icon" aria-hidden="true" style={{maskImage:`url(/assets/${name}.svg)`}}/>;
+type Props={item:DashboardClass;plan:Plan;roster:Learner[];individual:boolean;values:(t:TopicPlan,index:number,people?:Learner[])=>number[];onTopic:(name:string)=>void;onStudent:(id:string,topic?:string,subtopic?:string)=>void;order:'sequence'|'textbook';hasSequence:boolean;pacingLayout:'inline'|'stacked';onBuild:(topic?:TopicPlan)=>void;onFocus?:(topic:TopicPlan)=>void;onOpenTextbook:(topic:TopicPlan)=>void;recommendations:ReactNode;taskCount:(name:string)=>number};
 
 // Overview: where the class is in the textbook, how that compares with the plan, and how learning looks along the way.
 export function Overview({item,plan,roster,individual,values,onTopic,onStudent,order,hasSequence,pacingLayout,onBuild,onFocus,onOpenTextbook,recommendations,taskCount}:Props){
  const [tab,setTab]=useState<'Topics'|'Students'>('Topics');
+ const [supportOnly,setSupportOnly]=useState(false);
+ const supportFilter=useRef<HTMLInputElement>(null);
  const showStudents=!individual&&tab==='Students';
  const book=item.textbook?.topics??bookTopics;
  const chapter=(t:TopicPlan)=>{const i=book.indexOf(t.name);return i<0?plan.topics.length:i+1};
@@ -27,23 +30,29 @@ export function Overview({item,plan,roster,individual,values,onTopic,onStudent,o
  const allSubtopics=[...results.values()].flatMap(result=>result.subtopics);
  const completed=allSubtopics.filter(subtopicComplete).length;
  const learning=averageLevelsByStudent(allSubtopics,roster.length);
- const familiar=[...results.values()].filter(result=>averageLevel(result.averages)>=3).length;
- const focus=plan.topics.find(topic=>topic.name===plan.focus);
- const focusResults=focus?results.get(focus.name)?.averages??[]:learning;
- const support=focusResults.filter(level=>level>0&&level<3).length;
+ const supportByIndex=individual?null:priorSubtopicSupport(plan,topic=>results.get(topic.name)?.subtopics??[]);
+ const support=new Map(roster.flatMap((student,index)=>{
+  const flags=supportByIndex?.get(index);
+  return flags?[[student.id,flags] as const]:[];
+ }));
+ const showSupport=()=>{
+  setSupportOnly(true);
+  setTab('Students');
+  requestAnimationFrame(()=>supportFilter.current?.focus());
+ };
  const paceLabel=(t:TopicPlan)=>{const p=paceStatus(t);return p.status==='Behind'?`Behind by ${-p.delta}`:p.status==='Ahead'?`Ahead by ${p.delta}`:p.status};
  return <>
-  <section className="tp-dashboard tp-dashboard-wide" aria-label="Textbook dashboard">
-   <div className="tp-dashboard-heading">
-    <h3>Textbook summary</h3><span className="tp-muted">Teaching plan · {shortDate(DEMO_DATE)}</span>
-   </div>
-   <div className="tp-dashboard-body">
-    <div className="tp-overview-summary"><div><div className="tp-insight-values">
-     <div><span>{individual?'Mastery':'Class mastery'}</span><AverageMastery values={learning} individual={individual} noun="textbook" small/><small>Across the textbook</small></div>
-     <div><span>Topics at Familiar or above</span><strong>{icon('recommendations/progress')}{familiar} of {plan.topics.length}</strong></div>
-     <div><span>Subtopics completed</span><strong><SubtopicFlag/>{completed} of {total}</strong><small>{individual?'Familiar or above':'A majority of students are Familiar or above'}</small></div>
-     {!individual&&<div><span>May need support</span><strong>{icon('recommendations/students')}{support} of {roster.length}</strong><small>{focus?`Below Familiar in ${focus.name}`:'Below Familiar across the textbook'}</small></div>}
-    </div></div>{recommendations}</div>
+  <section className="tp-dashboard" aria-label="Textbook summary">
+   <div className={`tp-dashboard-body tp-summary ${recommendations?'':'tp-summary-full'}`}>
+    <div className="tp-summary-metrics">
+     <h3>Textbook summary</h3>
+     <div className="tp-insight-values">
+      <MasteryAverageTile values={learning} label={individual?'Mastery':'Class mastery'}/>
+      <SummaryTile label="Subtopics completed" icon="subtopics" value={`${completed} of ${total}`}/>
+      {!individual&&<NeedsAttentionTile value={`${support.size} of ${roster.length}`} controls="tp-overview-panel" onClick={showSupport}/>}
+     </div>
+    </div>
+    {recommendations}
    </div>
   </section>
   <section className="tp-sequence">
@@ -63,7 +72,12 @@ export function Overview({item,plan,roster,individual,values,onTopic,onStudent,o
     </div>
    </div>
    <div id="tp-overview-panel" role={individual?undefined:'tabpanel'} aria-labelledby={individual?undefined:`tp-overview-${tab}`}>
-   {showStudents?<OverviewStudents item={item} topics={ordered} roster={roster} number={(_,index)=>order==='sequence'?index+1:chapter(ordered[index])} onTopic={onTopic} onStudent={onStudent}/>:<>
+   {showStudents&&<div className="tp-support-filter">
+    <label className="tp-attention-filter"><input type="checkbox" ref={supportFilter} checked={supportOnly} onChange={event=>setSupportOnly(event.target.checked)}/>
+     Needs attention <span className="tp-muted">({support.size})</span>
+    </label>
+   </div>}
+   {showStudents?<OverviewStudents support={support} supportOnly={supportOnly} item={item} topics={ordered} roster={roster} number={(_,index)=>order==='sequence'?index+1:chapter(ordered[index])} onTopic={onTopic} onStudent={onStudent}/>:<>
    <div className="tp-table-wrap"><table className={`tp-table tp-overview-table tp-overview-pacing-${pacingLayout} ${individual?'tp-individual-overview':''}`}><colgroup><col className="tp-overview-topic"/><col className="tp-overview-teaching"/><col className="tp-overview-pacing"/>{!individual&&<col className="tp-overview-average"/>}<col/><col className="tp-overview-tasks"/><col className="tp-overview-actions"/></colgroup><thead><tr><th>Topic</th><th aria-label="Subtopics introduced"><span className="tp-subtopic-count"><SubtopicFlag/>Subtopics</span></th><th>Pacing</th>{!individual&&<th>Average mastery</th>}<th className={individual?undefined:'tp-class-mastery-cell'}>{individual?'Mastery':'Class mastery'}</th><th>Tasks</th><th>Actions</th></tr></thead><tbody>{ordered.map(t=>{
     const seq=plan.topics.indexOf(t)+1,ch=chapter(t),p=paceStatus(t),count=taskCount(t.name),averages=results.get(t.name)?.averages??[];
     return <tr key={t.name} className={t.name===plan.focus?'tp-topic-row tp-current-row':'tp-topic-row'}>

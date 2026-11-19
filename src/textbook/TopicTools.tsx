@@ -154,8 +154,8 @@ export function TopicSummary({topic,rows,skills,studentIds,individual,summaryRef
  const levels=averageLevelsByStudent(rows,studentIds.length);
  const hasMastery=levels.some(Boolean);
  return <section ref={summaryRef} className="tp-dashboard" aria-label="Topic summary">
-  <div className={`tp-dashboard-body tp-topic-summary ${individual?'tp-student-summary-body':''} ${recommendations?'':'tp-summary-full'}`}>
-   <div className="tp-topic-summary-metrics">
+  <div className={`tp-dashboard-body tp-summary ${individual?'tp-student-summary-body':''} ${recommendations?'':'tp-summary-full'}`}>
+   <div className="tp-summary-metrics">
     <h3>Topic summary</h3>
     {individual?<StudentLearningTiles levels={rows.flat()} collected={topicSkillValues.filter(level=>level>=4).length}
      skillCount={topicSkillValues.length} prerequisites={skills.filter(skill=>skill.kind==='Prerequisite').map(skill=>skill.values[0])}/>:<div className="tp-insight-values">

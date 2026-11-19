@@ -28,6 +28,13 @@ export function ReadinessPictogram({status}:{status:Readiness}){
  return <img className="tp-readiness-art" src={`/assets/readiness/pictogram-${visual[status].art}.png`} alt="" width={40} height={40}/>;
 }
 
+export function NeedsAttentionTile({value,onClick,disabled=false,controls}:{value:string;onClick:()=>void;disabled?:boolean;controls?:string}){
+ return <button type="button" className="tp-readiness-card tp-readiness-gap" disabled={disabled} aria-controls={controls} onClick={onClick}>
+  <span className="tp-readiness-card-label">Needs attention</span>
+  <strong className="tp-readiness-card-stat"><i className="tp-summary-icon" aria-hidden="true" style={{maskImage:'url(/assets/readiness/gaps.svg)'}}/>{value}</strong>
+ </button>;
+}
+
 type Props={
  statuses:Readiness[];
  individual?:{name:string;values:number[]}[];
@@ -57,10 +64,7 @@ export function ReadinessPanel({statuses,individual,onFilter,selectedStatuses,ga
      <span>{skill.name}</span><AverageMastery values={skill.values} skill individual small/>
     </li>)}</ul></div>:
     <div className={`tp-readiness-statuses ${gapReview?'tp-readiness-with-gap':''}`}>
-     {gapReview&&<button type="button" className="tp-readiness-card tp-readiness-gap" disabled={!gapReview.count} onClick={gapReview.open}>
-      <span className="tp-readiness-card-label">Needs attention</span>
-      <strong className="tp-readiness-card-stat"><i className="tp-summary-icon" aria-hidden="true" style={{maskImage:'url(/assets/readiness/gaps.svg)'}}/>{gapReview.count} {gapReview.count===1?'skill':'skills'}</strong>
-     </button>}
+     {gapReview&&<NeedsAttentionTile value={`${gapReview.count} ${gapReview.count===1?'skill':'skills'}`} disabled={!gapReview.count} onClick={gapReview.open}/>}
      {readinessStates.map(status=>{
      const count=statuses.filter(result=>result===status).length;
      const {tone}=visual[status];

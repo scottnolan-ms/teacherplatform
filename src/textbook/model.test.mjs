@@ -4,7 +4,7 @@ import ts from 'typescript';
 import {test} from 'node:test';
 const cache=new Map();
 function moduleUrl(file){const url=new URL(file,import.meta.url);if(cache.has(url.href))return cache.get(url.href);let code=ts.transpileModule(fs.readFileSync(url,'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;code=code.replace(/from ['"]([^'"]+)['"]/g,(_,path)=>`from '${moduleUrl(new URL(path+'.ts',url).href)}'`);const result=`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;cache.set(url.href,result);return result;}
-const {taskTopic,seedPlan,refreshFeaturedJourney,subtopicComplete,averageLevelsByStudent,mastery,prerequisiteLevels,readiness,distribution,skillMastery,scenarioValue,snapshot}=await import(moduleUrl('./model.ts'));
+const {taskTopic,seedPlan,refreshFeaturedJourney,subtopicComplete,priorSubtopicSupport,averageLevelsByStudent,mastery,prerequisiteLevels,readiness,distribution,skillMastery,scenarioValue,snapshot}=await import(moduleUrl('./model.ts'));
 const plan=seedPlan({focus:{topic:'Decimals and percentages',done:3,total:5,end:''}});
 const topic=plan.topics.find(t=>t.name===plan.focus);
 test('teaching edits do not change learning evidence',()=>{
@@ -127,4 +127,23 @@ test('7A evidence follows the illustrated teaching sequence and remains independ
  assert.ok(fractions.subtopics.every((_,index)=>results(fractions,index).every(level=>level===0)));
  assert.ok(students.some(student=>prerequisiteLevels('dash-7a',student,fractions).some(Boolean)));
  assert.deepEqual(results({...fractions,introduced:5,state:'Taught'},0),results(fractions,0));
+});
+
+test('support flags low mastery and missing evidence in introduced prior subtopics',()=>{
+ const prior={...topic,name:'Prior',state:'Taught',introduced:2,subtopics:['Class completed','Class practising','Not introduced']};
+ const focus={...topic, name:'Focus'};
+ const upcoming={...prior,name:'Upcoming',state:'Planned',end:''};
+ const data=new Map([
+  ['Prior',[[3,4,2,0,5],[0,2,0,2,3],[1,1,1,1,1]]],
+  ['Focus',[[1,1,1,1,1]]],
+  ['Upcoming',[[1,1,1,1,1]]],
+ ]);
+ const flags=priorSubtopicSupport({focus:'Focus',topics:[prior,focus,upcoming]}, t=>data.get(t.name));
+ assert.deepEqual([...flags],[
+  [2,[{topic:'Prior',subtopic:'Class completed',mastery:2}]],
+  [3,[{topic:'Prior',subtopic:'Class completed',mastery:0},{topic:'Prior',subtopic:'Class practising',mastery:2}]],
+  [1,[{topic:'Prior',subtopic:'Class practising',mastery:2}]],
+ ]);
+ const undatedFocus={...focus,state:'Teaching',end:''};
+ assert.deepEqual(priorSubtopicSupport({focus:'',topics:[prior,undatedFocus,upcoming]},t=>data.get(t.name)),flags);
 });

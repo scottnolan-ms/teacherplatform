@@ -45,7 +45,7 @@ export function TopicHeader({topic,number,seq,pages,focused,sheet,summaryRef,act
  return <header ref={headerRef} className={sheet?'tp-topic-heading tp-ts-heading':'tp-topic-heading tp-focus-heading'}>
   <div className="tp-topic-heading-title">
    <TopicEyebrow seq={seq} number={number} pages={pages} focus={focused}/>
-   {sheet?<h2>{topic.name}</h2>:<h3>{topic.name}</h3>}
+   <h1>{topic.name}</h1>
   </div>
   {summaryAbove&&<div className="tp-topic-stats" aria-label="Topic at a glance">
    <span className="tp-subtopic-count"><SubtopicFlag/><b>{topic.introduced} of {topic.subtopics.length}</b><span className="tp-sr"> subtopics introduced</span></span>

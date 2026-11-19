@@ -81,11 +81,11 @@ export default function TextbookProgress({item,learners,studentId}:{item:Dashboa
   if(demo.includes('nofocus'))saved={...saved,focus:''};
   return saved;
  });
- const [studentSheet,setStudentSheet]=useState<{id:string;learners:Learner[];topic?:string}|null>(null);
+ const [studentSheet,setStudentSheet]=useState<{id:string;learners:Learner[];topic?:string;subtopic?:string}|null>(null);
  const studentTrigger=useRef<HTMLElement|null>(null);
- const openStudent=(id:string,people:Learner[],topic?:string)=>{
+ const openStudent=(id:string,people:Learner[],topic?:string,subtopic?:string)=>{
   studentTrigger.current=document.activeElement as HTMLElement;
-  setStudentSheet({id,learners:people,topic});
+  setStudentSheet({id,learners:people,topic,subtopic});
  };
  const closeStudent=()=>{
   setStudentSheet(null);
@@ -416,13 +416,13 @@ export default function TextbookProgress({item,learners,studentId}:{item:Dashboa
    <ActionMenu label="topic focus">{dismiss=><div><button onClick={()=>{dismiss();setEditPlan(true)}}>Edit scope &amp; sequence</button></div>}</ActionMenu>
   </section>}
   {draftList}
-  {!page&&<Overview item={item} plan={plan} roster={roster} individual={!!selected} values={values} onTopic={goTopic} onStudent={(id,name)=>openStudent(id,roster,name)} order={shownOrder} hasSequence={hasSequence} pacingLayout={pacingLayout} onBuild={build} onFocus={studentId?undefined:setFocus} onOpenTextbook={setTextbookChapter} recommendations={overviewRecommendations()} taskCount={taskCount}/>}
+  {!page&&<Overview item={item} plan={plan} roster={roster} individual={!!selected} values={values} onTopic={goTopic} onStudent={(id,name,subtopic)=>openStudent(id,roster,name,subtopic)} order={shownOrder} hasSequence={hasSequence} pacingLayout={pacingLayout} onBuild={build} onFocus={studentId?undefined:setFocus} onOpenTextbook={setTextbookChapter} recommendations={overviewRecommendations()} taskCount={taskCount}/>}
   {inSheet&&topic&&<TopicSheet suspended={!!reportTask||!!studentSheet} title={`${topic.name} · ${selected?.name??item.name}`} item={item} order={shownOrder} onOrder={setOrder} hasSequence={hasSequence} entries={entries} current={topic.name} onTopic={goTopic} onClose={()=>goTopic()} header={topicHeader}>{notice&&<div role="status" className="tp-notice">{notice}<button onClick={()=>setNotice('')} aria-label="Dismiss notification">×</button></div>}{topicContent}</TopicSheet>}
   {reportTask&&<TopicTaskReport key={reportTask.id} item={item} task={reportTask} onClose={closeReport}/>}
   {preview&&<TeachingPreview action={preview} onClose={()=>setPreview(null)} onDraft={()=>{contextAction({...preview,kind:"Build a task"});setPreview(null)}}/>}
   {editPlan&&<ScopeSequenceSheet item={item} plan={plan} initialTopic={topic?.name} onSave={savePlan} onClose={()=>setEditPlan(false)}/>}
   {studentSheet&&<StudentProgressSheet item={item} learners={studentSheet.learners} studentId={studentSheet.id}
-   plan={plan} initialTopic={studentSheet.topic} order={shownOrder} nested={inSheet} checkInAssigned={checkInAssigned}
+   plan={plan} initialTopic={studentSheet.topic} initialSubtopic={studentSheet.subtopic} order={shownOrder} nested={inSheet} checkInAssigned={checkInAssigned}
    onStudent={id=>setStudentSheet({...studentSheet,id})} onClose={closeStudent}
    onPractice={(name,kind,content)=>build(plan.topics.find(t=>t.name===name),kind,learners.filter(student=>student.id===studentSheet.id),content)}/>}
   <dialog ref={modal} className="tp-dialog" onCancel={closeModal} onClick={e=>{if(e.target===e.currentTarget)closeModal()}} aria-label={draft?'Build a task':focusChoice!==null?'Choose a topic focus':textbookChapter?`Textbook · ${textbookChapter.name}`:'About textbook progress'}><div className="tp-dialog-body"><button className="tp-dialog-close" onClick={closeModal} aria-label="Close dialog">×</button>

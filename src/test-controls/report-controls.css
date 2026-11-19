@@ -162,9 +162,9 @@
 .tc-app.tc-app .tr-report-content {display:block}
 .tc-app.tc-app .tc-main>.tc-group-tabs+.tc-report {border:0;border-radius:0}
 .tc-app.tc-app .tc-main>:is(.tc-header,.tc-dashboard,.tc-overview,.tc-insights,.rp-prototype-toolbar) {margin-right:24px}
-:is(.tc-app.tc-app,.tp-page .tp-students-grid) .rp-name-sort {flex-direction:row;align-items:center;gap:8px;white-space:nowrap}
-:is(.tc-app.tc-app,.tp-page .tp-students-grid) .rp-name-sort select {color:#5a5a68;font-weight:400;padding:4px 22px 4px 6px;border:0;border-radius:4px;background:transparent url('/assets/report-controls/arrow-down.svg') right 2px center/16px no-repeat;appearance:none;max-width:none}
-:is(.tc-app.tc-app,.tp-page .tp-students-grid) .rp-name-sort select:hover {background-color:#f4f5f5}
+:is(.tc-app.tc-app,.tp-page .tp-students-grid,.tp-page .tp-overview-students) .rp-name-sort {flex-direction:row;align-items:center;gap:8px;white-space:nowrap}
+:is(.tc-app.tc-app,.tp-page .tp-students-grid,.tp-page .tp-overview-students) .rp-name-sort select {color:#5a5a68;font-weight:400;padding:4px 22px 4px 6px;border:0;border-radius:4px;background:transparent url('/assets/report-controls/arrow-down.svg') right 2px center/16px no-repeat;appearance:none;max-width:none}
+:is(.tc-app.tc-app,.tp-page .tp-students-grid,.tp-page .tp-overview-students) .rp-name-sort select:hover {background-color:#f4f5f5}
 .rp-sort-icon {display:block;width:16px;height:16px;flex:0 0 16px;background:currentColor;mask-position:center;mask-size:contain;mask-repeat:no-repeat}
 .tc-app .rp-prototype-toolbar {display:flex;align-items:center;gap:12px;padding:6px 10px;margin:0 0 12px;border:1px solid #dfdfe5;border-radius:8px;background:#f4f5f5;white-space:nowrap;overflow-x:auto;font-size:12px;color:#5a5a68}
 .rp-prototype-toolbar>span {font-size:10px;letter-spacing:1px}
