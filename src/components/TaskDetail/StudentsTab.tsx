@@ -1,3 +1,4 @@
+import {TableSelectAll} from '../TableSelectAll';
 import {FlagChips} from '../../test-controls/ReportFlags';
 import {hasReportFlags,timeAway} from '../../test-controls/report-flags';
 import {ReportIconButton} from '../../test-controls/ReportIconButton';
@@ -63,12 +64,8 @@ export default function StudentsTab({ students, taskGroups, selectedStudentIds, 
     }
   };
 
-  const toggleSelectAll = () => {
-    if (selectedStudents.length === students.length) {
-      setSelectedStudents([]);
-    } else {
-      setSelectedStudents(students.map(s => s.studentId));
-    }
+  const toggleSelectAll = (checked: boolean) => {
+    setSelectedStudents(checked ? students.map(student => student.studentId) : []);
   };
 
   const formatTime = (minutes: number) => {
@@ -93,9 +90,9 @@ export default function StudentsTab({ students, taskGroups, selectedStudentIds, 
         <thead>
           <tr>
             <th style={{ width: '40px' }}>
-              <input
-                type="checkbox"
-                checked={selectedStudents.length === students.length && students.length > 0}
+              <TableSelectAll
+                rowCount={students.length}
+                selectedCount={students.filter(student => selectedStudents.includes(student.studentId)).length}
                 onChange={toggleSelectAll}
               />
             </th>

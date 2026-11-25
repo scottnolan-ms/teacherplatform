@@ -43,9 +43,8 @@
 .tc-app .tc-live-counts button.active {background:#42168a;color:white}
 .tc-app .tc-live-counts button strong {color:inherit;font-size:13px;margin:0}
 .tc-app .tc-live-counts button:hover:not(:disabled),.tc-app .tc-strip-status button:hover:not(:disabled) {background:#ddcfff;color:#42168a}
-:is(.tc-app .tc-filterbar,.tp-page .tp-filters) :is(select,.tc-select-all,.tc-search) {height:32px;border:1px solid #92929f;border-radius:1000px;color:#32323c;font:500 12px/18px 'Proxima Nova',Arial,sans-serif!important;padding:5px 12px}
+:is(.tc-app .tc-filterbar,.tp-page .tp-filters) :is(select,.tc-search) {height:32px;border:1px solid #92929f;border-radius:1000px;color:#32323c;font:500 12px/18px 'Proxima Nova',Arial,sans-serif!important;padding:5px 12px}
 .tc-app.tc-layout-04 .tc-filterbar select,:is(.tc-app .tc-filterbar,.tp-page .tp-filters) select {appearance:none;padding-right:32px;background:white url('/assets/report-controls/arrow-down.svg') right 8px center/20px no-repeat}
-.tc-app .tc-select-all.selected {background:#ddcfff;border-color:#6e3ddd;color:#42168a}
 .tc-app .tc-layout-switch {border-radius:1000px;background:#f4f5f5;border:1px solid #dfdfe5;gap:4px;padding:3px 8px}
 .tc-app .tc-layout-switch button {min-height:28px;border:0;border-radius:1000px;padding:4px 10px;font-size:11px;font-weight:500;color:#42168a;background:transparent;box-shadow:none}
 .tc-app .tc-layout-switch button.active {background:#230b48;color:white}

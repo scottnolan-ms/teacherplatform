@@ -1,0 +1,14 @@
+.table-selection-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+th input.table-select-all {
+  accent-color: #6e3ddd;
+  flex: none;
+}
+
+.table-selection-count {
+  font-size: 12px;
+}
