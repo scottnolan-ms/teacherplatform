@@ -4,6 +4,7 @@ import Prototypes, { ProgressiveResults, TopicReadinessPrototypes } from './page
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 import Dashboard from './dashboard/Dashboard';
+import { TestCreationVersions } from './task-creation/TestCreation';
 import DashboardReportPage from './dashboard/DashboardReportPage';
 import TodayDashboard from './pages/TodayDashboard';
 import { DashboardPrototypes } from './pages/Prototypes';
@@ -36,6 +37,7 @@ function AppContent() {
       <PortalNavigation collapsed={collapsed} onToggle={toggleNav}/>
       {isPaper?<PaperPlus/>:/^\/classes\/[^/]+\/tasks\/[^/]+\/report$/.test(location.pathname)?<Routes><Route path="/classes/:classId/tasks/:taskId/report" element={<DashboardReportPage/>}/></Routes>:isHandwriting?<HandwritingScenario><TestControls key="handwriting"/></HandwritingScenario>:isAdaptive?<AdaptiveResults/>:isTest||isCustom?<TestControls key={isCustom?'custom':'test'} progressive={isCustom}/>:<main className="main-content">
         <Routes>
+          <Route path="/prototypes/test-mode-creation" element={<TestCreationVersions/>}/>
           <Route path="/prototypes/topic-readiness-check-in" element={<TopicReadinessPrototypes/>}/>
           <Route path="/prototypes/progressive-results" element={<ProgressiveResults/>}/>
           <Route path="/prototypes/dashboards" element={<DashboardPrototypes/>}/>

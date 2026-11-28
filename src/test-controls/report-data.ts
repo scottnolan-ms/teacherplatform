@@ -18,24 +18,27 @@ const equations = [
  ['0.5x + 1.5 = 4',5,'Subtract 1.5, then divide by 0.5.','Hard'],
  ['3(x + 4) − 2(x − 1) = 20',6,'Expand and collect terms to get x + 14 = 20.','Hard'],
 ] as const;
-export const questions = equations.map(([equation,answer,solution,difficulty],i)=>({id:i+1,equation,answer,solution,difficulty,marks:i===0?2:i<6?1:2,skill:['One-step equations','Inverse operations','Two-step equations','Brackets','Variables on both sides','Fractional equations'][Math.floor(i*6/15)]}));
-export type Question = {id:number;equation:string;answer:number;solution:string;difficulty:string;marks:number;skill:string};
+export const questions = equations.map(([equation,answer,solution,difficulty],i)=>({id:i+1,equation,answer,solution,difficulty,marks:i===0?2:i<6?1:2,multipartDemo:i===0,skill:['One-step equations','Inverse operations','Two-step equations','Brackets','Variables on both sides','Fractional equations'][Math.floor(i*6/15)]}));
+export type Question = {id:number;equation:string;answer:number;solution:string;difficulty:string;marks:number;skill:string;multipartDemo?:boolean;subproblems?:number};
+export const questionsFor = (attempt?: Attempt): Question[] => attempt?.reportQuestions ?? questions;
+export const subproblemCount = (question: Question) => question.subproblems ?? (question.multipartDemo ? 2 : question.marks + 1);
 // Deterministic demo responses are derived from existing attempt progress, never stored over it.
 export function response(student:Attempt,q:Question) {
+ const questions=questionsFor(student);
  const answered=Math.floor((student.markingProgress??student.progress)/100*questions.length);
  const inProgress=(!('adaptiveStarted' in student)||student.adaptiveStarted)&&q.id===answered+1 && student.progress>0 && student.status!=='Completed'&&student.status!=='Closed'&&student.reportMode!=='test';
  const n=(student.id*3+q.id*7+student.version)%10;
  const accuracy=student.accuracy??[10,8,6,4,2,0][(student.id-1)%6];
  let outcome:Outcome=q.id>answered?(inProgress?'In progress':'Not started'):n<accuracy?'Correct':n<accuracy+2&&q.marks>1?'Partial':'Incorrect';
  let earned=outcome==='Correct'?q.marks:outcome==='Partial'?1:0;
- if(q.id===1&&q.id<=answered){const parts=questionOneParts(student);earned=parts.reduce((n,p)=>n+p.earned,0);outcome=earned===2?'Correct':earned>0?'Partial':'Incorrect';}
- const subproblems=q.id===1?2:q.marks+1;
+ if(q.multipartDemo&&q.id<=answered){const parts=questionOneParts(student);earned=parts.reduce((n,p)=>n+p.earned,0);outcome=earned===2?'Correct':earned>0?'Partial':'Incorrect';}
+ const subproblems=subproblemCount(q);
  const completedSubproblems=inProgress?Math.max(1,Math.min(subproblems-1,Math.floor(((student.progress/100*questions.length)%1)*subproblems))):q.id<=answered?subproblems:0;
  const retried=student.reportMode==='custom'&&q.id<=answered+1&&student.progress>0&&(student.id+q.id)%5===0;
  return {outcome,earned,subproblems,completedSubproblems,retried,answer:outcome==='Not started'||outcome==='In progress'?null:outcome==='Correct'?q.answer:q.answer+(student.id%3+1)};
 }
 export function studentResult(s:Attempt) {
- const attempted=questions.filter(q=>['Correct','Partial','Incorrect'].includes(response(s,q).outcome));
+ const attempted=questionsFor(s).filter(q=>['Correct','Partial','Incorrect'].includes(response(s,q).outcome));
  const earned=attempted.reduce((n,q)=>n+response(s,q).earned,0);
  const available=attempted.reduce((n,q)=>n+q.marks,0);
  return {earned,available,answered:attempted.length,percent:s.markingPending?null:available?Math.round(100*earned/available):null};
@@ -66,9 +69,10 @@ export function isTestExtension(s:Attempt,now:number) {
 }
 export function scorecardResult(s:Attempt, now:number, preview:ScorePreview='Current attempt') {
  const result=studentResult(s);
+ const questions=questionsFor(s);
  const stage:ScoreStage=preview!=='Current attempt'?preview:(s.status==='Completed'||s.status==='Closed'||!!s.closedAt||!!s.expires&&now>=new Date(s.expires).getTime())?'Closed':now>=new Date(s.due).getTime()?'After due date':'Before due date';
  const available=stage==='Before due date'&&s.reportMode!=='test'?result.available:questions.reduce((n,q)=>n+q.marks,0);
- const percent=s.markingPending?null:available?Math.round(100*result.earned/available):null;
+ const percent=s.markingPending||s.reportQuestions&&!result.answered?null:available?Math.round(100*result.earned/available):null;
  return {...result, available, percent, stage, unattempted:questions.length-result.answered,
   tier:percent===null?'none':percent===100?'perfect':percent>=80?'good':percent>=50?'mid':percent>=25?'low':'poor'};
 }
@@ -96,6 +100,7 @@ export function resultDistribution(samples:(number|null)[]){return Array.from({l
 
 // One progress measure for custom table, filters, averages and scorecards.
 export function customProgress(s:Attempt,now:number){
+ const questions=questionsFor(s);
  const total=questions.reduce((n,q)=>n+response(s,q).subproblems,0);
  const done=questions.reduce((n,q)=>n+response(s,q).completedSubproblems,0);
  const snapshot={...s,progress:s.dueProgress??s.progress,markingProgress:undefined,status:'In progress' as const};
@@ -105,7 +110,7 @@ export function customProgress(s:Attempt,now:number){
 
 // Surface the same edited mark demonstrated in the question-one scorecard.
 function withEditedMarkFlags(student:Attempt):Attempt {
- if(student.markingPending || (student.markingProgress??student.progress) < 7)return student;
+ if(!questionsFor(student).some(question=>question.multipartDemo) || student.markingPending || (student.markingProgress??student.progress) < 7)return student;
  const edited=questionOneParts(student).filter(part=>part.override);
  const flags=[...(student.flags??[])];
  for(const part of edited){const id=`mark-${part.label}`;if(!flags.some(flag=>flag.id===id))flags.push({id,kind:'edited',label:'Mark edited by Sarah',question:part.label,detail:`${part.aiMark} → ${part.earned} / 1. ${part.rationale}`});}

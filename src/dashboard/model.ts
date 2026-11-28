@@ -1,5 +1,7 @@
+import type { TestSetup } from '../task-creation/model';
+
 export type Bucket='Recent'|'Due soon'|'Active'|'All';
-export type DemoTask={id:string;title:string;type:string;completed:boolean;dueIn:number;participation:number;assignedCount?:number;result:number|null;dismissed?:boolean;reviewed?:boolean;progress?:number;minutes?:number;startDate?:string;dueDate?:string;expiryDate?:string;assignedTo?:string};
+export type DemoTask={id:string;title:string;type:string;completed:boolean;dueIn:number;participation:number;assignedCount?:number;result:number|null;dismissed?:boolean;reviewed?:boolean;progress?:number;minutes?:number;startDate?:string;dueDate?:string;expiryDate?:string;assignedTo?:string;testSetup?:TestSetup};
 export type Focus={topic:string;start?:string;end:string;done:number;total:number;pace:'On track'|'Behind'|'Ahead'};
 export type DashboardClass={id:string;name:string;year:number;textbook?:{name:string;topics:string[]};students:string[];teacher:string;avatar:number;tasks:DemoTask[];history:boolean;focus:Focus|null;celebrate?:boolean;stickers?:string[];completedTopics:number};
 export const studentNames=['Emma Johnson','Liam Martinez','Sophia Okonkwo','Noah Okafor','Olivia Petrov','Davis Mason','Amelia Chen','Lucas Wilson','Isla Patel','Ethan Nguyen','Mia Thompson','Oliver Lee','Ava Nguyen','Noah Patel','Emily Chen','Jack Williams','Zoe Brown','Leo Jones','Grace Wilson','Henry Taylor','Ella Martin','Oscar Li','Ruby Singh','Charlie Evans','Chloe Smith','Archie Davis','Sophie Kim','Max Wright'];

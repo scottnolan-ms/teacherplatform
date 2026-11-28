@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardSwitcher from './DashboardSwitcher';
 import DashboardSheet from './DashboardSheet';
+import TestCreation from '../task-creation/TestCreation';
+import { SuccessToast } from '../components/SuccessToast';
+import { testReportPath, versions } from '../task-creation/model';
 import { featured, inBucket, loadDashboard, saveDashboard, seedDashboard } from './model';
-import type { Bucket, DashboardClass } from './model';
+import type { Bucket, DashboardClass, DemoTask } from './model';
 import './dashboard.css';
 export type Screen={kind:'activity'|'tasks'|'report'|'textbook'|'focus'|'assign'|'directory'|'health'|'recommendations'|'students'|'add'|'guide';classId?:string;taskId?:string;bucket?:Bucket;guide?:string;taskType?:string};
 export function Icon({name}:{name:string}){return <i className="dash-icon" aria-hidden="true" style={{maskImage:`url(/assets/dashboard/${name}.svg)`}}/>}
@@ -12,11 +15,30 @@ export function ClassAvatar({item}:{item:DashboardClass}){return item.name.match
 const tones=['#ae38ff','#ff32a6','#f46b00','#007e73','#0061ff','#8e3d9c'];
 export default function Dashboard(){
  const navigate=useNavigate();
+ const [params,setParams]=useSearchParams();
+ const [creatingTest,setCreatingTest]=useState(false);
+ const [assignedTest,setAssignedTest]=useState<DemoTask|null>(null);
  const [classes,setClasses]=useState(loadDashboard),[sort,setSort]=useState('year'),[screen,setScreen]=useState<Screen|null>(null),[notice,setNotice]=useState('');
  const update=(id:string,change:Partial<DashboardClass>)=>setClasses(current=>{const next=current.map(c=>c.id===id?{...c,...change}:c);saveDashboard(next);return next});
  const add=(item:DashboardClass)=>setClasses(current=>{const next=[...current,item];saveDashboard(next);return next});
  const mine=classes.filter(c=>c.teacher==='Sarah Mitchell').sort((a,b)=>sort==='year'?a.year-b.year||a.name.localeCompare(b.name):a.name.localeCompare(b.name));
- const open=(next:Screen)=>next.kind==='report'?navigate(`/classes/${next.classId}/tasks/${next.taskId}/report`):setScreen(next);
+ const open=(next:Screen)=>{
+  if(next.kind==='report')navigate(`/classes/${next.classId}/tasks/${next.taskId}/report`);
+  else if(next.kind==='assign'&&next.classId==='dash-7a'&&!next.taskType&&!next.guide){
+   setScreen(null);
+   setCreatingTest(true);
+  }else setScreen(next);
+ };
+ const testVersion=versions.find(version=>version.id===params.get('createTest'));
+ const testClass=classes.find(item=>item.id==='dash-7a');
+ const closeTest=()=>{
+  setCreatingTest(false);
+  if(params.has('createTest'))setParams(current=>{
+   const next=new URLSearchParams(current);
+   next.delete('createTest');
+   return next;
+  },{replace:true});
+ };
  const recommendation=(c:DashboardClass)=>open({kind:featured(c).kind==='focus'?'focus':featured(c).kind==='empty'?'students':featured(c).kind==='first'||featured(c).kind==='idle'?'assign':'recommendations',classId:c.id,taskType:featured(c).kind==='first'?'Topic readiness check-in':undefined});
  return <div className="dash-page"><DashboardSwitcher/><div className="dash-layout"><section className="dash-classes" aria-labelledby="my-classes"><header className="dash-heading"><h1 id="my-classes"><img src="/assets/dashboard/classes.svg" alt=""/>My classes</h1><label className="dash-sort"><span className="dash-sr">Sort classes</span><select value={sort} onChange={e=>setSort(e.target.value)}><option value="year">By year level</option><option value="name">By class name</option></select><Icon name="sort"/></label><button className="dash-outline" onClick={()=>open({kind:'add'})}><Icon name="add-class"/>Add class</button></header>
  <div className="dash-card-list">{mine.map(c=>{const feature=featured(c),t=feature.task;const copy=feature.kind==='empty'?['This class is empty','Add students to start tracking their progress.','Add students','classes']:feature.kind==='first'?['Assign your first task','A readiness check-in is a great place to start.','Assign check-in','task']:feature.kind==='focus'?['Help track class progress','Select a topic to focus on.','Set focus','focus']:feature.kind==='idle'?['No active tasks','This class has no tasks currently assigned.','Assign','task']:['Recognise student progress','Celebrate recent effort and achievement.','Send stickers','stickers'];return <article className="dash-card" key={c.id} style={{'--class-color':tones[c.avatar]} as CSSProperties}><div className="dash-card-main"><header><button className="dash-class-title" onClick={()=>open({kind:'activity',classId:c.id})}><ClassAvatar item={c}/><h2>{c.name}</h2></button><span className="dash-class-stat" title="Year level"><Icon name="year"/>{c.year}</span><button className="dash-class-stat" aria-label={`${c.name}: ${c.students.length} students`} onClick={()=>open({kind:'students',classId:c.id})}><Icon name="students"/>{c.students.length}</button><span className="dash-class-stat">2026</span><details className="dash-menu"><summary aria-label={`Options for ${c.name}`}><Icon name="more"/></summary><div><button onClick={()=>open({kind:'students',classId:c.id})}>Manage students</button><button onClick={()=>open({kind:'focus',classId:c.id})}>Set topic focus</button><button onClick={()=>open({kind:'recommendations',classId:c.id})}>Recommendations</button></div></details></header>
@@ -26,6 +48,13 @@ export default function Dashboard(){
  {c.focus?<button className="dash-focus-line" onClick={()=>navigate(`/classes/${c.id}?tab=textbook&topic=focus`)}><span><Icon name="focus"/>Topic focus: {c.focus.topic}</span><span>{c.focus.done} / {c.focus.total}<b className={`dash-pace ${c.focus.pace==='Behind'?'behind':''}`}><Icon name="pace"/>{c.focus.pace}</b></span></button>:<button className="dash-no-focus" onClick={()=>open({kind:'focus',classId:c.id})}><Icon name="focus"/>No topic focus selected</button>}</div>
  <aside className="dash-card-actions"><button onClick={()=>open({kind:'textbook',classId:c.id})}><Icon name="book"/>Textbook</button><button onClick={()=>open({kind:'tasks',classId:c.id,bucket:'All'})}><Icon name="active"/>All tasks</button><button className={!c.tasks.some(t=>!t.completed)?'dash-primary':''} onClick={()=>open({kind:'assign',classId:c.id})}><Icon name="add"/>Assign</button>{!c.focus&&<button className="dash-outline" onClick={()=>open({kind:'focus',classId:c.id})}><Icon name="focus"/>Set focus</button>}</aside></article>})}</div></section>
  <aside className="dash-sidebar"><header><span className="dash-school-icon"><Icon name="school"/></span><h2>Mathspace High</h2></header><button className="dash-school-link" onClick={()=>open({kind:'directory'})}><Icon name="directory"/><span>Class directory<small>All classes in the school</small></span><Icon name="chevron"/></button><button className="dash-school-link" onClick={()=>open({kind:'health'})}><Icon name="health"/><span>Class performance<small>Health of all classes in the school</small></span><Icon name="chevron"/></button><div className="dash-guide-heading"><span className="dash-help-icon"><Icon name="help"/></span><h2>Get to know Mathspace</h2><button onClick={()=>open({kind:'guide'})}>Guides <Icon name="chevron"/></button></div>{['Assign work to your students','Find skills gaps and measure growth','Track student activity and progress','Explore the student experience'].map((guide,i)=><button key={guide} className="dash-guide" onClick={()=>open({kind:'guide',guide})}><Icon name={['guide-task','skills','activity','students'][i]}/><span>How to {guide.toLowerCase()}</span><Icon name="chevron"/></button>)}</aside></div>
+ {testClass&&(creatingTest||testVersion)&&<TestCreation key={testVersion?.id??'current'} item={testClass}
+  version={testVersion?.id??'current'} onClose={closeTest}
+  onAssign={task=>{update(testClass.id,{tasks:[task,...testClass.tasks],history:true});setAssignedTest(task);}}
+  onOther={taskType=>{closeTest();setScreen({kind:'assign',classId:testClass.id,taskType});}}/>}
  {screen&&<DashboardSheet key={`${['directory','health'].includes(screen.kind)?'school':screen.kind}-${screen.classId??''}-${screen.taskId??''}`} screen={screen} classes={classes} onClose={()=>setScreen(null)} onOpen={open} onUpdate={update} onAdd={add} onNotice={setNotice}/>}
+ {assignedTest&&testClass&&<SuccessToast key={assignedTest.id} title="Task assigned" description={`${assignedTest.title} · ${testClass.name}`}
+  action={<Link to={testReportPath(testClass.id,assignedTest.id)} onClick={()=>setAssignedTest(null)}>Open task report</Link>}
+  onDismiss={()=>setAssignedTest(null)}/>}
  {notice&&<div className="dash-toast" role="status">{notice}<button aria-label="Dismiss notification" onClick={()=>setNotice('')}>×</button></div>}<footer className="dash-prototype-note">Prototype · Demonstration classes and activity. <Link to="/prototypes/dashboards">Explore dashboard views</Link> · <button onClick={()=>{const fresh=seedDashboard();setClasses(fresh);saveDashboard(fresh);setNotice('Demonstration classes restored.')}}>Reset demo classes</button></footer></div>
 }

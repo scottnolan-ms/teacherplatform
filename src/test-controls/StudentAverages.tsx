@@ -1,5 +1,5 @@
 import type { Attempt } from './model';
-import { customProgress, isTestExtension, questions, response, scorecardResult } from './report-data';
+import { customProgress, isTestExtension, questionsFor, response, scorecardResult } from './report-data';
 import { DisplayRow } from './TableDisplay';
 import { ResultChip } from './ReportViews';
 
@@ -31,7 +31,7 @@ export function StudentAverages({ students, columns, now, progressive }: {
       {column === 'results' && result !== null && <ResultChip percent={Math.round(result)} provisional={progressive && results.some(r => r.stage !== 'Closed') || students.some(s=>isTestExtension(s,now))} ongoing={progressive && results.every(r => r.stage === 'Before due date')} />}
       {column === 'marks' && results.length > 0 && `${number(mean(results.map(r => r.earned))!)} / ${number(mean(results.map(r => r.available))!)}`}
       {column === 'questions' && marked.length > 0 && <div className="tr-question-breakdown">{outcomes.map(outcome => {
-        const average = mean(marked.map(student => questions.filter(question => outcome.matches.includes(response(student, question).outcome)).length))!;
+        const average = mean(marked.map(student => questionsFor(student).filter(question => outcome.matches.includes(response(student, question).outcome)).length))!;
         return <span key={outcome.tone} className={outcome.tone} title={`${outcome.label}: ${number(average)} on average`}><i aria-hidden="true" style={{ maskImage: `url(/assets/report-details/${outcome.icon}.svg)` }} />{number(average)}</span>;
       })}</div>}
       {column === 'time' && time !== null && `${number(time)}m`}

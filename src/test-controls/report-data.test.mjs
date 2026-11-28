@@ -99,3 +99,20 @@ assert.equal(scorecardResult(completed,NOW).stage,'Closed');
 assert.equal(scorecardResult(completed,NOW).available,questions.reduce((n,q)=>n+q.marks,0));
 assert.equal(customProgress(completed,NOW).percent,100);
 console.log('Custom progress agrees with responses and completion uses the final denominator.');
+
+const assignedQuestions = [
+  { ...questions[4], id: 1, multipartDemo: false, subproblems: 1 },
+  { ...questions[4], id: 2, multipartDemo: false, subproblems: 1 },
+];
+const authoredSubmission = reportAttempt({
+  ...seed[6], status: 'Completed', progress: 100, reportQuestions: assignedQuestions, accuracy: 10,
+}, NOW, false);
+assert.equal(studentResult(authoredSubmission).answered, 2);
+assert.equal(response(authoredSubmission, assignedQuestions[0]).earned, 1);
+assert.equal(response(authoredSubmission, assignedQuestions[1]).earned, 1);
+assert.equal(scorecardResult(authoredSubmission, NOW).available, 2);
+assert.equal(scorecardResult(authoredSubmission, NOW).percent, 100);
+assert.equal(authoredSubmission.flags?.length ?? 0, 0);
+const missingSubmission = reportAttempt({ ...authoredSubmission, progress: 0, status: 'Closed' }, NOW, false);
+assert.equal(scorecardResult(missingSubmission, NOW).percent, null);
+console.log('Authored reports use only the assigned questions and keep missing submissions unmarked.');

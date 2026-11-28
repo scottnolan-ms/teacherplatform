@@ -1,0 +1,49 @@
+.ds-difficulty-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 24px;
+  padding-inline: 4px 6px;
+  border-radius: 4px;
+  background: #dfdfe5;
+  color: #32323c;
+  font: 600 12px/18px 'Proxima Nova', Arial, sans-serif;
+  white-space: nowrap;
+}
+
+.ds-difficulty-chip[data-level="refresher"] { background: #ddcfff; color: #42168a; }
+.ds-difficulty-chip[data-level="easy"] { background: #a6e7ee; color: #075c67; }
+.ds-difficulty-chip[data-level="medium"] { background: #fdebb8; color: #754800; }
+.ds-difficulty-chip[data-level="hard"] { background: #ffe0c7; color: #9a3b00; }
+.ds-difficulty-bars, .ds-difficulty-peaks {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  background: currentColor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+}
+
+.ds-difficulty-peaks { position: relative; background: transparent; }
+.ds-difficulty-peaks::before, .ds-difficulty-peaks::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  mask-repeat: no-repeat;
+}
+.ds-difficulty-peaks::before {
+  background: currentColor;
+  mask-image: var(--difficulty-peak);
+  mask-position: 1.048px 6px;
+}
+.ds-difficulty-peaks::after {
+  background: white;
+  mask-image: var(--difficulty-snow);
+  mask-position: 4.909px var(--snow-top);
+}
+.ds-difficulty-chip[data-level="refresher"] .ds-difficulty-peaks::before { mask-position: center; }
+.ds-difficulty-chip[data-level="refresher"] .ds-difficulty-peaks::after { content: none; }
+.ds-difficulty-chip[data-level="easy"] { --snow-top: 13.322px; }
+.ds-difficulty-chip[data-level="medium"] { --snow-top: 10.433px; }
+.ds-difficulty-chip[data-level="hard"] { --snow-top: 7.75px; }

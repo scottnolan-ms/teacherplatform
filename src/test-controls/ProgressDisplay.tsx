@@ -1,6 +1,6 @@
 import {useEffect,useId,useState} from 'react';
 import {AnchoredTooltip} from './AnchoredTooltip';
-import {questions,customProgress} from './report-data';
+import {questionsFor,subproblemCount,customProgress} from './report-data';
 import type {Attempt} from './model';
 export function ProgressDisplay({student:s,now,variant,required:provided,aggregate=false,percentage=false}:{student:Attempt;now:number;variant:'01'|'02';custom:boolean;aggregate?:boolean;percentage?:boolean;required?:{done:number;before:number;total:number}}) {
  const required=provided??(s.reportMode==='custom'?customProgress(s,now):undefined);
@@ -12,7 +12,7 @@ export function ProgressDisplay({student:s,now,variant,required:provided,aggrega
  const notAttempted=closed&&p===0;
  const completed=p===100;
  const label=percentage?`${p}% ${closed?'Complete':'Progress'}`:aggregate?`${p}% Progress`:notAttempted?'Not attempted':completed?new Date(s.closedAt??s.due).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):required?`${required.done} of ${required.total}`:`${p}% ${closed?'Complete':'Progress'}`;
- const total=required?.total??questions.reduce((n,q)=>n+(q.id===1?2:q.marks+1),0),done=required?.done??Math.round(total*p/100),early=required?.before??Math.min(done,Math.round(total*before/100));
+ const total=required?.total??questionsFor(s).reduce((n,q)=>n+subproblemCount(q),0),done=required?.done??Math.round(total*p/100),early=required?.before??Math.min(done,Math.round(total*before/100));
  const open=(el:HTMLElement)=>setTip(el.getBoundingClientRect());
  return <><div className={`rp-progress rp-v${variant} ${closed?'is-closed':''} ${late?'is-late':''} ${notAttempted?'not-attempted':''} ${p===0?'is-zero':''}`} tabIndex={0} role="img" aria-label={`${s.name}: ${p}% progress${closed?', closed':''}`} aria-describedby={tip?id:undefined} onMouseEnter={e=>open(e.currentTarget)} onMouseLeave={()=>setTip(null)} onFocus={e=>open(e.currentTarget)} onBlur={()=>setTip(null)} onKeyDown={e=>{if(e.key==='Escape')setTip(null)}}>
  <div className="rp-progress-label">{variant==='01'&&<i style={{maskImage:required&&!percentage&&s.reportMode!=='custom'?'url(/assets/adaptive/progress-diamond.svg)':aggregate?undefined:`url(/assets/report-controls/${notAttempted?'progress-none':completed?'closed':p===0?'progress-zero':p<25?'progress-10':p<50?'progress-25':p<75?'progress-half':p<90?'progress-75':'progress-90'}.svg)`,...(aggregate?{borderRadius:'50%',background:`conic-gradient(currentColor ${p}%, transparent 0)`,border:'1px solid currentColor',width:14,height:14,flex:'0 0 14px',boxSizing:'border-box' as const}: {})}}/>}<span>{label}</span>{late&&<img src="/assets/report-controls/progress-late.svg" alt="Work during extension"/>}</div>

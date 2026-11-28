@@ -4,7 +4,10 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import TestControls from '../test-controls/TestControls';
 import { demoRows } from '../test-controls/model';
 import type { Attempt } from '../test-controls/model';
-import { loadDashboard } from './model';
+import { useState } from 'react';
+import { loadDashboard, saveDashboard } from './model';
+import AuthoredTestReport from '../task-creation/AuthoredTestReport';
+import type { TestSetup } from '../task-creation/model';
 import type {DashboardClass,DemoTask} from './model';
 import { demoTaskDetails } from './task-list-model';
 export function hasReadinessReport(classId:string|undefined,taskId:string|undefined){
@@ -19,7 +22,18 @@ export default function DashboardReportPage(){
  if(taskId&&hasReadinessReport(classId,taskId))return <TaskDetailSheet key={taskId} taskId={taskId} onClose={()=>navigate(`/classes/${classId}/tasks`)}/>;
  const item=loadDashboard().find(c=>c.id===classId),task=item?.tasks.find(t=>t.id===taskId);
  if(!item||!task)return <div className="prototype-page"><h1>Task not found</h1><Link to="/dashboard">Back to dashboard</Link></div>;
+ if(task.testSetup)return <AuthoredReportRoute key={task.id} item={item} task={{...task,testSetup:task.testSetup}}/>;
  return <DashboardTaskReport key={`${item.id}-${task.id}`} item={item} task={task}/>;
+}
+
+function AuthoredReportRoute({item,task}:{item:DashboardClass;task:DemoTask&{testSetup:TestSetup}}){
+ const [setup,setSetup]=useState(task.testSetup);
+ return <AuthoredTestReport item={item} task={{...task,testSetup:setup}} onSave={next=>{
+  saveDashboard(loadDashboard().map(group=>group.id===item.id
+   ? {...group,tasks:group.tasks.map(value=>value.id===task.id?{...value,testSetup:next}:value)}
+   : group));
+  setSetup(next);
+ }}/>;
 }
 
 export function DashboardTaskReport({item,task}:{item:DashboardClass;task:DemoTask}){

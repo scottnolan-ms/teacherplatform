@@ -1,0 +1,15 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Difficulty-Status-1 Low">
+<mask id="mask0_0_7" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="2" y="4" width="20" height="16">
+<mask id="stroke0_0_7" fill="white">
+<path d="M2 14C2 12.8954 2.89543 12 4 12H6C7.10457 12 8 12.8954 8 14V18C8 19.1046 7.10457 20 6 20H4C2.89543 20 2 19.1046 2 18V14Z"/>
+<path d="M9 10C9 8.89543 9.89543 8 11 8H13C14.1046 8 15 8.89543 15 10V18C15 19.1046 14.1046 20 13 20H11C9.89543 20 9 19.1046 9 18V10Z"/>
+<path d="M16 6C16 4.89543 16.8954 4 18 4H20C21.1046 4 22 4.89543 22 6V18C22 19.1046 21.1046 20 20 20H18C16.8954 20 16 19.1046 16 18V6Z"/>
+</mask>
+<path id="Vector" d="M2 14C2 12.8954 2.89543 12 4 12H6C7.10457 12 8 12.8954 8 14V18C8 19.1046 7.10457 20 6 20H4C2.89543 20 2 19.1046 2 18V14ZM9 10C9 8.89543 9.89543 8 11 8H13C14.1046 8 15 8.89543 15 10V18C15 19.1046 14.1046 20 13 20H11C9.89543 20 9 19.1046 9 18V10ZM16 6C16 4.89543 16.8954 4 18 4H20C21.1046 4 22 4.89543 22 6V18C22 19.1046 21.1046 20 20 20H18C16.8954 20 16 19.1046 16 18V6Z" stroke-width="3" stroke="black" mask="url(#stroke0_0_7)"/>
+</mask>
+<g mask="url(#mask0_0_7)">
+<rect id="COLOUR" width="24" height="24" fill="#32323C"/>
+</g>
+</g>
+</svg>
